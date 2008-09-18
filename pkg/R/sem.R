@@ -1,4 +1,4 @@
-# last modified 6 September 08 by J. Fox
+# last modified 18 September 08 by J. Fox
 
 sem <- function(ram, ...){
     if (is.character(ram)) class(ram) <- 'mod'
@@ -213,8 +213,12 @@ sem.default <- function(ram, S, N, param.names=paste('Param', 1:t, sep=''),
             warning(paste('Optimization may not have converged; nlm return code = ',
                 res$code, '. Consult ?nlm.\n', sep=""))
         qr.hess <- try(qr(res$hessian), silent=TRUE)
-        if (class(qr.hess) == "try-error")
+        if (class(qr.hess) == "try-error"){
             warning("Could not compute QR decomposition of Hessian.\nOptimization probably did not converge.\n")
+			cov <- matrix(NA, t, t)
+			colnames(cov) <- rownames(cov) <- param.names
+			result$cov <- cov
+			}
         else if (qr.hess$rank < t){
             warning(' singular Hessian: model is probably underidentified.\n')
             cov <- matrix(NA, t, t)
