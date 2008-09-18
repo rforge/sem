@@ -90,6 +90,7 @@ sem.default <- function(ram, S, N, param.names=paste('Param', 1:t, sep=''),
     S <- unclass(S) # in case S is a rawmoment object
     if (is.triangular(S)) S <- S + t(S) - diag(diag(S))
     if (!is.symmetric(S)) stop('S must be a square triangular or symmetric matrix')
+	if (qr(S)$rank < ncol(S)) warning("S is numerically singular: expect problems")
     if ((!is.matrix(ram)) | ncol(ram) != 5 | (!is.numeric(ram)))
         stop ('ram argument must be a 5-column numeric matrix')
     par.size <- if (missing(par.size)) {
