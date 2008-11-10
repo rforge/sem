@@ -165,3 +165,5 @@ Changes to Version 0.9-14
   o  Changed test for symmetry of input covariance matrix so that it uses isSymmetric() (suggested by Brian Lai).
   
   o  Added a test for positive-definiteness of the input covariance matrix.
+  
+  o  Intercept error in summary.sem() when bounds of RMSEA can't be computed (following problem reported by Andrew J. Wawrzyniak).
