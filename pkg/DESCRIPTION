@@ -1,8 +1,8 @@
 Package: sem
-Version: 0.9-16
-Date: 2009/03/30
+Version: 0.9-17
+Date: 2009/05/24
 Title: Structural Equation Models
-Author: John Fox <jfox@mcmaster.ca>
+Author: John Fox <jfox@mcmaster.ca> with a contribution from Adam Kramer
 Maintainer: John Fox <jfox@mcmaster.ca>
 Depends: R (>= 1.6.0), stats
 Suggests: boot
