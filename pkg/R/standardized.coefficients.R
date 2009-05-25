@@ -1,4 +1,5 @@
-# last modified 2 May 2009 by Adam Kramer (original by J. Fox)
+# last modified 24 May 2009 by Adam Kramer (original by J. Fox)
+# last modified 24 May 2009 by J. Fox
 
 standardized.coefficients <- function (object, digits = 5, oneheaded=TRUE, twoheaded=TRUE)
 {
@@ -36,17 +37,18 @@ standardized.coefficients <- function (object, digits = 5, oneheaded=TRUE, twohe
 	par.code <- paste(var.names[ram[, 2]], c("<---",
 			"<-->")[ram[, 1]], var.names[ram[, 3]])
 	coeff <- data.frame(par.names, coeff, par.code)
-	names(coeff) <- c(" ", "Std. Estimate", " ")
+	colnames(coeff) <- c(" ", "Std. Estimate", " ")
 	if (oneheaded && twoheaded) {
-		print(coeff, rowlab = rep(" ", nrow(coeff)), right = FALSE)
+		coeff
 	}
 	else if (oneheaded) {
-		print(coeff[one.head,], rowlab = rep(" ", nrow(coeff)), right = FALSE)
+		coeff[one.head,]
 	}
 	else {
-		print(coeff[two.head,], rowlab = rep(" ", nrow(coeff)), right = FALSE)
+		coeff[two.head,]
 	}
 }
+
 #standardized.coefficients <- function (object, digits = 5) 
 #{
 #    old.digits <- options(digits = digits)
