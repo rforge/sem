@@ -185,4 +185,8 @@ Changes to Verstion 0.9-17
   o  standardized.coefficients() now standardizes both path coefficients and variances/covariances (thanks to code provided by Adam Kramer).
   
   o  path.digram() now has an option for displaying standardized coefficients (again thanks to Adam Kramer).
+  
+Changes to Version 0.9-18
+
+  o  path.diagram() can now run dot to create graphics output (thanks to a contribution from Michael Friendly).
  
