@@ -189,4 +189,6 @@ Changes to Verstion 0.9-17
 Changes to Version 0.9-18
 
   o  path.diagram() can now run dot to create graphics output (thanks to a contribution from Michael Friendly).
+  
+  o  fix to URL in DESCRIPTION (broken link reported by Jonathan Henkelman).
  
