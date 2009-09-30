@@ -190,5 +190,7 @@ Changes to Version 0.9-18
 
   o  path.diagram() can now run dot to create graphics output (thanks to a contribution from Michael Friendly).
   
-  o  fix to URL in DESCRIPTION (broken link reported by Jonathan Henkelman).
+  o  Fix to URL in DESCRIPTION (broken link reported by Jonathan Henkelman).
+  
+  o  Fix to startvalues() to avoid an error when the user unnecessarily but not incorrectly sets fixed variance parameters to 0 (problem reported by Rob Cribbie).
  
