@@ -1,6 +1,5 @@
-# last modified 24 June 2007 by J. Fox
 
-print.sem <- function(x, ...) {
+print.objectiveML <- function(x, ...) {
     n <- x$n
     t <- x$t
     n.fix <- x$n.fix
@@ -9,7 +8,7 @@ print.sem <- function(x, ...) {
         "  Df = ", df, "\n\n")
     if (!is.null(x$coef)){
         print(x$coeff)
-        cat("\n Iterations = ", x$iterations, "\n")
+        if (!is.na(x$iterations)) cat("\n Iterations = ", x$iterations, "\n")
         if (!is.null(x$aliased)) cat("\n Aliased parameters:", x$aliased, "\n")
         }
     invisible(x)

@@ -2,13 +2,12 @@ Package: sem2
 Version: 2.0-0
 Date: 2010/04/20
 Title: Structural Equation Models
-Author: John Fox <jfox@mcmaster.ca> with contributions from Adam Kramer and Michael Friendly
+Author: John Fox <jfox@mcmaster.ca> and Jarrett Brynes <byrnes@msi.ucsb.edu>, with contributions from Adam Kramer and Michael Friendly
 Maintainer: John Fox <jfox@mcmaster.ca>
 Depends: R (>= 1.6.0), stats
 Suggests: boot
 Description: This package contains functions for fitting general linear structural
-    equation models (with observed and unobserved variables) by the method of
-    maximum likelihood using the RAM approach, and for fitting structural equations
-    in observed-variable models by two-stage least squares.
+    equation models (with observed and unobserved variables) using the RAM approach, 
+    and for fitting structural equations in observed-variable models by two-stage least squares.
 License: GPL (>= 2)
 URL: http://www.r-project.org, http://socserv.socsci.mcmaster.ca/jfox/

@@ -1,11 +1,9 @@
-# last modified 10 March 10 by J. Fox
+sem <- function(model, ...){
+	if (is.character(model)) class(model) <- 'semmod'
+	UseMethod('sem', model)
+}
 
-sem <- function(ram, ...){
-    if (is.character(ram)) class(ram) <- 'mod'
-    UseMethod('sem', ram)
-    }
-
-sem.mod <- function (ram, S, N, obs.variables=rownames(S), fixed.x=NULL, debug=FALSE, ...){
+sem.semmod <- function (model, S, N, raw=FALSE, obs.variables=rownames(S), fixed.x=NULL, formula= ~ ., debug=FALSE, ...){
     parse.path <- function(path) {                                           
         path.1 <- gsub('-', '', gsub(' ','', path))
         direction <- if (regexpr('<>', path.1) > 0) 2 
@@ -15,13 +13,21 @@ sem.mod <- function (ram, S, N, obs.variables=rownames(S), fixed.x=NULL, debug=F
         path.1 <- strsplit(path.1, '[<>]')[[1]]
         list(first=path.1[1], second=path.1[length(path.1)], direction=direction)
         }
-    if ((!is.matrix(ram)) | ncol(ram) != 3) stop ('ram argument must be a 3-column matrix')
-    startvalues <- as.numeric(ram[,3])
-    par.names <- ram[,2]
+	if (missing(S)){
+		if (missing(data)) stop("S and data cannot both be missing")
+		data <- na.omit(data)
+		data <- as.matrix(data)
+		if (!is.numeric(data)) stop("data must be numeric")
+		S <- if (raw) rawMoments(formula, data=data) else cov(data)
+		N <- nrow(data)
+	}
+    if ((!is.matrix(model)) | ncol(model) != 3) stop ('model argument must be a 3-column matrix')
+    startvalues <- as.numeric(model[,3])
+    par.names <- model[,2]
     n.paths <- length(par.names)
     heads <- from <- to <- rep(0, n.paths)
     for (p in 1:n.paths){
-        path <- parse.path(ram[p,1])
+        path <- parse.path(model[p,1])
         heads[p] <- abs(path$direction)
         to[p] <- path$second
         from[p] <- path$first
@@ -70,20 +76,20 @@ sem.mod <- function (ram, S, N, obs.variables=rownames(S), fixed.x=NULL, debug=F
         cat('\n\n RAM:\n')
         print(ram)
         }
-    sem(ram=ram, S=S, N=N, param.names=pars, var.names=vars, fixed.x=fixed.x,
+    sem(ram, S=S, N=N, raw=raw, param.names=pars, var.names=vars, fixed.x=fixed.x,
         debug=debug, ...)
     }
      
-
-sem.default <- function(ram, S, N, param.names=paste('Param', 1:t, sep=''), 
-    var.names=paste('V', 1:m, sep=''), fixed.x=NULL, raw=FALSE, debug=FALSE,
+sem.default <- function(model, S, N, raw=FALSE, param.names, 
+    var.names, fixed.x=NULL, debug=FALSE,
     analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c('ones', 'startvalues'), 
-    refit=TRUE, start.tol=1E-6, ...){
+    refit=TRUE, start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...){
     ord <- function(x) 1 + apply(outer(unique(x), x, "<"), 2, sum)
     is.triangular <- function(X) {
         is.matrix(X) && (nrow(X) == ncol(X)) && 
             (all(0 == X[upper.tri(X)])) || (all(0 == X[lower.tri(X)]))
-        }    
+        } 
+	ram <- model
     S <- unclass(S) # in case S is a rawmoment object
     if (nrow(S) > 1 && is.triangular(S)) S <- S + t(S) - diag(diag(S))
     if (!isSymmetric(S)) stop('S must be a square triangular or symmetric matrix')
@@ -139,35 +145,6 @@ sem.default <- function(ram, S, N, param.names=paste('Param', 1:t, sep=''),
     sel.free.2 <- sel.free[two.free]
     unique.free.1 <- unique(sel.free.1)
     unique.free.2 <- unique(sel.free.2)
-    objective.1 <- function(par){
-        A <- P <- matrix(0, m, m)
-        val <- ifelse (fixed, ram[,5], par[sel.free])
-        A[arrows.1] <- val[one.head]
-        P[arrows.2t] <- P[arrows.2] <- val[!one.head]
-        I.Ainv <- solve(diag(m) - A)
-        C <- J %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J)
-        Cinv <- solve(C)
-        f <- sum(diag(S %*% Cinv)) + log(det(C))
-        attributes(f) <- list(C=C, A=A, P=P)
-        f
-        }
-    objective.2 <- function(par){
-        A <- P <- matrix(0, m, m)
-        val <- ifelse (fixed, ram[,5], par[sel.free])
-        A[arrows.1] <- val[one.head]
-        P[arrows.2t] <- P[arrows.2] <- val[!one.head]
-        I.Ainv <- solve(diag(m) - A)
-        C <- J %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J)
-        Cinv <- solve(C)
-        f <- sum(diag(S %*% Cinv)) + log(det(C))
-        grad.P <- correct * t(I.Ainv) %*% t(J) %*% Cinv %*% (C - S) %*% Cinv %*% J %*% I.Ainv
-        grad.A <- grad.P %*% P %*% t(I.Ainv)        
-        gradient <- rep(0, t)
-        gradient[unique.free.1] <- tapply(grad.A[arrows.1.free],ram[ram[,1]==1 & ram[,4]!=0, 4], sum)
-        gradient[unique.free.2] <- tapply(grad.P[arrows.2.free],ram[ram[,1]==2 & ram[,4]!=0, 4], sum)
-        attributes(f) <- list(C=C, A=A, P=P, gradient=gradient)
-        f
-        }
     result <- list()
     result$var.names <- var.names
     result$ram <- ram
@@ -182,98 +159,43 @@ sem.default <- function(ram, S, N, param.names=paste('Param', 1:t, sep=''),
     result$raw <- raw
     if (length(param.names)== 0){
         warning("there are no free parameters in the model")
-        obj <- objective.1(NULL)
         }
     else {
         start <- if (any(is.na(ram[,5][par.posn])))
             startvalues(S, ram, debug=debug, tol=start.tol)
             else ram[,5][par.posn]
-        if (!warn){
-            save.warn <- options(warn=-1)
-            on.exit(options(save.warn))
-            }
+#        if (!warn){
+#            save.warn <- options(warn=-1)
+#            on.exit(options(save.warn))
+#            }
         typsize <- if (par.size == 'startvalues') abs(start) else rep(1,t)
-        res <- nlm(if (analytic.gradient) objective.2 else objective.1,
-            start, hessian=TRUE, iterlim=maxiter, print.level=if(debug) 2 else 0,
-            typsize=typsize, ...)
-        convergence <- res$code
-        if (!warn) options(save.warn)
-        par <- res$estimate
-        names(par) <- param.names
-        obj <- objective.2(par)
+		model.description <- list(S=S, logdetS=log(det(S)), invS=solve(S), N=N, m=m, n=n, t=t, fixed=fixed, ram=ram, sel.free=sel.free, arrows.1=arrows.1, arrows.1.free=arrows.1.free,
+			one.head=one.head, arrows.2t=arrows.2t, arrows.2=arrows.2, arrows.2.free=arrows.2.free, unique.free.1=unique.free.1, unique.free.2=unique.free.2,
+			J=J, correct=correct, param.names=param.names, var.names=var.names, observed=observed, raw=raw)
+		res <- optimizer(start=start, 
+			objective=objective, gradient=analytic.gradient, maxiter=maxiter, debug=debug, par.size=par.size, 
+			model.description=model.description, warn=warn, ...)
         ram[par.posn, 5] <- start
         par.code <- paste(var.names[ram[,2]], c('<---', '<-->')[ram[,1]],
         var.names[ram[,3]])
-        result$coeff <- par
+        result$coeff <- res$par
+		result$vcov <- res$vcov
         result$par.posn <- par.posn
-        result$convergence <- convergence
+        result$convergence <- res$convergence
         result$iterations <- res$iterations
         result$raw <- raw
-        if (convergence > 2)
-            warning(paste('Optimization may not have converged; nlm return code = ',
-                res$code, '. Consult ?nlm.\n', sep=""))
-        qr.hess <- try(qr(res$hessian), silent=TRUE)
-        if (class(qr.hess) == "try-error"){
-            warning("Could not compute QR decomposition of Hessian.\nOptimization probably did not converge.\n")
-			cov <- matrix(NA, t, t)
-			colnames(cov) <- rownames(cov) <- param.names
-			result$cov <- cov
-			}
-        else if (qr.hess$rank < t){
-            warning(' singular Hessian: model is probably underidentified.\n')
-            cov <- matrix(NA, t, t)
-            colnames(cov) <- rownames(cov) <- param.names
-            result$cov <- cov
-            which.aliased <- qr.hess$pivot[-(1:qr.hess$rank)]
-            aliased <- param.names[which.aliased]
-            position.aliased <- is.element(ram[,4], which.aliased)
-            if (refit){
-                warning(' refitting without aliased parameters.\n')
-                ram.refit <- ram[!position.aliased,]
-                par.refit <- ram.refit[,4]
-                par.refit[par.refit != 0] <- ord(par.refit[par.refit != 0])
-                ram.refit[,4] <- par.refit
-                iterations <- result$iterations
-                result <- Recall(ram.refit, S, N,
-                    param.names=param.names[-which.aliased], var.names=var.names,
-                    debug=debug, analytic.gradient=analytic.gradient,
-                    warn=warn, maxiter=maxiter, par.size=par.size, refit=TRUE, ...)
-                result$iterations <- iterations + result$iterations
-                aliased <- c(aliased, result$aliased)
-                }
-            result$aliased <- aliased
-            }
-        else {
-            cov <- (2/(N - (!raw))) * solve(res$hessian)
-            colnames(cov) <- rownames(cov) <- param.names
-            result$cov <- cov
-            if (any(diag(cov) < 0)) {
-                result$aliased <- c(param.names[diag(cov) < 0], result$aliased)
-                warning("Negative parameter variances.\nModel is probably underidentified.\n")
-                }
-            }
-        }
-    result$criterion <-  c(obj) - n - log(det(S))
-    C <- attr(obj, "C")
-    rownames(C) <- colnames(C) <- var.names[observed]
-    result$C <- C
-    A <- attr(obj, "A")
-    rownames(A) <- colnames(A) <- var.names
-    result$A <- A
-    P <- attr(obj, "P")
-    rownames(P) <- colnames(P) <- var.names
-    result$P <- P
-    if (!raw) {
-        CC <- diag(diag(S))
-        result$chisqNull <- (N - 1) * 
-            (sum(diag(S %*% solve(CC))) + log(det(CC)) -log(det(S)) - n)
-        }
-    class(result) <- "sem"
+    result$criterion <-  res$criterion
+	result$C <- res$C
+	result$A <- res$A
+	result$P <- res$P
+	cls <- gsub("\\.", "", deparse(substitute(objective)))
+    class(result) <- c(cls, "sem")
     result
     }
+}
 	
 vcov.sem <- function(object, ...) {
-	object$cov
+	object$vcov
 }
 
 coef.sem <- function(object, ...){

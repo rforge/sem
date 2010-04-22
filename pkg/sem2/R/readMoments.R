@@ -1,6 +1,10 @@
-# last modified 14 April 2007 by J. Fox
 
-read.moments <- function(file="", diag=TRUE, 
+read.moments <- function(...){
+	.Deprecated("readMoments", package="sem")
+	readMoments(...)
+}
+
+readMoments <- function(file="", diag=TRUE, 
         names=as.character(paste("X", 1:n, sep=""))){
     elements <- scan(file=file)
     m <- length(elements)

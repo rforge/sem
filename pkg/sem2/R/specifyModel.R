@@ -1,15 +1,19 @@
-# last modified 7 March 2006 by J. Fox
 
-specify.model <- function(file=""){
+specify.model <- function(...){
+	.Deprecated("specifyModel", package="sem")
+	specifyModel(...)
+}
+
+specifyModel <- function(file=""){
     ram <- scan(file=file, what=list(path="", par="", start=1, dump=""), sep=",", 
         strip.white=TRUE, comment.char="#", fill=TRUE) 
             # dump permits comma at line end
     ram <- cbind(ram$path, ram$par, ram$start)
-    class(ram) <- "mod"
+    class(ram) <- "semmod"
     ram
     }
     
-print.mod <- function(x, ...){
+print.semmod <- function(x, ...){
     path <- x[,1]
     parameter <- x[,2]
     parameter[is.na(parameter)] <- "<fixed>"
