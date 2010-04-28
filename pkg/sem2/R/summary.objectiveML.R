@@ -1,5 +1,5 @@
 
-summary.objectiveML <- function(object, digits=5, conf.level=.90, ...) {
+summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=TRUE, ...) {
 	if (any(is.na(object$vcov))) stop("coefficient covariances cannot be computed")
 	norm.res <- normalized.residuals(object)
 	se <- sqrt(diag(object$vcov))
@@ -63,7 +63,7 @@ summary.objectiveML <- function(object, digits=5, conf.level=.90, ...) {
 		ram <- object$ram[object$par.posn, , drop=FALSE]
 		par.code <- paste(var.names[ram[,2]], c('<---', '<-->')[ram[,1]],
 			var.names[ram[,3]])
-		coeff <- data.frame(object$coeff, se, z, 2*(1 - pnorm(abs(z))), par.code)
+		coeff <- data.frame(object$coeff, se, z, 2*pnorm(abs(z), lower.tail=FALSE), par.code)
 		names(coeff) <- c("Estimate", "Std Error", "z value", "Pr(>|z|)", " ")
 		row.names(coeff) <- names(object$coeff)
 	}
@@ -74,7 +74,8 @@ summary.objectiveML <- function(object, digits=5, conf.level=.90, ...) {
 	ans <- list(chisq=chisq, df=df, chisqNull=chisqNull, dfNull=dfNull,
 		GFI=GFI, AGFI=AGFI, RMSEA=RMSEA, NFI=NFI, NNFI=NNFI, CFI=CFI, BIC=BIC, SRMR=SRMR, 
 		norm.res=norm.res, coeff=coeff, digits=digits, 
-		iterations=object$iterations, aliased=object$aliased, raw=object$raw)
+		iterations=object$iterations, aliased=object$aliased, raw=object$raw,
+		robust=robust, robust.vcov=object$robust.vcov, adj.obj=object$adj.obj)
 	class(ans) <- "summary.objectiveML"
 	ans
 }
@@ -84,7 +85,7 @@ print.summary.objectiveML <- function(x, ...){
 	on.exit(options(old.digits))
 	if (x$raw) cat("\nModel fit to raw moment matrix.\n")
 	cat("\n Model Chisquare = ", x$chisq, "  Df = ", x$df, 
-		"Pr(>Chisq) =", if (x$df > 0) 1 - pchisq(x$chisq, x$df)
+		"Pr(>Chisq) =", if (x$df > 0) pchisq(x$chisq, x$df, lower.tail=FALSE)
 			else NA)
 	if (!x$raw) {
 		cat("\n Chisquare (null model) = ", x$chisqNull,  "  Df = ", x$dfNull)
@@ -107,6 +108,21 @@ print.summary.objectiveML <- function(x, ...){
 		print(x$coeff, right=FALSE)
 		if (!is.na(x$iterations)) cat("\n Iterations = ", x$iterations, "\n")
 		if (!is.null(x$aliased)) cat("\n Aliased parameters:", x$aliased, "\n")
+	}
+	if (x$robust && !is.null(x$robust.vcov)){
+		cat("\n\nSatorra-Bentler Corrected Fit Statistics and Standard Errors:\n")
+		#print(x$adj.obj)
+		cat("\n Adjusted Model Chisquare = ", x$adj.obj$chisq.scaled, "  Df = ", x$df, 
+		"Pr(>Chisq) =", if (x$df > 0) pchisq(x$adj.obj$chisq.scaled, x$df, lower.tail=FALSE)
+			else NA)
+		cat(paste("\n AICc", " = ", round(aicc.adjchisq(x$adj.obj), 3), sep = ""))
+		cat(paste("\n BIC", " = ", round(bic.adjchisq(x$adj.obj), 3), "\n\n", sep = ""))
+		coefs <- x$coef
+		coefs[,2] <- sqrt(diag(x$robust.vcov))
+		coefs[,3] <- coefs[,1]/coefs[,2]
+		coefs[,4] <- 2*pnorm(abs(coefs[,3]), lower.tail=FALSE)
+		colnames(coefs)[2] <- "Corrected SE"
+		print(coefs)
 	}
 	invisible(x)
 }

@@ -3,7 +3,7 @@ sem <- function(model, ...){
 	UseMethod('sem', model)
 }
 
-sem.semmod <- function (model, S, N, raw=FALSE, obs.variables=rownames(S), fixed.x=NULL, formula= ~ ., debug=FALSE, ...){
+sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S), fixed.x=NULL, formula= ~ ., robust=TRUE, debug=FALSE, ...){
     parse.path <- function(path) {                                           
         path.1 <- gsub('-', '', gsub(' ','', path))
         direction <- if (regexpr('<>', path.1) > 0) 2 
@@ -15,11 +15,13 @@ sem.semmod <- function (model, S, N, raw=FALSE, obs.variables=rownames(S), fixed
         }
 	if (missing(S)){
 		if (missing(data)) stop("S and data cannot both be missing")
+		N.all <- nrow(data)
 		data <- na.omit(data)
 		data <- as.matrix(data)
 		if (!is.numeric(data)) stop("data must be numeric")
 		S <- if (raw) rawMoments(formula, data=data) else cov(data)
 		N <- nrow(data)
+		if (N < N.all) warning(N - N.all, " observations removed due to missingness")
 	}
     if ((!is.matrix(model)) | ncol(model) != 3) stop ('model argument must be a 3-column matrix')
     startvalues <- as.numeric(model[,3])
@@ -76,12 +78,13 @@ sem.semmod <- function (model, S, N, raw=FALSE, obs.variables=rownames(S), fixed
         cat('\n\n RAM:\n')
         print(ram)
         }
-    sem(ram, S=S, N=N, raw=raw, param.names=pars, var.names=vars, fixed.x=fixed.x,
-        debug=debug, ...)
+	if (missing(data)) data <- NULL
+    sem(ram, S=S, N=N, raw=raw, data=data, param.names=pars, var.names=vars, fixed.x=fixed.x,
+		robust=robust, debug=debug, ...)
     }
      
-sem.default <- function(model, S, N, raw=FALSE, param.names, 
-    var.names, fixed.x=NULL, debug=FALSE,
+sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names, 
+    var.names, fixed.x=NULL, robust=TRUE, debug=FALSE,
     analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c('ones', 'startvalues'), 
     refit=TRUE, start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...){
     ord <- function(x) 1 + apply(outer(unique(x), x, "<"), 2, sum)
@@ -188,14 +191,18 @@ sem.default <- function(model, S, N, raw=FALSE, param.names,
 	result$C <- res$C
 	result$A <- res$A
 	result$P <- res$P
+	}
 	cls <- gsub("\\.", "", deparse(substitute(objective)))
     class(result) <- c(cls, "sem")
-    result
+	if (robust && !is.null(data) && inherits(result, "objectiveML")){
+		result$adj.obj <- sbchisq(result, data)
+		result$robust.vcov <- robust_vcov(result, adj.obj=result$adj.obj)
     }
+	result
 }
 	
-vcov.sem <- function(object, ...) {
-	object$vcov
+vcov.sem <- function(object, robust=FALSE, ...) {
+	if (robust) object$robust.vcov else object$vcov
 }
 
 coef.sem <- function(object, ...){
