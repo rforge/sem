@@ -4,13 +4,51 @@ specify.model <- function(...){
 	specifyModel(...)
 }
 
-specifyModel <- function(file=""){
-    ram <- scan(file=file, what=list(path="", par="", start=1, dump=""), sep=",", 
+specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE){
+	add.variances <- function () {
+		variables <- need.variance()
+		nvars <- length(variables)
+		if (nvars == 0) return(model)
+		message("NOTE: adding ", nvars, " variances to the model")
+		paths <- character(nvars)
+		par.names <- character(nvars)
+		for (i in 1:nvars) {
+			paths[i] <- paste(variables[i], "<->", variables[i])
+			par.names[i] <- paste("V[", variables[i], "]", sep = "")
+		}
+		model.2 <- cbind(c(model[, 1], paths), c(model[, 2], par.names), 
+			c(model[, 3], rep(NA, length(paths))))
+		class(model.2) <- "semmod"
+		model.2
+	}
+	need.variance <- function () {
+		all.vars <- classifyVariables(model)
+		exo.vars <- all.vars$exogenous
+		end.vars <- all.vars$endogenous
+		variables <- logical(0)
+		for (paths in model[, 1]) {
+			vars <- strip.white(paths)
+			vars <- sub("<->", "->", vars)
+			vars <- strsplit(vars, "->")[[1]]
+			if (vars[1] != vars[2]) {
+				for (a.variable in vars) {
+					if (is.na(variables[a.variable])) variables[a.variable] <- TRUE
+				}
+			}
+			else {
+				variables[vars[1]] <- FALSE
+			}
+		}
+		if (!exog.variances && length(exo.vars) > 0) variables[exo.vars] <- FALSE
+		if (!endog.variances && length(end.vars) > 0) variables[end.vars] <- FALSE
+		names(variables)[variables]
+	}
+    model <- scan(file=file, what=list(path="", par="", start=1, dump=""), sep=",", 
         strip.white=TRUE, comment.char="#", fill=TRUE) 
             # dump permits comma at line end
-    ram <- cbind(ram$path, ram$par, ram$start)
-    class(ram) <- "semmod"
-    ram
+    model <- cbind(model$path, model$par, model$start)
+    class(model) <- "semmod"
+	add.variances()
     }
     
 print.semmod <- function(x, ...){
@@ -25,4 +63,21 @@ print.semmod <- function(x, ...){
         right=FALSE)
     invisible(x)
     }
-    
+	
+classifyVariables <- function (model) {
+	variables <- logical(0)
+	for (paths in model[, 1]) {
+		vars <- strip.white(paths)
+		is.path <- length(grep("<->", vars)) > 0
+		vars <- sub("<->", "->", vars)
+		vars <- strsplit(vars, "->")[[1]]
+		if (is.na(variables[vars[1]])) variables[vars[1]] <- FALSE
+		if (is.na(variables[vars[2]])) variables[vars[2]] <- FALSE
+		if (vars[1] != vars[2] && !(is.path)) variables[vars[2]] <- TRUE
+	}
+	list(endogenous=names(variables[variables]), exogenous=names(variables[!variables]))
+}
+
+strip.white<-function(x) gsub(' ', '', x)
+
+

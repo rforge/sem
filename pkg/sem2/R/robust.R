@@ -18,8 +18,7 @@ robust_vcov <- function (sem.obj, adj.obj, data.obj, useFit=FALSE, useGinv=FALSE
 		info_m
 	acov <- acov/(ncases - 1)
 	rownames(acov) <- colnames(acov) <- colnames(adj.obj$p_deriv_mat)
-	par.names <- names(sem.obj$coeff)
-	acov[par.names, par.names]
+	acov
 }
 
 
@@ -101,46 +100,80 @@ ml.wmat <- function (sem.obj, useFit = FALSE)
 	return(w_mat)
 }
 
-delta_matrix <- function (sem.object, adj = 1e-04) 
-{
+#delta_matrix <- function (sem.object, adj = 1e-04) 
+#{
+#	p.star <- sem.object$n * (sem.object$n + 1)/2
+#	par.idx <- which(sem.object$ram[, "parameter"] > 0)
+#	nparams <- length(par.idx)
+#	delta.mat <- matrix(0, nparams, p.star)
+#	rownames(delta.mat) <- rep(NA, nparams)
+#	colnames(delta.mat) <- vech(matrix.names(sem.object$C))
+#	vars <- sem.object$var.names
+#	C.vect <- vech(sem.object$C)
+#	J <- sem.object$J
+#	m <- sem.object$m
+#	for (i in 1:nparams) {
+#		A <- sem.object$A
+#		P <- sem.object$P
+#		from <- sem.object$ram[par.idx[i], 2]
+#		to <- sem.object$ram[par.idx[i], 3]
+#		path_type <- sem.object$ram[par.idx[i], 1]
+#		if (path_type == 1) {
+#			adjust <- abs(A[from, to])*adj
+#			A[from, to] <- A[from, to] + adjust
+#		}
+#		else {
+#			adjust <- abs(P[from, to])*adj
+#			P[from, to] <- P[from, to] + adjust
+#			P[to, from] <- P[to, from]
+#		}
+#		I.Ainv <- solve(diag(m) - A)
+#		C <- J %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J)
+#		C.vech <- vech(C)
+#		delta.mat[i, ] <- (C.vech - C.vect)/adjust
+#		rownames(delta.mat)[i] <- rownames(sem.object$ram)[par.idx[i]]
+#		if (rownames(delta.mat)[i] == "") {
+#			rownames(delta.mat)[i] <- paste(vars[sem.object$ram[par.idx[i], 
+#						3]], vars[sem.object$ram[par.idx[i], 2]], sep = "-")
+#		}
+#	}
+#	delta.mat <- t(delta.mat)
+#	return(delta.mat)
+#}
+
+delta_matrix <- function (sem.object, adj = 1e-04) {
 	p.star <- sem.object$n * (sem.object$n + 1)/2
-	par.idx <- which(sem.object$ram[, "parameter"] > 0)
-	nparams <- length(par.idx)
-	delta.mat <- matrix(0, nparams, p.star)
-	rownames(delta.mat) <- rep(NA, nparams)
-	colnames(delta.mat) <- vech(matrix.names(sem.object$C))
+	pars <- names(sem.object$coeff)
+	nparms <- length(pars)
+	delta.mat <- matrix(0, nparms, p.star)
+	rownames(delta.mat) <- pars
 	vars <- sem.object$var.names
-	C.vect <- vech(sem.object$C)
 	J <- sem.object$J
 	m <- sem.object$m
-	for (i in 1:nparams) {
+	for (j in 1:nparms) {
 		A <- sem.object$A
 		P <- sem.object$P
-		from <- sem.object$ram[par.idx[i], 2]
-		to <- sem.object$ram[par.idx[i], 3]
-		path_type <- sem.object$ram[par.idx[i], 1]
-		if (path_type == 1) {
-			adjust <- abs(A[from, to])*adj
-			A[from, to] <- A[from, to] + adjust
+		i <- which(rownames(sem.object$ram) == pars[j])
+		from <- sem.object$ram[i, 2]
+		to <- sem.object$ram[i, 3]
+		path_type <- sem.object$ram[i, 1][1]
+		if (path_type == 1){
+			AA <- A[cbind(from, to)][1]
+			adjust <- abs(AA) * adj
+			A[cbind(from, to)] <- AA + adjust
 		}
 		else {
-			adjust <- abs(P[from, to])*adj
-			P[from, to] <- P[from, to] + adjust
-			P[to, from] <- P[to, from]
+			PP <- P[cbind(to, from)][1]
+			adjust <- PP * adj
+			P[cbind(from, to)] <- P[cbind(to, from)] <- PP + adjust
 		}
 		I.Ainv <- solve(diag(m) - A)
 		C <- J %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J)
-		C.vech <- vech(C)
-		delta.mat[i, ] <- (C.vech - C.vect)/adjust
-		rownames(delta.mat)[i] <- rownames(sem.object$ram)[par.idx[i]]
-		if (rownames(delta.mat)[i] == "") {
-			rownames(delta.mat)[i] <- paste(vars[sem.object$ram[par.idx[i], 
-						3]], vars[sem.object$ram[par.idx[i], 2]], sep = "-")
-		}
+		delta.mat[j, ] <- (vech(C) - vech(sem.object$C))/adjust
 	}
-	delta.mat <- t(delta.mat)
-	return(delta.mat)
+	t(delta.mat)
 }
+
 
 aicc.adjchisq <- function (adj.obj) 
 {
