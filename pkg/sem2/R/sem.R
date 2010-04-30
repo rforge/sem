@@ -80,11 +80,11 @@ sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S),
         }
 	if (missing(data)) data <- NULL
     sem(ram, S=S, N=N, raw=raw, data=data, param.names=pars, var.names=vars, fixed.x=fixed.x,
-		robust=robust, debug=debug, ...)
+		semmod=model, robust=robust, debug=debug, ...)
     }
      
 sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names, 
-    var.names, fixed.x=NULL, robust=TRUE, debug=FALSE,
+    var.names, fixed.x=NULL, robust=TRUE, semmod=NULL, debug=FALSE,
     analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c('ones', 'startvalues'), 
     refit=TRUE, start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...){
     ord <- function(x) 1 + apply(outer(unique(x), x, "<"), 2, sum)
@@ -160,6 +160,8 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
     result$m <- m
     result$t <- t
     result$raw <- raw
+	result$data <- data
+	result$semmod <- semmod
     if (length(param.names)== 0){
         warning("there are no free parameters in the model")
         }
@@ -167,11 +169,7 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
         start <- if (any(is.na(ram[,5][par.posn])))
             startvalues(S, ram, debug=debug, tol=start.tol)
             else ram[,5][par.posn]
-#        if (!warn){
-#            save.warn <- options(warn=-1)
-#            on.exit(options(save.warn))
-#            }
-        typsize <- if (par.size == 'startvalues') abs(start) else rep(1,t)
+      typsize <- if (par.size == 'startvalues') abs(start) else rep(1,t)
 		model.description <- list(S=S, logdetS=log(det(S)), invS=solve(S), N=N, m=m, n=n, t=t, fixed=fixed, ram=ram, sel.free=sel.free, arrows.1=arrows.1, arrows.1.free=arrows.1.free,
 			one.head=one.head, arrows.2t=arrows.2t, arrows.2=arrows.2, arrows.2.free=arrows.2.free, unique.free.1=unique.free.1, unique.free.2=unique.free.2,
 			J=J, correct=correct, param.names=param.names, var.names=var.names, observed=observed, raw=raw)
