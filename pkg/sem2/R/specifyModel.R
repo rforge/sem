@@ -4,7 +4,7 @@ specify.model <- function(...){
 	specifyModel(...)
 }
 
-specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE){
+specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE, covs){
 	add.variances <- function () {
 		variables <- need.variance()
 		nvars <- length(variables)
@@ -28,7 +28,8 @@ specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE){
 		variables <- logical(0)
 		for (paths in model[, 1]) {
 			vars <- strip.white(paths)
-			vars <- sub("<->", "->", vars)
+			vars <- sub("-*>", "->", sub("<-*", "<-", vars))
+			vars <- sub("<->|<-", "->", vars)
 			vars <- strsplit(vars, "->")[[1]]
 			if (vars[1] != vars[2]) {
 				for (a.variable in vars) {
@@ -47,6 +48,21 @@ specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE){
         strip.white=TRUE, comment.char="#", fill=TRUE) 
             # dump permits comma at line end
     model <- cbind(model$path, model$par, model$start)
+	if (!(missing(covs))){
+		for (cov in covs){
+			vars <- strsplit(cov, "[ ,]+")[[1]]
+			nvar <- length(vars)
+			for (i in 1:nvar){
+				for (j in i:nvar){
+					row <- c(paste(vars[i], "<->", vars[j]), 
+						if (i == j) paste("V[", vars[i], "]", sep="") else paste("C[", vars[i], ",", vars[j], "]", sep=""),
+						NA)
+					if (row[2] %in% model[,2]) next
+					model <- rbind(model, row)
+				}
+			}
+		}
+	}
     class(model) <- "semmod"
 	add.variances()
     }
@@ -68,12 +84,23 @@ classifyVariables <- function (model) {
 	variables <- logical(0)
 	for (paths in model[, 1]) {
 		vars <- strip.white(paths)
-		is.path <- length(grep("<->", vars)) > 0
-		vars <- sub("<->", "->", vars)
-		vars <- strsplit(vars, "->")[[1]]
-		if (is.na(variables[vars[1]])) variables[vars[1]] <- FALSE
-		if (is.na(variables[vars[2]])) variables[vars[2]] <- FALSE
-		if (vars[1] != vars[2] && !(is.path)) variables[vars[2]] <- TRUE
+		vars <- sub("-*>", "->", sub("<-*", "<-", vars))
+		if (grepl("<->", vars)){
+			vars <- strsplit(vars, "<->")[[1]]
+			if (is.na(variables[vars[1]])) variables[vars[1]] <- FALSE
+			if (is.na(variables[vars[2]])) variables[vars[2]] <- FALSE
+		}
+		else if (grepl("->", vars)){
+			vars <- strsplit(vars, "->")[[1]]
+			if (is.na(variables[vars[1]])) variables[vars[1]] <- FALSE
+			variables[vars[2]] <- TRUE
+		}
+		else if (grepl("<-", vars)){
+			vars <- strsplit(vars, "<-")[[1]]
+			if (is.na(variables[vars[1]])) variables[vars[2]] <- FALSE
+			variables[vars[1]] <- TRUE
+		}
+		else stop("incorrectly specified model")
 	}
 	list(endogenous=names(variables[variables]), exogenous=names(variables[!variables]))
 }
