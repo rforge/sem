@@ -1,10 +1,9 @@
-## last modified 2 June 2005 by J. Fox
 
-mod.indices<-function(model, ...){
-    UseMethod("mod.indices")
+modIndices<-function(model, ...){
+    UseMethod("modIndices")
     }
 
-mod.indices.sem <- function(model, ...){        
+modIndices.objectiveML <- function(model, ...){        
     accumulate <- function(A, B, C, D, d) {
         res <- matrix(0, d^2, d^2)    
         for (ii in 1:(d^2)){
@@ -87,11 +86,11 @@ mod.indices.sem <- function(model, ...){
     rownames(par.A) <- colnames(par.A) <- vars
     rownames(par.P) <- colnames(par.P) <- vars
     result <- list(mod.A=mod.A, mod.P=mod.P, par.A=par.A, par.P=par.P)
-    class(result) <- "sem.modind"
+    class(result) <- "modIndices"
     result
     }
 
-summary.sem.modind <- function(object, round=2, 
+summary.modIndices <- function(object, round=2, 
     print.matrices=c('both', 'par.change', 'mod.indices'), ...) {
     print.matrices <- match.arg(print.matrices)
     if (print.matrices != "mod.indices"){ 
@@ -113,7 +112,7 @@ summary.sem.modind <- function(object, round=2,
     invisible(NULL)
     }
 
-print.sem.modind <- function(x, n.largest=5, ...){
+print.modIndices <- function(x, n.largest=5, ...){
     cat("\n", n.largest, "largest modification indices, A matrix:\n")
     mod.A <- as.vector(x$mod.A)
     names <- rownames(x$mod.A)

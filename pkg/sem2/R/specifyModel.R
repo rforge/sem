@@ -47,6 +47,7 @@ specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE, co
     model <- scan(file=file, what=list(path="", par="", start=1, dump=""), sep=",", 
         strip.white=TRUE, comment.char="#", fill=TRUE) 
             # dump permits comma at line end
+	model$par[model$par == ""] <- NA
     model <- cbind(model$path, model$par, model$start)
 	if (!(missing(covs))){
 		for (cov in covs){

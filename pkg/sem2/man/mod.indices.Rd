@@ -108,7 +108,7 @@ model.wh <- specify.model()
     SES            <-> SES,           phi,  NA
 
 sem.wh <- sem(model.wh, S.wh, 932)
-mod.indices(sem.wh)
+modIndices(sem.wh)
 
 ##   5 largest modification indices, A matrix:
 ##  Powerless67:Education    Anomia67:Education 

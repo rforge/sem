@@ -16,10 +16,11 @@ sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S),
 	if (missing(S)){
 		if (missing(data)) stop("S and data cannot both be missing")
 		N.all <- nrow(data)
-		data <- na.omit(data)
-		data <- as.matrix(data)
-		if (!is.numeric(data)) stop("data must be numeric")
-		S <- if (raw) rawMoments(formula, data=data) else cov(data)
+		data <- model.matrix(formula, data=data)
+		S <- if (raw) rawMoments(data) else {
+				data <-  data[, colnames(data) != "(Intercept)"]
+				cov(data)
+			}
 		N <- nrow(data)
 		if (N < N.all) warning(N - N.all, " observations removed due to missingness")
 	}
@@ -78,7 +79,7 @@ sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S),
         cat('\n\n RAM:\n')
         print(ram)
         }
-	if (missing(data)) data <- NULL
+	data <- if (missing(data)) NULL else data[, obs.variables]
     sem(ram, S=S, N=N, raw=raw, data=data, param.names=pars, var.names=vars, fixed.x=fixed.x,
 		semmod=model, robust=robust, debug=debug, ...)
     }
