@@ -64,7 +64,7 @@ specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE, co
 			}
 		}
 	}
-	model <- removeRedundantPaths(model)
+	model <- removeRedundantPaths(model, warn=FALSE)
 	add.variances()
     }
     
