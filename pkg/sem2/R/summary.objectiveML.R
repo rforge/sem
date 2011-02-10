@@ -1,5 +1,5 @@
 
-summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=TRUE, ...) {
+summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, ...) {
 	if (any(is.na(object$vcov))) stop("coefficient covariances cannot be computed")
 	norm.res <- normalized.residuals(object)
 	se <- sqrt(diag(object$vcov))
@@ -17,8 +17,16 @@ summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=TRUE, .
 	CSC <- CSC %*% CSC
 	CS <- invC %*% S
 	CS <- CS %*% CS
-	chisq <- object$criterion * (N - (!object$raw))
 	chisqNull <- chisqNull(object) # object$chisqNull
+	
+	if(robust==F) {
+		   chisq <- object$criterion * (N - (!object$raw))
+	}else{ 
+		   chisq<-object$adj.obj$chisq.scaled
+		   chisqNull <- chisqNull/object$adj.obj$c # object$chisqNull
+
+	}
+	
 	GFI <- if (!object$raw) 1 - sum(diag(CSC))/sum(diag(CS)) else NA
 	if ((!object$raw) && df > 0){
 		AGFI <- 1 - (n*(n + 1)/(2*df))*(1 - GFI)
@@ -68,11 +76,17 @@ summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=TRUE, .
 		row.names(coeff) <- names(object$coeff)
 	}
 	else coeff <- NULL
-	BIC <- chisq - df * log(N)
+	#using functions for consistency
+	AIC <- aic.sem(object)
+	AICc <- aicc.sem(object)
+	BIC <- bic.sem(object)
+	CAIC <- caic.sem(object)
+	
 	SRMR <- sqrt(sum(standardized.residuals(object)^2 * 
 				upper.tri(diag(n), diag=TRUE))/(n*(n + 1)/2))
 	ans <- list(chisq=chisq, df=df, chisqNull=chisqNull, dfNull=dfNull,
 		GFI=GFI, AGFI=AGFI, RMSEA=RMSEA, NFI=NFI, NNFI=NNFI, CFI=CFI, BIC=BIC, SRMR=SRMR, 
+		AIC=AIC, AICc=AICc, CAIC=CAIC,
 		norm.res=norm.res, coeff=coeff, digits=digits, 
 		iterations=object$iterations, aliased=object$aliased, raw=object$raw,
 		robust=robust, robust.vcov=object$robust.vcov, adj.obj=object$adj.obj)
@@ -84,10 +98,31 @@ print.summary.objectiveML <- function(x, ...){
 	old.digits <- options(digits=x$digits)
 	on.exit(options(old.digits))
 	if (x$raw) cat("\nModel fit to raw moment matrix.\n")
+	
+	
+	if (x$robust && !is.null(x$robust.vcov)){
+		cat("\n\nSatorra-Bentler Corrected Fit Statistics and Standard Errors:\n")
+		#print(x$adj.obj)
+		cat("\n Adjusted Model Chisquare = ", x$adj.obj$chisq.scaled, "  Df = ", x$df, 
+		"Pr(>Chisq) =", if (x$df > 0) pchisq(x$adj.obj$chisq.scaled, x$df, lower.tail=FALSE)
+			else NA)
+		
+		#use the scaled chisq for all other indices
+		x$chisq<-x$adj.obj$chisq.scaled
+		
+		x$coeff <- x$coef
+		x$coeff[,2] <- sqrt(diag(x$robust.vcov))
+		x$coeff[,3] <- x$coeff[,1]/x$coeff[,2]
+		x$coeff[,4] <- 2*pnorm(abs(x$coeff[,3]), lower.tail=FALSE)
+		colnames(x$coeff)[2] <- "Corrected SE"
+	}else{
 	cat("\n Model Chisquare = ", x$chisq, "  Df = ", x$df, 
 		"Pr(>Chisq) =", if (x$df > 0) pchisq(x$chisq, x$df, lower.tail=FALSE)
 			else NA)
+	}
+	
 	if (!x$raw) {
+		
 		cat("\n Chisquare (null model) = ", x$chisqNull,  "  Df = ", x$dfNull)
 		cat("\n Goodness-of-fit index = ", x$GFI)
 	}
@@ -100,7 +135,10 @@ print.summary.objectiveML <- function(x, ...){
 		cat("\n Bentler CFI = ", x$CFI)
 		cat("\n SRMR = ", x$SRMR)
 	}
-	cat("\n BIC = ", x$BIC, "\n")
+	cat("\n AIC = ", x$AIC)
+	cat("\n AICc = ", x$AICc)
+	cat("\n BIC = ", x$BIC)
+	cat("\n CAIC = ", x$CAIC, "\n")
 	cat("\n Normalized Residuals\n")
 	print(summary(as.vector(x$norm.res)))
 	if (!is.null(x$coeff)){
@@ -109,21 +147,8 @@ print.summary.objectiveML <- function(x, ...){
 		if (!is.na(x$iterations)) cat("\n Iterations = ", x$iterations, "\n")
 		if (!is.null(x$aliased)) cat("\n Aliased parameters:", x$aliased, "\n")
 	}
-	if (x$robust && !is.null(x$robust.vcov)){
-		cat("\n\nSatorra-Bentler Corrected Fit Statistics and Standard Errors:\n")
-		#print(x$adj.obj)
-		cat("\n Adjusted Model Chisquare = ", x$adj.obj$chisq.scaled, "  Df = ", x$df, 
-		"Pr(>Chisq) =", if (x$df > 0) pchisq(x$adj.obj$chisq.scaled, x$df, lower.tail=FALSE)
-			else NA)
-		cat(paste("\n AICc", " = ", round(aicc.adjchisq(x$adj.obj), 3), sep = ""))
-		cat(paste("\n BIC", " = ", round(bic.adjchisq(x$adj.obj), 3), "\n\n", sep = ""))
-		coefs <- x$coef
-		coefs[,2] <- sqrt(diag(x$robust.vcov))
-		coefs[,3] <- coefs[,1]/coefs[,2]
-		coefs[,4] <- 2*pnorm(abs(coefs[,3]), lower.tail=FALSE)
-		colnames(coefs)[2] <- "Corrected SE"
-		print(coefs)
-	}
+	
+	
 	invisible(x)
 }
 
