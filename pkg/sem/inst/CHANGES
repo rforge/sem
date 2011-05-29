@@ -205,5 +205,7 @@ Changes to Version 0.9-20
 Changes to Version 0.9-21
 
   o  Example for mod.indices() should have been marked as "don't run" and now is so marked (reported by Brian Ripley).
+  
+Changes to Version 0.9-22
 
- 
+  o  tsls() modified to report error when number of IVs less than number of coefficients (surfaced in problem reported by Jeffrey Racine).

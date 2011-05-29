@@ -1,7 +1,7 @@
 # Two-Stage Least Squares
 #   John Fox
 
-# last modified 28 March 2009 by J. Fox
+# last modified 29 by J. Fox
 
 tsls <- function(y, ...){
     UseMethod("tsls")
@@ -10,6 +10,7 @@ tsls <- function(y, ...){
 tsls.default <- function (y, X, Z, names=NULL, ...) {
     n <- length(y)
     p <- ncol(X)
+	if (p > ncol(Z)) stop("number of cofficients, ", p, ", greater than number of instrumental variables, ", ncol(Z))
     invZtZ <- solve(crossprod(Z))
     XtZ <- crossprod(X, Z)
 #    V <- solve(XtZ %*% invZtZ %*% t(XtZ))
