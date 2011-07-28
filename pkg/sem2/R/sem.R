@@ -87,7 +87,7 @@ sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S),
 sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names, 
     var.names, fixed.x=NULL, robust=TRUE, semmod=NULL, debug=FALSE,
     analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c('ones', 'startvalues'), 
-    refit=TRUE, start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...){
+    refit=TRUE, start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, analytic.hessian=NULL, ...){
     ord <- function(x) 1 + apply(outer(unique(x), x, "<"), 2, sum)
     is.triangular <- function(X) {
         is.matrix(X) && (nrow(X) == ncol(X)) && 
@@ -176,7 +176,7 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 			J=J, correct=correct, param.names=param.names, var.names=var.names, observed=observed, raw=raw)
 		res <- optimizer(start=start, 
 			objective=objective, gradient=analytic.gradient, maxiter=maxiter, debug=debug, par.size=par.size, 
-			model.description=model.description, warn=warn, ...)
+			model.description=model.description, warn=warn, analytic.hessian=analytic.hessian, ...)
         ram[par.posn, 5] <- start
         par.code <- paste(var.names[ram[,2]], c('<---', '<-->')[ram[,1]],
         var.names[ram[,3]])
@@ -200,8 +200,109 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 	result
 }
 	
-vcov.sem <- function(object, robust=FALSE, ...) {
-	if (robust) object$robust.vcov else object$vcov
+vcov.sem <- function(object, robust=FALSE, analytic=is.null(object$vcov), ...) {
+	if (robust) return(object$robust.vcov)
+	if (!analytic) return(object$vcov)
+	if (!inherits(object, "objectiveML")) stop("analytic coefficient covariance matrix unavailable")
+	hessian <- function(model){
+		accumulate <- function(A, B, C, D, d) {
+			sub <- function(i, j) (j - 1)*d + i
+			res <- matrix(0, d^2, d^2)    
+			for (g in 1:d){
+				for (h in 1:d){
+					for (i in 1:d){
+						for (j in 1:d){
+							res[sub(g, h), sub(i, j)] <- A[g, i] * B[h, j] + C[g, j] * D[h, i]
+						}
+					}
+				}
+			}
+			res
+		}    
+		A <- model$A
+		P <- model$P
+		S <- model$S
+		C <- model$C
+		J <- model$J
+		m <- model$m
+		t <- model$t
+		I.Ainv <- solve(diag(m) - A) 
+		Cinv <- solve(C)    
+		AA <- t(I.Ainv) %*% t(J)
+		BB <- J %*% I.Ainv %*% P %*% t(I.Ainv)
+		CC <- t(I.Ainv) %*% t(J)
+		DD <- J %*% I.Ainv
+		dF.dBdB <- accumulate(AA %*% Cinv %*% t(AA), t(BB) %*% Cinv %*% BB,
+				AA %*% Cinv %*% BB, t(BB) %*% Cinv %*% t(AA), m)                
+		dF.dPdP <- accumulate(CC %*% Cinv %*% t(CC), t(DD) %*% Cinv %*% DD,
+				CC %*% Cinv %*% DD, t(DD) %*% Cinv %*% t(CC), m)                
+		dF.dBdP <- accumulate(AA %*% Cinv %*% t(CC), t(BB) %*% Cinv %*% DD,
+				AA %*% Cinv %*% DD, t(BB) %*% Cinv %*% t(CC), m)               
+		ram <- model$ram    
+		fixed <- ram[, 4] == 0
+		sel.free <- ram[, 4]
+		sel.free[fixed] <- 0
+		one.head <- ram[, 1] == 1
+		one.free <- which( (!fixed) & one.head )
+		two.free <- which( (!fixed) & (!one.head) )
+		two.free.cov <- which((!fixed) & (!one.head) & (ram[, 2] != ram[, 3]))
+		arrows.1 <- ram[one.head, c(2, 3)]
+		arrows.2 <- ram[!one.head, c(2, 3)]
+		arrows.2t <- ram[!one.head, c(3, 2)]
+		arrows.1.free <- ram[one.free, c(2, 3)]
+		arrows.2.free <- ram[two.free, c(2, 3)]
+		sel.free.1 <- sel.free[one.free]
+		sel.free.2 <- sel.free[two.free]
+		unique.free.1 <- unique(sel.free.1)
+		unique.free.2 <- unique(sel.free.2)    
+		posn.matrix <- matrix(1:(m^2), m, m)    
+		posn.free <- c(posn.matrix[arrows.1.free], 
+				(m^2) + posn.matrix[arrows.2.free])        
+		DBB <- dF.dBdB[posn.matrix[arrows.1.free], 
+				posn.matrix[arrows.1.free]]
+		DPP <- dF.dPdP[posn.matrix[arrows.2.free], 
+				posn.matrix[arrows.2.free]]
+		DBP <- dF.dBdP[posn.matrix[arrows.1.free],
+				posn.matrix[arrows.2.free]]
+		hessian <- rbind( cbind(DBB,    DBP),
+				cbind(t(DBP), DPP))    
+		n1 <- length(one.free)
+		n2 <- length(two.free)
+		nn <- rep(c(sqrt(2), sqrt(2)/2), c(n1, n2))
+		nn[c(one.free, two.free) %in% two.free.cov] <- sqrt(2)
+		hessian <- hessian * outer(nn, nn)
+		pars <- ram[, 4][!fixed]
+		Z <- outer(1:t, pars, function(x, y) as.numeric(x == y))
+		hessian <- Z %*% hessian %*% t(Z)
+		par.names <- c(names(one.free), names(two.free))
+		par.names <- par.names[par.names != ""]
+		rownames(hessian) <- colnames(hessian) <- par.names
+		hessian
+	}
+	h <- hessian(object)
+	t <- object$t
+	N <- object$N
+	raw <- object$raw
+	param.names <- object$param.names
+	vcov <- matrix(NA, t, t)
+	qr.hess <- try(qr(h), silent=TRUE)
+	if (class(qr.hess) == "try-error"){
+		warning("Could not compute QR decomposition of Hessian.\nOptimization probably did not converge.\n")
+	}
+	else if (qr.hess$rank < t){
+		warning(' singular Hessian: model is probably underidentified.\n')
+		which.aliased <- qr.hess$pivot[-(1:qr.hess$rank)]
+		attr(vcov, "aliased") <- param.names[which.aliased]
+	}
+	else {
+		vcov <- (2/(N - (!raw))) * solve(h)
+		if (any(diag(vcov) < 0)) {
+			attr(vcov, "aliased") <- param.names[diag(vcov) < 0]
+			warning("Negative parameter variances.\nModel is probably underidentified.\n")
+		}
+	}
+	colnames(vcov) <- rownames(vcov) <- param.names
+	vcov
 }
 
 coef.sem <- function(object, ...){

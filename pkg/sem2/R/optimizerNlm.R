@@ -13,7 +13,7 @@ optimizerNlm <- function(start, objective=objectiveML,
 			par <- res$estimate
 			names(par) <- param.names
 			result$par <- par
-			if (result$convergence > 2)
+			if (!result$convergence)
 				warning(paste('Optimization may not have converged; nlm return code = ',
 						res$code, '. Consult ?nlm.\n', sep=""))
 			vcov <- matrix(NA, t, t)

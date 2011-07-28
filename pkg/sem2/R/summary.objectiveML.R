@@ -1,8 +1,9 @@
 
-summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, ...) {
-	if (any(is.na(object$vcov))) stop("coefficient covariances cannot be computed")
+summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=TRUE, ...) {
+	vcov <- vcov(object, robust=robust, analytic=analytic.se)
+	if (any(is.na(vcov))) stop("coefficient covariances cannot be computed")
 	norm.res <- normalized.residuals(object)
-	se <- sqrt(diag(object$vcov))
+	se <- sqrt(diag(vcov))
 	z <- object$coeff/se
 	n.fix <- object$n.fix
 	n <- object$n
