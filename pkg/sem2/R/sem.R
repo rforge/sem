@@ -87,7 +87,7 @@ sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S),
 sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names, 
     var.names, fixed.x=NULL, robust=TRUE, semmod=NULL, debug=FALSE,
     analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c('ones', 'startvalues'), 
-    refit=TRUE, start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, analytic.hessian=NULL, ...){
+    refit=TRUE, start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...){
     ord <- function(x) 1 + apply(outer(unique(x), x, "<"), 2, sum)
     is.triangular <- function(X) {
         is.matrix(X) && (nrow(X) == ncol(X)) && 
@@ -176,7 +176,7 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 			J=J, correct=correct, param.names=param.names, var.names=var.names, observed=observed, raw=raw)
 		res <- optimizer(start=start, 
 			objective=objective, gradient=analytic.gradient, maxiter=maxiter, debug=debug, par.size=par.size, 
-			model.description=model.description, warn=warn, analytic.hessian=analytic.hessian, ...)
+			model.description=model.description, warn=warn, ...)
         ram[par.posn, 5] <- start
         par.code <- paste(var.names[ram[,2]], c('<---', '<-->')[ram[,1]],
         var.names[ram[,3]])

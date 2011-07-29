@@ -1,3 +1,5 @@
+# last modified 2011-07-29 by J. Fox
+
 
 summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=TRUE, ...) {
 	vcov <- vcov(object, robust=robust, analytic=analytic.se)
@@ -77,11 +79,10 @@ summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, 
 		row.names(coeff) <- names(object$coeff)
 	}
 	else coeff <- NULL
-	#using functions for consistency
-	AIC <- aic.sem(object)
-	AICc <- aicc.sem(object)
-	BIC <- bic.sem(object)
-	CAIC <- caic.sem(object)
+	AIC <- AIC(object)
+	AICc <- AICc(object)
+	BIC <- BIC(object)
+	CAIC <- CAIC(object)
 	
 	SRMR <- sqrt(sum(standardized.residuals(object)^2 * 
 				upper.tri(diag(n), diag=TRUE))/(n*(n + 1)/2))
