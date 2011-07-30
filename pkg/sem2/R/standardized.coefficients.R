@@ -1,7 +1,12 @@
-# last modified 24 May 2009 by Adam Kramer (original by J. Fox)
-# last modified 24 May 2009 by J. Fox
+# modified 24 May 2009 by Adam Kramer (original by J. Fox)
+# last modified 2011-07-30 by J. Fox
 
-standardized.coefficients <- function (object, digits = 5, oneheaded=TRUE, twoheaded=TRUE)
+standardized.coefficients <- function(object, ...){
+	.Deprecated("standardizedCoefficients", package="sem")
+	standardizedCoefficients(object, ...)
+}
+
+standardizedCoefficients <- function (object, digits = 5, oneheaded=TRUE, twoheaded=TRUE)
 {
 	if (!oneheaded && !twoheaded) {
 		stop("No coefficients requested.")
@@ -79,6 +84,11 @@ standardized.coefficients <- function (object, digits = 5, oneheaded=TRUE, twohe
 #    print(coeff, rowlab = rep(" ", nrow(coeff)), right = FALSE)
 #}
 
-std.coef <- function (...){
-    standardized.coefficients(...)
+std.coef <- function(object, ...){
+	.Deprecated("stdCoef", package="sem")
+	standardizedCoefficients(object, ...)
+}
+
+stdCoef <- function (...){
+    standardizedCoefficients(...)
     }

@@ -1,18 +1,19 @@
-# last modified 2011-07-29 by J. Fox
+# last modified 2011-07-30 by J. Fox
 
 sem <- function(model, ...){
-	if (is.character(model)) class(model) <- 'semmod'
-	UseMethod('sem', model)
+	if (is.character(model)) class(model) <- "semmod"
+	UseMethod("sem", model)
 }
 
-sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S), fixed.x=NULL, formula= ~ ., robust=TRUE, debug=FALSE, ...){
+sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S), 
+		fixed.x=NULL, formula= ~ ., robust=!missing(data), debug=FALSE, ...){
     parse.path <- function(path) {                                           
-        path.1 <- gsub('-', '', gsub(' ','', path))
-        direction <- if (regexpr('<>', path.1) > 0) 2 
-            else if (regexpr('<', path.1) > 0) -1
-            else if (regexpr('>', path.1) > 0) 1
-            else stop(paste('ill-formed path:', path))
-        path.1 <- strsplit(path.1, '[<>]')[[1]]
+        path.1 <- gsub("-", "", gsub(" ","", path))
+        direction <- if (regexpr("<>", path.1) > 0) 2 
+            else if (regexpr("<", path.1) > 0) -1
+            else if (regexpr(">", path.1) > 0) 1
+            else stop(paste("ill-formed path:", path))
+        path.1 <- strsplit(path.1, "[<>]")[[1]]
         list(first=path.1[1], second=path.1[length(path.1)], direction=direction)
         }
 	if (missing(S)){
@@ -26,7 +27,7 @@ sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S),
 		N <- nrow(data)
 		if (N < N.all) warning(N - N.all, " observations removed due to missingness")
 	}
-    if ((!is.matrix(model)) | ncol(model) != 3) stop ('model argument must be a 3-column matrix')
+    if ((!is.matrix(model)) | ncol(model) != 3) stop ("model argument must be a 3-column matrix")
     startvalues <- as.numeric(model[,3])
     par.names <- model[,2]
     n.paths <- length(par.names)
@@ -56,29 +57,29 @@ sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S),
     vars <- c(obs.variables, latent.vars)
     pars <- na.omit(unique(par.names))
     ram[,1] <- heads
-    ram[,2] <- apply(outer(vars, to, '=='), 2, which)
-    ram[,3] <- apply(outer(vars, from, '=='), 2, which)   
-    par.nos <- apply(outer(pars, par.names, '=='), 2, which)
+    ram[,2] <- apply(outer(vars, to, "=="), 2, which)
+    ram[,3] <- apply(outer(vars, from, "=="), 2, which)   
+    par.nos <- apply(outer(pars, par.names, "=="), 2, which)
     if (length(par.nos) > 0)
         ram[,4] <- unlist(lapply(par.nos, function(x) if (length(x) == 0) 0 else x))
     ram[,5]<- startvalues
-    colnames(ram) <- c('heads', 'to', 'from', 'parameter', 'start')
-    if (!is.null(fixed.x)) fixed.x <- apply(outer(vars, fixed.x, '=='), 2, which)
+    colnames(ram) <- c("heads", "to", "from", "parameter", "start")
+    if (!is.null(fixed.x)) fixed.x <- apply(outer(vars, fixed.x, "=="), 2, which)
     n <- length(obs.variables)
     m <- length(all.vars)
     t <- length(pars)
     if (debug) {
-        cat('\n observed variables:\n') 
-        print(paste(paste(1:n,':', sep=''), obs.variables, sep=''))
-        cat('\n')
+        cat("\n observed variables:\n") 
+        print(paste(paste(1:n,":", sep=""), obs.variables, sep=""))
+        cat("\n")
         if (m > n){ 
-            cat('\n latent variables:\n')
-            print(paste(paste((n+1):m,':', sep=''), latent.vars, sep=''))
-            cat('\n')
+            cat("\n latent variables:\n")
+            print(paste(paste((n+1):m,":", sep=""), latent.vars, sep=""))
+            cat("\n")
             }
-        cat('\n parameters:\n') 
-        print(paste(paste(1:t,':', sep=''), pars, sep=''))
-        cat('\n\n RAM:\n')
+        cat("\n parameters:\n") 
+        print(paste(paste(1:t,":", sep=""), pars, sep=""))
+        cat("\n\n RAM:\n")
         print(ram)
         }
 	data <- if (missing(data)) NULL else data[, obs.variables]
@@ -87,9 +88,9 @@ sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S),
     }
      
 sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names, 
-    var.names, fixed.x=NULL, robust=TRUE, semmod=NULL, debug=FALSE,
-    analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c('ones', 'startvalues'), 
-    refit=TRUE, start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...){
+    var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
+    analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c("ones", "startvalues"), 
+    start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...){
     ord <- function(x) 1 + apply(outer(unique(x), x, "<"), 2, sum)
     is.triangular <- function(X) {
         is.matrix(X) && (nrow(X) == ncol(X)) && 
@@ -98,15 +99,15 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 	ram <- model
     S <- unclass(S) # in case S is a rawmoment object
     if (nrow(S) > 1 && is.triangular(S)) S <- S + t(S) - diag(diag(S))
-    if (!isSymmetric(S)) stop('S must be a square triangular or symmetric matrix')
+    if (!isSymmetric(S)) stop("S must be a square triangular or symmetric matrix")
 	if (qr(S)$rank < ncol(S)) warning("S is numerically singular: expect problems")
 	if (any(eigen(S, symmetric=TRUE, only.values=TRUE)$values <= 0)) 
 		warning("S is not positive-definite: expect problems")
     if ((!is.matrix(ram)) | ncol(ram) != 5 | (!is.numeric(ram)))
-        stop ('ram argument must be a 5-column numeric matrix')
+        stop ("ram argument must be a 5-column numeric matrix")
     par.size <- if (missing(par.size)) {
         range <- range(diag(S))
-        if (range[2]/range[1] > 100) 'startvalues' else 'ones'
+        if (range[2]/range[1] > 100) "startvalues" else "ones"
         }
         else match.arg(par.size)
     n <- nrow(S)
@@ -172,15 +173,17 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
         start <- if (any(is.na(ram[,5][par.posn])))
             startvalues(S, ram, debug=debug, tol=start.tol)
             else ram[,5][par.posn]
-      typsize <- if (par.size == 'startvalues') abs(start) else rep(1,t)
-		model.description <- list(S=S, logdetS=log(det(S)), invS=solve(S), N=N, m=m, n=n, t=t, fixed=fixed, ram=ram, sel.free=sel.free, arrows.1=arrows.1, arrows.1.free=arrows.1.free,
-			one.head=one.head, arrows.2t=arrows.2t, arrows.2=arrows.2, arrows.2.free=arrows.2.free, unique.free.1=unique.free.1, unique.free.2=unique.free.2,
+      typsize <- if (par.size == "startvalues") abs(start) else rep(1,t)
+		model.description <- list(S=S, logdetS=log(det(S)), invS=solve(S), N=N, m=m, n=n, t=t, 
+				fixed=fixed, ram=ram, sel.free=sel.free, arrows.1=arrows.1, arrows.1.free=arrows.1.free,
+			one.head=one.head, arrows.2t=arrows.2t, arrows.2=arrows.2, arrows.2.free=arrows.2.free, 
+			unique.free.1=unique.free.1, unique.free.2=unique.free.2,
 			J=J, correct=correct, param.names=param.names, var.names=var.names, observed=observed, raw=raw)
 		res <- optimizer(start=start, 
 			objective=objective, gradient=analytic.gradient, maxiter=maxiter, debug=debug, par.size=par.size, 
 			model.description=model.description, warn=warn, ...)
         ram[par.posn, 5] <- start
-        par.code <- paste(var.names[ram[,2]], c('<---', '<-->')[ram[,1]],
+        par.code <- paste(var.names[ram[,2]], c("<---", "<-->")[ram[,1]],
         var.names[ram[,3]])
         result$coeff <- res$par
 		result$vcov <- res$vcov
@@ -202,7 +205,7 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 	result
 }
 	
-vcov.sem <- function(object, robust=FALSE, analytic=is.null(object$vcov), ...) {
+vcov.sem <- function(object, robust=FALSE, analytic=inherits(object, "objectiveML"), ...) {
 	if (robust) return(object$robust.vcov)
 	if (!analytic) return(object$vcov)
 	if (!inherits(object, "objectiveML")) stop("analytic coefficient covariance matrix unavailable")
@@ -292,7 +295,7 @@ vcov.sem <- function(object, robust=FALSE, analytic=is.null(object$vcov), ...) {
 		warning("Could not compute QR decomposition of Hessian.\nOptimization probably did not converge.\n")
 	}
 	else if (qr.hess$rank < t){
-		warning(' singular Hessian: model is probably underidentified.\n')
+		warning(" singular Hessian: model is probably underidentified.\n")
 		which.aliased <- qr.hess$pivot[-(1:qr.hess$rank)]
 		attr(vcov, "aliased") <- param.names[which.aliased]
 	}
