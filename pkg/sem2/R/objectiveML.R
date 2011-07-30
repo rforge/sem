@@ -1,3 +1,5 @@
+# last modified 2011-07-30 by J. Fox
+
 objectiveML <- function(gradient=TRUE){
 	result <- list(
 		objective = function(par, model.description){
@@ -25,7 +27,7 @@ objectiveML <- function(gradient=TRUE){
 		}
 	)
 	if (gradient)
-		result$gradient = function(par, model.description){
+		result$gradient <- function(par, model.description){
 			with(model.description, {
 					A <- P <- matrix(0, m, m)
 					val <- ifelse (fixed, ram[,5], par[sel.free])

@@ -1,8 +1,10 @@
+# last modified 2011-07-30 by J. Fox
+
 optimizerNlm <- function(start, objective=objectiveML, 
 	gradient=TRUE, maxiter, debug, par.size, model.description, warn, ...){
 	with(model.description, {
 			obj <- objective(gradient=gradient)$objective
-			typsize <- if (par.size == 'startvalues') abs(start) else rep(1,t)
+			typsize <- if (par.size == 'startvalues') abs(start) else rep(1, t)
 			if (!warn) save.warn <- options(warn=-1)
 			res <- nlm(obj, start, iterlim=maxiter, print.level=if(debug) 2 else 0,
 				typsize=typsize, hessian=TRUE, model.description, ...)

@@ -1,3 +1,5 @@
+# last modified 2011-07-30 by J. Fox
+
 raw.moments <- function(...){
 	.Deprecated("rawMoments", package="sem")
 	rawMoments(...)
@@ -35,7 +37,7 @@ print.rawmoments <- function(x, ...){
 	xx <- unclass(x)
 	attr(xx, "N") <- NULL
 	cat("\nRaw Moments\n")
-	print(xx)
+	print(xx, ...)
 	cat("\nN = ", attr(x, "N"), "\n")
 	invisible(x)
 }

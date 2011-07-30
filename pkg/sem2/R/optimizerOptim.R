@@ -1,5 +1,7 @@
-optimizerOptim <- function(start, objective=objectiveML, method="CG",
-	gradient=TRUE, maxiter, debug, par.size, model.description, warn, ...){
+# last modified 2011-07-30 by J. Fox
+
+optimizerOptim <- function(start, objective=objectiveML, 
+	gradient=TRUE, maxiter, debug, par.size, model.description, warn, method="CG", ...){
 	with(model.description, {
 			obj <- objective(gradient=gradient)
 			grad <- obj$gradient

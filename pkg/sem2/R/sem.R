@@ -1,3 +1,5 @@
+# last modified 2011-07-29 by J. Fox
+
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- 'semmod'
 	UseMethod('sem', model)

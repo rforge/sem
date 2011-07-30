@@ -1,3 +1,5 @@
+# last modified 2011-07-30
+
 optimizerNlminb <- function(start, objective=objectiveML, 
 		gradient=TRUE, maxiter, debug, par.size, model.description, warn, ...){
 	with(model.description, {
@@ -5,7 +7,8 @@ optimizerNlminb <- function(start, objective=objectiveML,
 				objective <- obj$objective
 				grad <- if (gradient) obj$gradient else NULL
 				if (!warn) save.warn <- options(warn=-1)
-				res <- nlminb(start, objective, gradient=grad, model.description=model.description, control=list(trace=if(debug) 1 else 0, iter.max=maxiter, ...))
+				res <- nlminb(start, objective, gradient=grad, model.description=model.description, 
+						control=list(trace=if(debug) 1 else 0, iter.max=maxiter, ...))
 				if (!warn) options(save.warn)
 				result <- list()
 				result$convergence <- res$convergence == 0

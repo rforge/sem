@@ -1,24 +1,34 @@
-# last modified 2 June 2005 by J. Fox
+# last modified 2011-07-30 by J. Fox
 
 residuals.sem <- function(object, ...){
     object$S - object$C
-    }    
-
+    }
+	
 standardized.residuals <- function(object, ...){
-    UseMethod("standardized.residuals")
+	.Deprecated("standardizedResiduals", package="sem")
+	UseMethod("standardizeResiduals")
+}
+
+standardizedResiduals <- function(object, ...){
+    UseMethod("standardizedResiduals")
     }
 
-standardized.residuals.sem <- function(object, ...){
+standardizedResiduals.sem <- function(object, ...){
     res <- residuals(object)
     s <- diag(object$S)
     res/sqrt(outer(s, s))
     }
 
 normalized.residuals <- function(object, ...){
-    UseMethod("normalized.residuals")
+	.Deprecated("normalizedResiduals", package="sem")
+    UseMethod("normalizedResiduals")
     }
+	
+normalizedResiduals <- function(object, ...){
+	UseMethod("normalizedResiduals")
+}
     
-normalized.residuals.sem <- function(object, ...){
+normalizedResiduals.sem <- function(object, ...){
     res <- residuals(object)
     N <- object$N - (!object$raw)
     C <- object$C
