@@ -1,4 +1,4 @@
-# last modified 2011-07-30 by J. Fox
+# last modified 2011-08-03 by J. Fox
 
 residuals.sem <- function(object, ...){
     object$S - object$C
@@ -6,7 +6,7 @@ residuals.sem <- function(object, ...){
 	
 standardized.residuals <- function(object, ...){
 	.Deprecated("standardizedResiduals", package="sem")
-	UseMethod("standardizeResiduals")
+	UseMethod("standardizedResiduals")
 }
 
 standardizedResiduals <- function(object, ...){

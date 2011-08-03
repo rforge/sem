@@ -1,15 +1,15 @@
+# last modified 2011-08-03 by J. Fox
 
-
-robust_vcov <- function (sem.obj, adj.obj, data.obj, useFit=FALSE, useGinv=FALSE){
+robustVcov <- function(sem.obj, adj.obj, data.obj, use.fit=FALSE, use.ginv=FALSE){
 	if (missing(adj.obj) && missing(data.obj)) 
 		stop("Need a data or sbchisq object")
 	if (missing(adj.obj)) {
-		adj.obj <- sbchisq(sem.obj, data.obj, useFit = useFit)
+		adj.obj <- sbchisq(sem.obj, data.obj, use.fit = use.fit)
 	}
 	ncases <- sem.obj$N
-	hes <- sem_hessian(adj.obj$w_mat, adj.obj$p_deriv_mat)
+	hes <- semHessian(adj.obj$w_mat, adj.obj$p_deriv_mat)
 	info_m <- try(solve(hes), silent = TRUE)
-	if (class(info_m) == "try-error" && useGinv == TRUE) {
+	if (class(info_m) == "try-error" && use.ginv == TRUE) {
 		info_m <- ginv(hes)
 		ginvFlag <- TRUE
 	}
@@ -21,20 +21,17 @@ robust_vcov <- function (sem.obj, adj.obj, data.obj, useFit=FALSE, useGinv=FALSE
 	acov
 }
 
-
-sbchisq <- function (sem.obj, sem.data, adj = 1e-04, useFit = FALSE, useGinv = FALSE) 
-{
-	props <- sem.props(sem.obj)
-	sem.prop <- props$chisq
+sbchisq <- function(sem.obj, sem.data, adj=1e-04, use.fit=FALSE, use.ginv=FALSE){
+	props <- semProps(sem.obj)
 	chisq <- props$chisq
 	df <- props$df
-	w_adf <- adf.wmat(sem.data)
-	w_mat <- ml.wmat(sem.obj, useFit = useFit)
-	p_deriv_mat <- delta_matrix(sem.obj)
+	w_adf <- adfWmat(sem.data)
+	w_mat <- mlWmat(sem.obj, use.fit = use.fit)
+	p_deriv_mat <- deltaMatrix(sem.obj)
 	ginvFlag <- FALSE
 	invMat <- try(solve(t(p_deriv_mat) %*% w_mat %*% p_deriv_mat), 
 		silent = TRUE)
-	if (class(invMat) == "try-error" && useGinv == TRUE) {
+	if (class(invMat) == "try-error" && use.ginv == TRUE) {
 		invMat <- ginv(t(p_deriv_mat) %*% w_mat %*% p_deriv_mat)
 		ginvFlag <- TRUE
 	}
@@ -53,19 +50,13 @@ sbchisq <- function (sem.obj, sem.data, adj = 1e-04, useFit = FALSE, useGinv = F
 	return(ret)
 }
 
-adf.wmat <- function (raw_data) 
-{
-#	n <- length(raw_data[, 1])
-#	n.col <- length(names(raw_data))
-	names <- colnames(raw_data)
-	n <- nrow(raw_data)
-	n.col <- ncol(raw_data)
+adfWmat <- function(rawdata) {
+	names <- colnames(rawdata)
+	n <- nrow(rawdata)
+	n.col <- ncol(rawdata)
 	nc.star <- n.col * (n.col + 1)/2
 	nc2 <- n.col^2
-#	i1 <- rep(1, n)
-#	xbar <- apply(raw_data, 2, sum)/n
-#	z <- raw_data - kronecker(xbar, i1)
-	z <- scale(raw_data, center=TRUE, scale=FALSE)
+	z <- scale(rawdata, center=TRUE, scale=FALSE)
 	sc <- vector(nc.star, mode="list")
 	outnames <- vector(nc.star, mode="character")
 	ind <- combn(n.col + 1, 2)
@@ -73,8 +64,6 @@ adf.wmat <- function (raw_data)
 	for (q in 1:nc.star) {
 		i <- ind[1, q]
 		j <- ind[2, q]
-#		a.name <- paste(names(raw_data)[i], names(raw_data)[j], 
-#			sep = "_")
 		outnames[q] <- paste(names[i], names[j], sep="_")
 		sc[[q]] <- z[, i] * z[, j]
 	}
@@ -83,10 +72,9 @@ adf.wmat <- function (raw_data)
 	return(adf_mat)
 }
 
-ml.wmat <- function (sem.obj, useFit = FALSE) 
-{
-	p <- nrow(sem.obj$C) # length(rownames(sem.obj$C))
-	if (useFit) {
+mlWmat <- function(sem.obj, use.fit=FALSE) {
+	p <- nrow(sem.obj$C) 
+	if (use.fit) {
 		An <- sem.obj$C
 	}
 	else {
@@ -95,19 +83,19 @@ ml.wmat <- function (sem.obj, useFit = FALSE)
 	Dp <- Ktrans(p)
 	An.inv <- solve(An)
 	w_mat <- 0.5 * t(Dp) %*% kronecker(An.inv, An.inv) %*% Dp
-	rownames(w_mat) <- vech(matrix.names(sem.obj$C))
+	rownames(w_mat) <- vech(matrixNames(sem.obj$C))
 	colnames(w_mat) <- rownames(w_mat)
 	return(w_mat)
 }
 
-#delta_matrix <- function (sem.object, adj = 1e-04) 
+#deltaMatrix <- function (sem.object, adj = 1e-04) 
 #{
 #	p.star <- sem.object$n * (sem.object$n + 1)/2
 #	par.idx <- which(sem.object$ram[, "parameter"] > 0)
 #	nparams <- length(par.idx)
 #	delta.mat <- matrix(0, nparams, p.star)
 #	rownames(delta.mat) <- rep(NA, nparams)
-#	colnames(delta.mat) <- vech(matrix.names(sem.object$C))
+#	colnames(delta.mat) <- vech(matrixNames(sem.object$C))
 #	vars <- sem.object$var.names
 #	C.vect <- vech(sem.object$C)
 #	J <- sem.object$J
@@ -141,7 +129,7 @@ ml.wmat <- function (sem.obj, useFit = FALSE)
 #	return(delta.mat)
 #}
 
-delta_matrix <- function (sem.object, adj = 1e-04) {
+deltaMatrix <- function(sem.object, adj=1e-04) {
 	p.star <- sem.object$n * (sem.object$n + 1)/2
 	pars <- names(sem.object$coeff)
 	nparms <- length(pars)
@@ -175,56 +163,45 @@ delta_matrix <- function (sem.object, adj = 1e-04) {
 }
 
 
-aicc.adjchisq <- function (adj.obj) 
-{
+AICc.adjchisq <- function(adj.obj){
 	t <- adj.obj$t
 	N <- adj.obj$N
-	ret <- adj.obj$chisq.scaled + 2 * t * (t + 1)/(N - t - 1)
+	ret <- adj.obj$chisq.scaled + 2*t*(t + 1)/(N - t - 1)
 	return(ret)
 }
 
-bic.adjchisq <- function (adj.obj) 
-{
+BIC.adjchisq <- function (adj.obj){
 	ret <- adj.obj$chisq.scaled - adj.obj$df * log(adj.obj$N)
 	return(ret)
 }
 
-sem.props <- function (object) 
-{
-	ret <- list()
-	ret$N <- object$N
-	N <- ret$N
-	ret$n <- object$n
-	n <- ret$n
-	ret$t <- object$t
-	t <- ret$t
-	ret$n.fix <- object$n.fix
-	n.fix <- ret$n.fix
-	ret$df <- n * (n + 1)/2 - t - n.fix * (n.fix + 1)/2
-	ret$chisq <- object$criterion * (N - (!object$raw))
-	return(ret)
+semProps <- function(object){
+	N <- object$N
+	n <- object$n
+	t <- object$t
+	n.fix <- object$n.fix
+	list(N=N, n=n, t=t, n.fix=n.fix, df=n*(n + 1)/2 - t - n.fix*(n.fix + 1)/2, 
+			chisq=object$criterion*(N - (!object$raw)))
 }
 
-Ktrans <- function (num.vars) 
-{
-	D.mat <- duplication.matrix(num.vars)
-	return(D.mat)
+Ktrans <- function(num.vars){
+	duplication.matrix(num.vars)
 }
 
-matrix.names <- function (mat, sep = "_") 
-{
-	rnames <- rownames(mat)
-	cnames <- colnames(mat)
-	for (i in 1:length(mat[, 1])) {
-		for (j in 1:length(mat[, 1])) {
-			mat[i, j] <- paste(rnames[i], cnames[j], sep = sep)
-		}
-	}
-	return(mat)
+matrixNames <- function(mat, sep="_"){
+# replaced code bugged
+#	rnames <- rownames(mat)
+#	cnames <- colnames(mat)
+#	for (i in 1:length(mat[, 1])) {
+#		for (j in 1:length(mat[, 2])) {
+#			mat[i, j] <- paste(rnames[i], cnames[j], sep = sep)
+#		}
+#	}
+#	return(mat)
+	outer(rownames(mat), colnames(mat), function(x, y) paste(x, y, sep=sep))
 }
 
-sem_hessian <- function (w_mat, delta_mat) 
-{
-	ret <- t(delta_mat) %*% w_mat %*% delta_mat
+semHessian <- function(w.mat, delta.mat){
+	ret <- t(delta.mat) %*% w.mat %*% delta.mat
 	return(ret)
 }

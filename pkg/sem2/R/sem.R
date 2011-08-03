@@ -1,4 +1,4 @@
-# last modified 2011-07-30 by J. Fox
+# last modified 2011-08-03 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -200,7 +200,7 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
     class(result) <- c(cls, "sem")
 	if (robust && !is.null(data) && inherits(result, "objectiveML")){
 		result$adj.obj <- sbchisq(result, data)
-		result$robust.vcov <- robust_vcov(result, adj.obj=result$adj.obj)
+		result$robust.vcov <- robustVcov(result, adj.obj=result$adj.obj)
     }
 	result
 }
@@ -310,6 +310,12 @@ vcov.sem <- function(object, robust=FALSE, analytic=inherits(object, "objectiveM
 	vcov
 }
 
-coef.sem <- function(object, ...){
-	object$coeff
+coef.sem <- function(object, standardized=FALSE, ...){
+	if (!standardized) return(object$coeff)
+	sc <- stdCoef(object, ...)
+	names <- as.character(sc[, 1])
+	which <- names != " "
+	coef <- sc[which, 2]
+	names(coef) <- names[which]
+	coef
 }

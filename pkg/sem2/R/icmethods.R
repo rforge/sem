@@ -3,7 +3,7 @@
 # sem or adjchisq objects
 # as well as generate and AIC table
 
-# last modified 2011-07-29 by J. Fox
+# last modified 2011-08-03 by J. Fox
 
 logLik.sem <- function(object, ...){
 	deviance(object)*-2	
@@ -29,7 +29,7 @@ AICc.sem<-function(object) {
 
 # Consistent Akaike Information Criterion
 CAIC.sem<-function(object) {
-	props<-sem.props(object)
+	props<-semProps(object)
 	props$chisq - props$df*(1 + log(object$N))
 }
 
