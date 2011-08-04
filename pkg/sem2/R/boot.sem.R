@@ -1,21 +1,25 @@
 # bootstrapped standard errors and confidence intervals for sem
 
-# last modified 26 November 2008 by J. Fox
+# last modified 2011-08-04 by J. Fox
 
-boot.sem <- function(data, model, R=100, cov=cov, ...){
+bootSem <- function(model, R=100, cov=cov, data=model$data, ...){
     refit <- function(){
         indices <- sample(N, N, replace=TRUE)
         S <- cov(data[indices,])
-        refitted.model <- sem(ram, S, N, coef.names, ...)
+        refitted.model <- sem(ram, S, N, param.names=coef.names, var.names=var.names,
+				optimizer=model$optimizer, objective=model$objective, ...)
         refitted.model$coeff
         }
     if (!require("boot")) stop("package boot not available")
+	has.tcltk <- require("tcltk")
+	if (has.tcltk) pb <- tkProgressBar("Bootstrap Sampling", "Bootstrap sample: ", 0, R)
     # the following 2 lines borrowed from boot in package boot
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) runif(1)
     seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
     warn <- options(warn=-2)
     on.exit(options(warn)) # insure restore even in event of error
     nErrors <- 0
+	if (is.null(data)) stop("the model object doesn't contain a data matrix")
     N <- nrow(data)
     coefficients <- model$coeff
     coef.names <- names(coefficients)
@@ -25,6 +29,7 @@ boot.sem <- function(data, model, R=100, cov=cov, ...){
     coefs <- matrix(numeric(0), R, length(coefficients))
     colnames(coefs) <- coef.names
     for (b in 1:R){
+		if (has.tcltk) setTkProgressBar(pb, b, label=sprintf("Bootstrap sample: %d", b))
         for (try in 1:11){
             if (try > 10) stop("more than 10 consecutive convergence failures")
             res <- try(refit(), silent=TRUE)
@@ -42,6 +47,7 @@ boot.sem <- function(data, model, R=100, cov=cov, ...){
     res <- list(t0=coefficients, t=coefs, R=R, data=data, seed=seed,
         statistic=refit, sim="ordinary", stype="i", call=match.call(),
         strata=rep(1, N), weights=rep(1/N, N))
+	if (has.tcltk) close(pb)
     class(res) <- c("bootsem", "boot")
     res
     }   
