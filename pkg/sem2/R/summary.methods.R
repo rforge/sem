@@ -144,7 +144,7 @@ print.summary.objectiveML <- function(x, ...){
 }
 
 summary.objectiveGLS <- function(object, ...){
-	summary <- summary.objectiveML(object, ...)
+	summary <- summary.objectiveML(object, ..., analytic.se=FALSE)
 	summary$chisqNull <- chisqNull(object) # object$chisqNull
 	summary
 }

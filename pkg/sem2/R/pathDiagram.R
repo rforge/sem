@@ -1,13 +1,18 @@
 # with contributions by Adam Kramer and Michael Friendly (originally by J. Fox)
-# last modified 1 June 2009 by J. Fox
+# last modified 2011-08-04 by J. Fox
 
-path.diagram <- function (model, ...)
+path.diagram <- function(model, ...){
+	.Deprecated("pathDiagram", package="sem")
+	UseMethod("pathDiagram")
+}
+
+pathDiagram <- function (model, ...)
 {
-	UseMethod("path.diagram")
+	UseMethod("pathDiagram")
 }
 
 
-path.diagram.sem <- function (model, file, min.rank = NULL, max.rank = NULL,
+pathDiagram.sem <- function (model, file, min.rank = NULL, max.rank = NULL,
 	same.rank = NULL, variables = model$var.names, parameters = rownames(model$ram),
 	ignore.double = TRUE, edge.labels = c("names", "values",
 		"both"), size = c(8, 8), node.font = c("Helvetica", 14),

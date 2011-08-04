@@ -1,3 +1,4 @@
+# last modified 2011-08-04 by J. Fox
 
 print.objectiveML <- function(x, ...) {
     n <- x$n
@@ -13,3 +14,5 @@ print.objectiveML <- function(x, ...) {
         }
     invisible(x)
     }
+
+print.objectiveGLS <- function(x, ...) print.objectiveML(x, ...)

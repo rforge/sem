@@ -16,24 +16,24 @@
 \title{General Structural Equation Models}
 \description{
   \code{sem} fits general structural equation models (with both observed and
-  unobserved variables) by the method of maximum likelihood, assuming
-  multinormal errors. Observed variables are also called \emph{indicators} or 
+  unobserved variables). Observed variables are also called \emph{indicators} or 
   \emph{manifest variables}; unobserved variables are also called \emph{factors}
   or \emph{latent variables}. Normally, the generic function (\code{sem}) would
-  be used.
+  be used, though the user may wish to specify various arguments to the methods.
 }
 
 \usage{
-sem(ram, ...)
+sem(model, ...)
 
-\method{sem}{mod}(ram, S, N, obs.variables=rownames(S), fixed.x=NULL, debug=FALSE, ...)
+\method{sem}{semmod}(model, S, N, data, raw=FALSE, obs.variables=rownames(S), 
+		fixed.x=NULL, formula= ~ ., robust=!missing(data), debug=FALSE, ...)
     
-\method{sem}{default}(ram, S, N, param.names = paste("Param", 1:t, sep = ""), 
-    var.names = paste("V", 1:m, sep = ""), fixed.x = NULL, raw=FALSE, 
-    debug = FALSE, analytic.gradient = TRUE, warn = FALSE, maxiter = 500, 
-    par.size=c('ones', 'startvalues'), refit=TRUE, start.tol=1E-6, ...) 
+\method{sem}{default}(model, S, N, data=NULL, raw=FALSE, param.names, 
+		var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
+		analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c("ones", "startvalues"), 
+		start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...) 
     
-startvalues(S, ram, debug = FALSE, tol=1E-6)
+startvalues(S, ram, debug=FALSE, tol=1E-6)
 
 \method{print}{sem}(x, ...)
 
