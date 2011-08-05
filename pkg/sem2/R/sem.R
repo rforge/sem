@@ -1,4 +1,4 @@
-# last modified 2011-08-04 by J. Fox
+# last modified 2011-08-05 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -152,22 +152,12 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 	sel.free.2 <- sel.free[two.free]
 	unique.free.1 <- unique(sel.free.1)
 	unique.free.2 <- unique(sel.free.2)
-	result <- list()
-	result$var.names <- var.names
-	result$ram <- ram
 	rownames(S) <- colnames(S) <- var.names[observed]
-	result$S <- S
-	result$J <- J
-	result$n.fix <- n.fix
-	result$n <- n
-	result$N <- N
-	result$m <- m
-	result$t <- t
-	result$raw <- raw
-	result$data <- data
-	result$semmod <- semmod
-	result$optimizer <- optimizer
-	result$objective <- objective
+	result <- list(var.names=var.names, ram=ram, S=S, J=J, n.fix=n.fix, n=n, N=N, m=m, t=t, raw=raw,
+		data=data, semmod=semmod, optimizer=optimizer, objective=objective,
+		# remaining values to be supplied after optimization
+		coeff=NULL, vcov=NULL, par.posn=NULL, convergence=NULL, iteractions=NULL, criterion=NULL, C=NULL, A=NULL, P=NULL,
+		adj.obj=NULL, robust.vcov=NULL)
 	if (length(param.names)== 0){
 		warning("there are no free parameters in the model")
 	}
@@ -192,7 +182,6 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 		result$par.posn <- par.posn
 		result$convergence <- res$convergence
 		result$iterations <- res$iterations
-		result$raw <- raw
 		result$criterion <-  res$criterion
 		result$C <- res$C
 		result$A <- res$A

@@ -81,7 +81,7 @@ print.semmod <- function(x, ...){
     invisible(x)
     }
 	
-classifyVariables <- function (model) {
+classifyVariables <- function(model) {
 	variables <- logical(0)
 	for (paths in model[, 1]) {
 		vars <- strip.white(paths)
@@ -106,7 +106,7 @@ classifyVariables <- function (model) {
 	list(endogenous=names(variables[variables]), exogenous=names(variables[!variables]))
 }
 
-strip.white<-function(x) gsub(' ', '', x)
+strip.white <- function(x) gsub(' ', '', x)
 
 removeRedundantPaths <- function(model, warn=TRUE){
 	paths <- model[, 1]
