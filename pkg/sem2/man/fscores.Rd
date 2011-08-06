@@ -10,15 +10,16 @@
 \usage{
 fscores(model, ...)
 
-\method{fscores}{sem}(model, data, center = TRUE, scale = FALSE, ...)
+\method{fscores}{sem}(model, data=model$data, center=TRUE, scale=FALSE, ...)
 }
 
 \arguments{
   \item{model}{an object of class \code{"sem"}, produced by the \code{\link{sem}}
     function.}
   \item{data}{an optional numeric data frame or matrix containing the observed variables
-    in the model; if present, the estimated factor scores are returned; if absent, the
-    factor-score \emph{coefficients} are returned.}
+    in the model; if not \code{NULL}, the estimated factor scores are returned; if \code{NULL}, the
+    factor-score \emph{coefficients} are returned. The default is the \code{data} element of \code{model},
+    which is non-\code{NULL} if the model was fit to a data set rather than a covariance or moment matrix.}
   \item{center}{if \code{TRUE}, the default, the means of the observed variables are
     subtracted prior to computing factor scores. One would normally use this option
     if the model is estimated from a covariance or correlation matrix among the
@@ -90,15 +91,6 @@ model.wh.1 <- specify.model()
 sem.wh.1 <- sem(model.wh.1, S.wh, 932)
 
 fscores(sem.wh.1)
-
-##                Alienation67 Alienation71         SES
-##    Anomia67     0.413112363  0.048268330 -0.05212632
-##    Powerless67  0.345402079  0.040014780 -0.04355578
-##    Anomia71     0.052663484  0.430618716 -0.03999218
-##    Powerless71  0.043704122  0.360044434 -0.03339943
-##    Education   -0.074921670 -0.063969383  0.50571037
-##    SEI         -0.004638977 -0.003960837  0.03131242
-
    }
 }
 

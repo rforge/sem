@@ -5,7 +5,7 @@ mod.indices <- function(model, ...){
 	modIndices(model, ...)
 }
 
-modIndices<-function(model, ...){
+modIndices <- function(model, ...){
     UseMethod("modIndices")
     }
 

@@ -1,9 +1,9 @@
 \name{residuals.sem}
 \alias{residuals.sem}
-\alias{standardized.residuals}
-\alias{standardized.residuals.sem}
-\alias{normalized.residuals}
-\alias{normalized.residuals.sem}
+\alias{standardizedResiduals}
+\alias{standardizedResiduals.sem}
+\alias{normalizedResiduals}
+\alias{normalizedResiduals.sem}
 
 \title{Residual Covariances for a Structural Equation Model}
 \description{
@@ -15,13 +15,13 @@
 \usage{
 \method{residuals}{sem}(object, ...)
 
-standardized.residuals(object, ...)
+standardizedResiduals(object, ...)
 
-\method{standardized.residuals}{sem}(object, ...)
+\method{standardizedResiduals}{sem}(object, ...)
 
-normalized.residuals(object, ...)
+normalizedResiduals(object, ...)
 
-\method{normalized.residuals}{sem}(object, ...)
+\method{normalizedResiduals}{sem}(object, ...)
 }
 
 \arguments{
@@ -62,67 +62,8 @@ normalized.residuals(object, ...)
 # -------------     has been fit and is in sem.dhp.1
 
 residuals(sem.dhp.1)
-
-##                  ROccAsp        REdAsp       FOccAsp        FEdAsp
-##    ROccAsp  4.156103e-07 -2.896368e-07 -2.866110e-02  9.102874e-02
-##    REdAsp  -2.896368e-07 -1.541581e-06 -1.094841e-02 -2.379215e-02
-##    FOccAsp -2.866110e-02 -1.094841e-02 -3.740356e-06 -9.564103e-07
-##    
-##    . . .
-##    
-##                      FIQ       FParAsp
-##    ROccAsp  3.467853e-02 -3.187309e-02
-##    REdAsp   4.878970e-03 -4.443480e-02
-##    FOccAsp -7.354686e-03  2.488120e-02
-##    FEdAsp   1.124604e-02 -3.690078e-02
-##    RParAsp  2.775558e-17  5.551115e-17
-##    RIQ      2.220446e-16  6.938894e-17
-##    RSES     0.000000e+00 -1.387779e-17
-##    FSES     1.110223e-16 -2.775558e-17
-##    FIQ      4.440892e-16  1.110223e-16
-##    FParAsp  1.110223e-16  4.440892e-16
-
-normalized.residuals(sem.dhp.1) 
-
-##                  ROccAsp        REdAsp       FOccAsp        FEdAsp
-##    ROccAsp  5.330519e-06 -4.455587e-06 -4.898232e-01  1.567678e+00
-##    REdAsp  -4.455587e-06 -1.977191e-05 -1.857670e-01 -4.071582e-01
-##    FOccAsp -4.898232e-01 -1.857670e-01 -4.797271e-05 -1.460881e-05
-##    
-##    . . .
-##    
-##                      FIQ       FParAsp
-##    ROccAsp  6.080514e-01 -5.747909e-01
-##    REdAsp   8.518738e-02 -8.007295e-01
-##    FOccAsp -1.180429e-01  4.374639e-01
-##    FEdAsp   1.832159e-01 -6.514685e-01
-##    RParAsp  5.019082e-16  1.000322e-15
-##    RIQ      3.818356e-15  1.252092e-15
-##    RSES     0.000000e+00 -2.506364e-16
-##    FSES     1.931472e-15 -5.029583e-16
-##    FIQ      5.695780e-15  1.971289e-15
-##    FParAsp  1.971289e-15  5.695780e-15
-      
-standardized.residuals(sem.dhp.1)
-
-##                  ROccAsp        REdAsp       FOccAsp        FEdAsp
-##    ROccAsp  4.156103e-07 -2.896368e-07 -2.866110e-02  9.102874e-02
-##    REdAsp  -2.896368e-07 -1.541581e-06 -1.094841e-02 -2.379215e-02
-##    FOccAsp -2.866110e-02 -1.094841e-02 -3.740356e-06 -9.564103e-07
-##    
-##    . . .
-##    
-##                      FIQ       FParAsp
-##    ROccAsp  3.467853e-02 -3.187309e-02
-##    REdAsp   4.878970e-03 -4.443480e-02
-##    FOccAsp -7.354686e-03  2.488120e-02
-##    FEdAsp   1.124604e-02 -3.690078e-02
-##    RParAsp  2.775558e-17  5.551115e-17
-##    RIQ      2.220446e-16  6.938894e-17
-##    RSES     0.000000e+00 -1.387779e-17
-##    FSES     1.110223e-16 -2.775558e-17
-##    FIQ      4.440892e-16  1.110223e-16
-##    FParAsp  1.110223e-16  4.440892e-16
+normalizedResiduals(sem.dhp.1) 
+standardizedResiduals(sem.dhp.1)
     }
 }
 

@@ -1,5 +1,5 @@
-\name{boot.sem}
-\alias{boot.sem}
+\name{bootSem}
+\alias{bootSem}
 \alias{print.bootsem}
 \alias{summary.bootsem}
 
@@ -10,7 +10,7 @@ the \code{\link{sem}} function).
 }
 
 \usage{
-boot.sem(data, model, R=100, cov=cov, ...)
+bootSem(model, R=100, cov=cov, data=model$data, ...)
 
 \method{print}{bootsem}(x, digits=getOption("digits"), ...)
 
@@ -19,9 +19,6 @@ boot.sem(data, model, R=100, cov=cov, ...)
 }
 
 \arguments{
-  \item{data}{a data frame containing the data to which the model was fit;
-    note that the original observations are required, not just the covariance 
-    matrix of the observed variables in the model.}
   \item{model}{an \code{sem} object, produced by the \code{sem} function.}
   \item{R}{the number of bootstrap replications; the default is 100, which should
     be enough for computing standard errors, but not confidence intervals
@@ -32,6 +29,11 @@ boot.sem(data, model, R=100, cov=cov, ...)
     \code{polycor} package will compute product-moment, polychoric, and
     polyserial correlations among mixed continuous and ordinal variables
     (see the example below for an illustration).}
+  \item{data}{a data frame or numeric matrix containing the data to which the model was fit;
+    note that the original observations are required, not just the covariance 
+    matrix of the observed variables in the model. The default is the data set stored in the
+    \code{sem} object, which will be present only if the model was fit to a data set rather than
+    a covariance or moment matrix.}
   \item{x, object}{an object of class \code{bootsem}.}
   \item{digits}{controls the number of digits to print.}
   \item{type}{type of bootstrapped confidence intervals to compute; the
@@ -113,7 +115,6 @@ MBSA7 <-> MBSA7, the2, NA
 MBSA8 <-> MBSA8, the3, NA
 MBSA9 <-> MBSA9, the4, NA
 
-data(CNES)
 R.cnes <- hcor(CNES)
 
 sem.cnes <- sem(model.cnes, R.cnes, N=1529)
@@ -121,10 +122,9 @@ summary(sem.cnes)
 
 #  Note: this can take a couple of minutes:
 
-system.time(boot.cnes <- boot.sem(CNES, sem.cnes, R=100, cov=hcor), gcFirst=TRUE)
+system.time(boot.cnes <- boot.sem(sem.cnes, R=100, cov=hcor, data=CNES))
 summary(boot.cnes, type="norm")  
 # cf., standard errors to those computed by summary(sem.cnes)
-
     }
 }
 

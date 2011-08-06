@@ -1,5 +1,5 @@
-\name{read.moments}
-\alias{read.moments}
+\name{readMoments}
+\alias{readMoments}
 
 \title{Input a Covariance, Correlation, or Raw Moment Matrix}
     
@@ -13,8 +13,8 @@ are taken to be 1.
 }
 
 \usage{
-read.moments(file = "", diag = TRUE, 
-    names = as.character(paste("X", 1:n, sep = "")))
+readMoments(file="", diag=TRUE, 
+    names=as.character(paste("X", 1:n, sep = "")))
 }
 
 \arguments{
@@ -39,7 +39,7 @@ read.moments(file = "", diag = TRUE,
 
 \examples{
     \dontrun{
-R.DHP <- read.moments(diag=FALSE, names=c("ROccAsp", "REdAsp", "FOccAsp", 
+R.DHP <- readMoments(diag=FALSE, names=c("ROccAsp", "REdAsp", "FOccAsp", 
                 "FEdAsp", "RParAsp", "RIQ", "RSES", "FSES", "FIQ", "FParAsp"))
     .6247     
     .3269  .3669       

@@ -1,7 +1,7 @@
-\name{path.diagram}
+\name{pathDiagram}
 
-\alias{path.diagram}
-\alias{path.diagram.sem}
+\alias{pathDiagram}
+\alias{pathDiagram.sem}
 
 \title{Draw Path Diagram}
 \description{
@@ -14,7 +14,7 @@
 }
 
 \usage{
-path.diagram(model, ...)
+pathDiagram(model, ...)
 
 \method{path.diagram}{sem}(model, file, min.rank = NULL, max.rank = NULL,
 	same.rank = NULL, variables = model$var.names, parameters = rownames(model$ram),
@@ -124,32 +124,6 @@ sem.dhp <- sem(model.dhp, R.DHP, 329,
     
 path.diagram(sem.dhp, min.rank='RIQ, RSES, RParAsp, FParAsp, FSES, FIQ', 
     max.rank='ROccAsp, REdAsp, FEdAsp, FOccAsp')
-
-##   digraph "sem.dhp" {
-##   rankdir=LR;
-##   size="8,8";
-##   node [fontname="Helvetica" fontsize=14 shape=box];
-##   edge [fontname="Helvetica" fontsize=10];
-##   center=1;
-##   {rank=min "RIQ" "RSES" "RParAsp" "FParAsp" "FSES" "FIQ"}
-##   {rank=max "ROccAsp" "REdAsp" "FEdAsp" "FOccAsp"}
-##   "RGenAsp" [shape=ellipse]
-##   "FGenAsp" [shape=ellipse]
-##   "RParAsp" -> "RGenAsp" [label="gam11"];
-##   "RIQ" -> "RGenAsp" [label="gam12"];
-##   "RSES" -> "RGenAsp" [label="gam13"];
-##   "FSES" -> "RGenAsp" [label="gam14"];
-##   "RSES" -> "FGenAsp" [label="gam23"];
-##   "FSES" -> "FGenAsp" [label="gam24"];
-##   "FIQ" -> "FGenAsp" [label="gam25"];
-##   "FParAsp" -> "FGenAsp" [label="gam26"];
-##   "FGenAsp" -> "RGenAsp" [label="beta12"];
-##   "RGenAsp" -> "FGenAsp" [label="beta21"];
-##   "RGenAsp" -> "ROccAsp" [label=""];
-##   "RGenAsp" -> "REdAsp" [label="lam21"];
-##   "FGenAsp" -> "FOccAsp" [label=""];
-##   "FGenAsp" -> "FEdAsp" [label="lam42"];
-##   }
 	}
 }
 

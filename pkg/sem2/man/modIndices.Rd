@@ -1,6 +1,6 @@
-\name{mod.indices}
-\alias{mod.indices}
-\alias{mod.indices.sem}
+\name{modIndices}
+\alias{modIndices}
+\alias{modIndices.objectiveML}
 \alias{print.sem.modind}
 \alias{summary.sem.modind}
 
@@ -8,19 +8,17 @@
 \description{
   \code{mod.indices} calculates modification indices (score tests) 
   and estimated parameter changes for the fixed and constrained 
-  parameters in a structural equation model. [Warning: This is a
-  preliminary version: the computed values are a bit off the correct
-  values.]
+  parameters in a structural equation model fit by multinormal maximum likelihood.
 }
 
 \usage{
 mod.indices(model, ...)
 
-\method{mod.indices}{sem}(model, ...)
+\method{modIndices}{objectiveML}(model, ...)
 
-\method{print}{sem.modind}(x, n.largest=5, ...)
+\method{print}{modIndices}(x, n.largest=5, ...)
 
-\method{summary}{sem.modind}(object, round=2, 
+\method{summary}{modIndices}(object, round=2, 
     print.matrices=c("both", "par.change", "mod.indices"), ...)
 }
     
@@ -38,7 +36,7 @@ mod.indices(model, ...)
 }
 
 \details{
-  Modification indices are one-df chi-square score statistics for the fixed and constrained
+  Modification indices are one-df chi-square score (\dQuote{Lagrange-multiplier}) test statistics for the fixed and constrained
   parameters in a structural equation model. They may be regarded as an estimate of the improvement
   in the likelihood-ratio chi-square statistic for the model if the corresponding parameter is
   respecified as a free parameter. The \code{mod.indices} function also estimates the change in the
@@ -74,6 +72,7 @@ mod.indices(model, ...)
 \seealso{\code{\link{sem}}}
 
 \examples{
+	\dontrun{
 # This example is adapted from the SAS manual
 
 S.wh <- read.moments(names=c('Anomia67','Powerless67','Anomia71',
@@ -109,22 +108,7 @@ model.wh <- specify.model()
 
 sem.wh <- sem(model.wh, S.wh, 932)
 modIndices(sem.wh)
-
-##   5 largest modification indices, A matrix:
-##  Powerless67:Education    Anomia67:Education 
-##                 4.8736                3.8027 
-##        Powerless67:SES Education:Powerless67 
-##                 2.7608                2.4619 
-##         Anomia67:SES 
-##               2.3122 
-##
-##    5 largest modification indices, P matrix:
-##  Education:Powerless67    Education:Anomia67 
-##                 6.4028                4.5398 
-##        SES:Powerless67          SES:Anomia67 
-##                 2.7608                2.3122 
-##        SEI:Powerless67 
-##                 1.3185 
+	}
 }
 
 \keyword{models}

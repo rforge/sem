@@ -1,7 +1,7 @@
-\name{raw.moments}
-\alias{raw.moments}
-\alias{raw.moments.formula}
-\alias{raw.moments.default}
+\name{rawMoments}
+\alias{rawMoments}
+\alias{rawMoments.formula}
+\alias{rawMoments.default}
 \alias{cov2raw}
 \alias{print.rawmoments}
 
@@ -11,12 +11,12 @@
  number of observations.
 }
 \usage{
-raw.moments(object, ...)
+rawMoments(object, ...)
 
-\method{raw.moments}{formula}(formula, data, subset, na.action, 
+\method{rawMoments}{formula}(formula, data, subset, na.action, 
     contrasts = NULL, ...)
 
-\method{raw.moments}{default}(object, ...)
+\method{rawMoments}{default}(object, ...)
 
 cov2raw(cov, mean, N, sd)
 
@@ -49,7 +49,7 @@ cov2raw(cov, mean, N, sd)
 }
 
 \value{
-  \code{raw.moments} and \code{cov2raw} return an object of class \code{rawmoments}, 
+  \code{rawMoments} and \code{cov2raw} return an object of class \code{rawmoments}, 
   which is simply a matrix
   with an attribute \code{"N"} that contains the number of observations on
   which the moments are based.
@@ -61,8 +61,8 @@ cov2raw(cov, mean, N, sd)
 
 \examples{
 data(Kmenta)
-raw.moments(cbind(1, Kmenta))
-raw.moments(~ Q + P + D + F + A, data=Kmenta)
+rawMoments(cbind(1, Kmenta))
+rawMoments(~ Q + P + D + F + A, data=Kmenta)
 
 Cov <- with(Kmenta, cov(cbind(Q, P, D, F, A)))
 cov2raw(Cov, colMeans(Kmenta), nrow(Kmenta))
