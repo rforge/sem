@@ -45,6 +45,7 @@ stdCoef(...)
 # -------------     has been fit and is in sem.dhp.1     
 \dontrun{
 standardizedCoefficients(sem.dhp.1) 
+	}
 }
 
 \keyword{models}
