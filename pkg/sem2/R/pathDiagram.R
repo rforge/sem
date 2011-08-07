@@ -1,9 +1,9 @@
 # with contributions by Adam Kramer and Michael Friendly (originally by J. Fox)
-# last modified 2011-08-04 by J. Fox
+# last modified 2011-08-07 by J. Fox
 
-path.diagram <- function(model, ...){
+path.diagram <- function(...){
 	.Deprecated("pathDiagram", package="sem")
-	UseMethod("pathDiagram")
+	pathDiagram(...)
 }
 
 pathDiagram <- function (model, ...)

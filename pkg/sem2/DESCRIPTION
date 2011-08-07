@@ -1,8 +1,8 @@
 Package: sem2
 Version: 2.0-0
-Date: 2010/06/19
+Date: 2010/08/06
 Title: Structural Equation Models
-Author: John Fox <jfox@mcmaster.ca> and Jarrett Brynes <byrnes@msi.ucsb.edu>, with contributions from Adam Kramer and Michael Friendly
+Author: John Fox <jfox@mcmaster.ca> and Jarrett Byrnes <byrnes@nceas.ucsb.edu>, with contributions from Michael Culbertson, Michael Friendly, and Adam Kramer.
 Maintainer: John Fox <jfox@mcmaster.ca>
 Depends: R (>= 1.6.0), stats, matrixcalc
 Suggests: boot

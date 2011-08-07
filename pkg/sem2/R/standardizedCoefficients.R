@@ -1,9 +1,9 @@
 # modified 24 May 2009 by Adam Kramer (original by J. Fox)
-# last modified 2011-07-30 by J. Fox
+# last modified 2011-08-07 by J. Fox
 
-standardized.coefficients <- function(object, ...){
+standardized.coefficients <- function(...){
 	.Deprecated("standardizedCoefficients", package="sem")
-	standardizedCoefficients(object, ...)
+	standardizedCoefficients(...)
 }
 
 standardizedCoefficients <- function (object, digits = 5, oneheaded=TRUE, twoheaded=TRUE)
@@ -84,9 +84,9 @@ standardizedCoefficients <- function (object, digits = 5, oneheaded=TRUE, twohea
 #    print(coeff, rowlab = rep(" ", nrow(coeff)), right = FALSE)
 #}
 
-std.coef <- function(object, ...){
+std.coef <- function(...){
 	.Deprecated("stdCoef", package="sem")
-	standardizedCoefficients(object, ...)
+	standardizedCoefficients(...)
 }
 
 stdCoef <- function (...){

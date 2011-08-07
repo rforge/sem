@@ -67,7 +67,7 @@ mod.indices(model, ...)
     \emph{Psychometrika} \bold{54}, 371--384.
 }
 
-\author{John Fox \email{jfox@mcmaster.ca}}
+\author{John Fox \email{jfox@mcmaster.ca} and Michael Culbertson}
 
 \seealso{\code{\link{sem}}}
 

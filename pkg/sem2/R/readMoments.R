@@ -1,3 +1,4 @@
+# last modified 2011-087-07 by J. Fox
 
 read.moments <- function(...){
 	.Deprecated("readMoments", package="sem")

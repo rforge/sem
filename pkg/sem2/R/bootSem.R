@@ -1,6 +1,11 @@
 # bootstrapped standard errors and confidence intervals for sem
 
-# last modified 2011-08-04 by J. Fox
+# last modified 2011-08-07 by J. Fox
+
+boot.sem <- function(...) {
+	.Deprecated("bootSem", package="sem")
+	bootSem(...)
+}
 
 bootSem <- function(model, R=100, cov=cov, data=model$data, ...){
     refit <- function(){

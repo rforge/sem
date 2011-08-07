@@ -1,8 +1,8 @@
 # last modified 2011-08-03 by J. Fox
 
-mod.indices <- function(model, ...){
+mod.indices <- function(...){
 	.Deprecated("modIndices", package="sem")
-	modIndices(model, ...)
+	modIndices(...)
 }
 
 modIndices <- function(model, ...){

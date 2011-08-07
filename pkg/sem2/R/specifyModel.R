@@ -1,3 +1,4 @@
+# last modified 2011-08-07
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")

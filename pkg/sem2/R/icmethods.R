@@ -3,9 +3,9 @@
 # sem or adjchisq objects
 # as well as generate and AIC table
 
-# last modified 2011-08-03 by J. Fox
+# last modified 2011-08-07 by J. Fox
 
-logLik.sem <- function(object, ...){
+logLik.objectiveML <- function(object, ...){
 	deviance(object)*-2	
 	}
 
@@ -18,22 +18,22 @@ CAIC <- function(object) UseMethod ("CAIC", object)
 
 # methods for sem objects
 
-AIC.sem<-function(object, ..., k) {
+AIC.objectiveML <- function(object, ..., k) {
 	deviance(object) + 2*object$t
 }
 
 # small sample second order corrected aic
-AICc.sem<-function(object) {
+AICc.objectiveML <- function(object) {
 	deviance(object) + 2*object$t*(object$t + 1)/(object$N - object$t - 1)
 }
 
 # Consistent Akaike Information Criterion
-CAIC.sem<-function(object) {
+CAIC.objectiveML <- function(object) {
 	props<-semProps(object)
 	props$chisq - props$df*(1 + log(object$N))
 }
 
-BIC.sem<-function(object, ...) {
+BIC.objectiveML <- function(object, ...) {
 	deviance(object) + object$t*log(object$N)
 }
 
