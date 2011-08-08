@@ -1,6 +1,6 @@
 \name{standardizedCoefficients}
 \alias{standardizedCoefficients}
-\alias{std.coef}
+\alias{stdCoef}
 
 \title{Standardized Coefficients for Structural Equation Models}
 \description{

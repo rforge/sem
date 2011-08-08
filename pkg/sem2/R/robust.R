@@ -1,4 +1,4 @@
-# last modified 2011-08-03 by J. Fox
+# last modified 2011-08-07 by J. Fox
 
 robustVcov <- function(sem.obj, adj.obj, data.obj, use.fit=FALSE, use.ginv=FALSE){
 	if (missing(adj.obj) && missing(data.obj)) 
@@ -163,17 +163,17 @@ deltaMatrix <- function(sem.object, adj=1e-04) {
 }
 
 
-AICc.adjchisq <- function(adj.obj){
-	t <- adj.obj$t
-	N <- adj.obj$N
-	ret <- adj.obj$chisq.scaled + 2*t*(t + 1)/(N - t - 1)
-	return(ret)
-}
-
-BIC.adjchisq <- function (adj.obj){
-	ret <- adj.obj$chisq.scaled - adj.obj$df * log(adj.obj$N)
-	return(ret)
-}
+#AICc.adjchisq <- function(adj.obj){
+#	t <- adj.obj$t
+#	N <- adj.obj$N
+#	ret <- adj.obj$chisq.scaled + 2*t*(t + 1)/(N - t - 1)
+#	return(ret)
+#}
+#
+#BIC.adjchisq <- function (adj.obj){
+#	ret <- adj.obj$chisq.scaled - adj.obj$df * log(adj.obj$N)
+#	return(ret)
+#}
 
 semProps <- function(object){
 	N <- object$N

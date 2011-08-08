@@ -20,7 +20,7 @@ rawMoments.formula <- function (formula, data, subset, na.action,
 	response <- attr(attr(mf, "terms"), "response")
 	if (response) stop("formula cannot have a response")
 	na.act <- attr(mf, "na.action")
-	raw.moments(model.matrix(formula, data = mf, contrasts))
+	rawMoments(model.matrix(formula, data = mf, contrasts))
 }
 
 rawMoments.default <- function(object, na.rm=FALSE, ...){

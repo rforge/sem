@@ -14,9 +14,9 @@
 rawMoments(object, ...)
 
 \method{rawMoments}{formula}(formula, data, subset, na.action, 
-    contrasts = NULL, ...)
+    contrasts=NULL, ...)
 
-\method{rawMoments}{default}(object, ...)
+\method{rawMoments}{default}(object, na.rm=FALSE, ...)
 
 cov2raw(cov, mean, N, sd)
 
@@ -31,13 +31,14 @@ cov2raw(cov, mean, N, sd)
     if it is not explicitly suppressed by putting \code{-1} in the formula.}
   \item{data}{an optional data frame containing the variables in the formula. 
     By default the variables are taken from the environment from which 
-    \code{raw.moments} is called.}
+    \code{rawMoments} is called.}
   \item{subset}{an optional vector specifying a subset of observations to be 
     used in computing moments.}
   \item{na.action}{a function that indicates what should happen when the data 
     contain \code{NA}s. The default is set by the \code{na.action} option.}
   \item{contrasts}{an optional list. See the \code{contrasts.arg} of 
     \code{\link[stats:model.matrix]{model.matrix.default}}}.
+  \item{na.rm}{if \code{TRUE}, any data rows with missing data will be removed.}
   \item{cov}{a covariance or correlation matrix.}
   \item{mean}{a vector of means.}
   \item{N}{the number of observations on which the covariances or correlations 

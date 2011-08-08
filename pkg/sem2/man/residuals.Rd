@@ -15,11 +15,7 @@
 \usage{
 \method{residuals}{sem}(object, ...)
 
-standardizedResiduals(object, ...)
-
 \method{standardizedResiduals}{sem}(object, ...)
-
-normalizedResiduals(object, ...)
 
 \method{normalizedResiduals}{sem}(object, ...)
 }

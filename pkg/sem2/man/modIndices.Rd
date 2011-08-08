@@ -1,8 +1,8 @@
 \name{modIndices}
 \alias{modIndices}
 \alias{modIndices.objectiveML}
-\alias{print.sem.modind}
-\alias{summary.sem.modind}
+\alias{print.modIndices}
+\alias{summary.modIndices}
 
 \title{Modification Indices for Structural Equation Models}
 \description{
@@ -12,7 +12,7 @@
 }
 
 \usage{
-mod.indices(model, ...)
+modIndices(model, ...)
 
 \method{modIndices}{objectiveML}(model, ...)
 

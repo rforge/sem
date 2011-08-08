@@ -1,4 +1,4 @@
-# last modified 2011-08-07 by J. Fox
+# last modified 2011-08-08 by J. Fox
 
 residuals.sem <- function(object, ...){
     object$S - object$C
@@ -19,7 +19,7 @@ standardizedResiduals.sem <- function(object, ...){
     res/sqrt(outer(s, s))
     }
 
-normalized.residuals <- function(object, ...){
+normalized.residuals <- function(...){
 	.Deprecated("normalizedResiduals", package="sem")
 	normalizedResiduals(...)
     }

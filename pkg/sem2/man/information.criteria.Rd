@@ -1,0 +1,35 @@
+\name{information.criteria}
+\alias{information.criteria}
+\alias{AICc}
+\alias{CAIC}
+
+\title{
+Additional Information Criteria
+}
+
+\description{
+These are generic functions for computing, respectively, the AICc (second-order corrected Akaike Information Criterion) and CAIC (consistent Akaike Information Criterion).
+}
+
+\usage{
+AICc(object, ...)
+
+CAIC(object, ...)
+}
+
+\arguments{
+  \item{object}{an object for which an appropriate \code{AICc} or \code{CAIC} method exists.}
+  \item{\ldots}{possible additional arguments for methods.}
+}
+
+\author{John Fox \email{jfox@mcmaster.ca}}
+
+\references{
+ *** TO BE SUPPLIED
+}
+
+\seealso{
+\code{\link{AICc.objectiveML}}, \code{\link{CAIC.objectiveML}}
+}
+
+\keyword{models}

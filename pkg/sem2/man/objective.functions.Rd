@@ -1,4 +1,6 @@
 \name{objective.functions}
+
+\alias{objective.functions}
 \alias{objectiveML}
 \alias{objectiveGLS}
 
@@ -7,7 +9,7 @@ sem Objective Function Builders
 }
 
 \description{
-These functions return objective functions suitable for use with optimizers called by \code\link{{sem}}. The user would not
+These functions return objective functions suitable for use with optimizers called by \code{\link{sem}}. The user would not
 normally call these functions directly, but rather merely supply one of them in the \code{objective} argument to
 \code{sem}.
 }
@@ -29,7 +31,7 @@ These functions return an object of class \code{"semObjective"}, with up to two 
 \item{gradient}{a gradient function.}
 }
 
-\author{John Fox \email{jfox@mcmaster.ca}
+\author{John Fox \email{jfox@mcmaster.ca}}
 
 \seealso{
 \code{\link{sem}}, \code{\link{optimizers}}

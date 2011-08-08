@@ -5,7 +5,7 @@ sem <- function(model, ...){
 	UseMethod("sem", model)
 }
 
-sem.semmod <- function (model, S, N, data, raw=FALSE, obs.variables=rownames(S), 
+sem.semmod <- function(model, S, N, data, raw=FALSE, obs.variables=rownames(S), 
 		fixed.x=NULL, formula= ~ ., robust=!missing(data), debug=FALSE, ...){
 	parse.path <- function(path) {                                           
 		path.1 <- gsub("-", "", gsub(" ","", path))

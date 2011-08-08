@@ -2,6 +2,7 @@
 \alias{bootSem}
 \alias{print.bootsem}
 \alias{summary.bootsem}
+\alias{print.summary.bootsem}
 
 \title{Bootstrap a Structural Equation Model}
 \description{

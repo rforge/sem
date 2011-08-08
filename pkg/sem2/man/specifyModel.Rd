@@ -1,6 +1,12 @@
 \name{specifyModel}
 \alias{specifyModel}
 \alias{print.semmod}
+\alias{classifyVariables}
+\alias{removeRedundantPaths}
+\alias{combineModels}
+\alias{combineModels.semmod}
+\alias{update.semmod}
+
 \title{Specify a Structural Equation Model}
 \description{
   Create the RAM specification of a structural equation model.
@@ -10,6 +16,8 @@ specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs)
 
 classifyVariables(model)
 removeRedundantPaths(model, warn=TRUE)
+\method{combineModels}{semmod}(..., warn=TRUE)
+\method{update}{semmod}(object, file = "", ...)
 
 \method{print}{semmod}(x, ...)
 }
@@ -26,10 +34,10 @@ removeRedundantPaths(model, warn=TRUE)
   \item{covs}{optional: a character vector of one or more elements, with each element
   	giving a string of variable names, separated by commas. Variances and covariances
   	among all variables in each such string are added to the model.}
-  \item{x, model}{An object of class \code{semmod}, as produced by
+  \item{x, model, object}{An object of class \code{semmod}, as produced by
     \code{specifyModel}.}
   \item{warn}{print a warning if redundant paths are detected.}
-  \item{...}{Ignored.}
+  \item{...}{\code{sem} objects.}
 }
 
 \details{

@@ -1,9 +1,12 @@
 \name{sem} 
 
 \alias{sem}
-\alias{sem.mod}
+\alias{sem.semmod}
 \alias{sem.default}
 \alias{startvalues}
+\alias{coef.sem}
+\alias{vcov.sem}
+\alias{df.residual.sem}
 
 \title{General Structural Equation Models}
 \description{
@@ -26,11 +29,15 @@ sem(model, ...)
 		start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...) 
     
 startvalues(S, ram, debug=FALSE, tol=1E-6)
+
+\method{coef}{sem}(object, standardized=FALSE, ...)
+\method{vcov}{sem}(object, robust=FALSE, analytic=inherits(object, "objectiveML"), ...)
+\method{df.residual}{sem}(object, ...)
 }
 
 \arguments{
-  \item{ram}{RAM specification, which is a simple encoding of the path
-    diagram for the model. The \code{ram} matrix may be given either in symbolic 
+  \item{model}{RAM specification, which is a simple encoding of the path
+    diagram for the model. The model may be given either in symbolic 
     form (as a \code{semmod} object, as returned by the \code{\link{specifyModel}} function,
     or as a character matrix), invoking \code{sem.semmod}, which calls \code{sem.default} 
     after setting up the model,
@@ -43,7 +50,7 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     form of input is useful for fitting models with intercepts, in which case the moment matrix
     should include the mean square and cross-products for a unit variable all of whose entries are 1;
     of course, the raw mean square for the unit variable is 1. Raw-moment matrices may be computed
-    by \code{\link{raw.moments}}. If the \code{ram} argument is given in symbolic form, then
+    by \code{\link{rawMoments}}. If the \code{ram} argument is given in symbolic form, then
     the observed-variable covariance or raw-moment matrix may contain variables that do not appear in the model,
     in which case a warning is printed. As an alternative to specifying \code{S} the user may
     supply a data frame containing the data for the model (see the argument \code{data}).}
@@ -63,10 +70,13 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   	which covariance or raw moments are computed. The default formula is \code{~.}, i.e., all of the
   	variables in the data, including an implied intercept; if a covariance matrix is to be computed,
   	the constant is suppressed.}
-  \item{robust}{if \code{TRUE}, then quantities are computed that can be used to compute robust
+  \item{robust}{In \code{sem}: if \code{TRUE}, then quantities are computed that can be used to compute robust
   	estimates of coefficient standard errors and robust tests when the model is fit by multinormal maximum likelihood;
   	the default is \code{TRUE} when the \code{data} argument is \code{TRUE}, and this option is only
-  	available when the data are given.}
+  	available when the data are given. In \code{vcov}: if \code{TRUE}, return a robust coefficient covariance matrix
+  	(if \code{object} contains the requisite information).}
+  \item{semmod}{a \code{semmod} object containing the description of the model; optional, and normally supplied
+  	not directly by the user but via the \code{semmod} method for \code{sem}.}
   \item{debug}{if \code{TRUE}, some information is printed to help you debug the symbolic
     model specification; for example, if a variable name is misspelled, \code{sem} will
     assume that the variable is a (new) latent variable. Information about
@@ -107,6 +117,11 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   	which produces maximum-likelihood estimates assuming multinormality. An alternative is 
   	\code{\link{objectiveGLS}}, which produced generalized least squares estimates --- or the user
   	can supply an objective function to be minimzed.}
+  \item{ram}{numeric RAM matrix.}
+  \item{object}{an object of class \code{"sem"}, returned by \code{sem}.}
+  \item{standardized}{if \code{TRUE}, return standardized coefficients.}
+  \item{analytic}{return an analytic (as opposed to numeric) estimate of the coefficient covariance matrix;
+  	at present only available for the \code{\link{objectiveML}} objective function.}
 } 
 
 \details{

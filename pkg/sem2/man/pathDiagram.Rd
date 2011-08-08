@@ -16,7 +16,7 @@
 \usage{
 pathDiagram(model, ...)
 
-\method{path.diagram}{sem}(model, file, min.rank = NULL, max.rank = NULL,
+\method{pathDiagram}{sem}(model, file, min.rank = NULL, max.rank = NULL,
 	same.rank = NULL, variables = model$var.names, parameters = rownames(model$ram),
 	ignore.double = TRUE, edge.labels = c("names", "values", "both"), 
 	size = c(8, 8), node.font = c("Helvetica", 14),

@@ -1,5 +1,6 @@
 \name{optimizers}
 
+\alias{optimizers}
 \alias{optimizerNlm}
 \alias{optimizerOptim}
 \alias{optimizerNlminb}
@@ -7,7 +8,7 @@
 \title{sem Optimizers}
 
 \description{
-These functions call optimizers (\code{\link[stats]{nlm}, \code{\link[stats]{optim}, or \code{\link[stats]{nlminb}), 
+These functions call optimizers (\code{\link[stats]{nlm}}, \code{\link[stats]{optim}}, or \code{\link[stats]{nlminb}}, 
 to fit structural equation models, and are called by the \code{\link{sem}} function. 
 The user would not normally call these functions directly, but rather merely supply one of them in the \code{optimizer} argument to
 \code{sem}.
@@ -42,7 +43,7 @@ debug, par.size, model.description, warn, ...)
   
   \item{warn}{if \code{FALSE}, suppress warnings during the optimization.}
   
-  \item{method}{the method to be employed by the \code{\link[stats]{optim}} optimizer; the default is \code{"CG"} (conjugate-gradient).
+  \item{method}{the method to be employed by the \code{\link[stats]{optim}} optimizer; the default is \code{"CG"} (conjugate-gradient).}
   
   \item{\dots}{additional arguments for the \code{nlm}, \code{optim}, or \code{nlminb} optimizer.}
 
@@ -69,8 +70,8 @@ An object of class \code{"semResult"}, with elements:
 
 }
 
-\author{John Fox \email{jfox@mcmaster.ca}
+\author{John Fox \email{jfox@mcmaster.ca}}
 
-\seealso{\code{\link{sem}}, \code{\link{objective.functions}}, \code{\link[stats]{nlm}, \code{\link[stats]{optim}, \code{\link[stats]{nlminb})}
+\seealso{\code{\link{sem}}, \code{\link{objective.functions}}, \code{\link[stats]{nlm}}, \code{\link[stats]{optim}}, \code{\link[stats]{nlminb}})}
 
 \keyword{models}

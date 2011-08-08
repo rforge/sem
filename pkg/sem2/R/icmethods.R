@@ -11,9 +11,9 @@ logLik.objectiveML <- function(object, ...){
 
 # generics
 
-AICc <- function(object) UseMethod ("AICc", object)
+AICc <- function(object, ...) UseMethod("AICc")
 
-CAIC <- function(object) UseMethod ("CAIC", object)
+CAIC <- function(object, ...) UseMethod ("CAIC")
 
 
 # methods for sem objects
@@ -23,12 +23,12 @@ AIC.objectiveML <- function(object, ..., k) {
 }
 
 # small sample second order corrected aic
-AICc.objectiveML <- function(object) {
+AICc.objectiveML <- function(object, ...) {
 	deviance(object) + 2*object$t*(object$t + 1)/(object$N - object$t - 1)
 }
 
 # Consistent Akaike Information Criterion
-CAIC.objectiveML <- function(object) {
+CAIC.objectiveML <- function(object, ...) {
 	props<-semProps(object)
 	props$chisq - props$df*(1 + log(object$N))
 }
