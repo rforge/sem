@@ -18,10 +18,10 @@ update.semmod <- function (object, file = "", ...) {
 		return(old.model)
 	}
 	modmat <- scan(file = file, what = list(change = "", var1 = "", 
-			var2 = "", var3 = "", var4 = ""), sep = ",", strip.white = TRUE, 
-		comment.char = "#", fill = TRUE)
+					var2 = "", var3 = "", var4 = ""), sep = ",", strip.white = TRUE, 
+			comment.char = "#", fill = TRUE)
 	modmat <- cbind(modmat$change, modmat$var1, modmat$var2, 
-		modmat$var3)
+			modmat$var3)
 	if ("delete" %in% modmat[, 1]) {
 		deletemat <- modmat[which(modmat[, 1] == "delete"), 2:3, drop=FALSE]
 		deletemat[which(deletemat[, 2] == ""), 2] <- "path"
@@ -37,8 +37,9 @@ update.semmod <- function (object, file = "", ...) {
 	}
 	if ("replace" %in% modmat[, 1]) {
 		submat <- modmat[which(modmat[, 1] == "replace"), 2:3, drop=FALSE]
-		object[, 1:2] <- mapply(function(x, y) gsub(x, y, object[, 
-						1:2]), submat[, 1], submat[, 2])
+		for (i in 1:nrow(submat)){
+			object[, 1:2] <- mapply(function(x, y) gsub(x, y, object[, 1:2]), submat[i, 1], submat[i, 2])
+		}
 	}
 	removeRedundantPaths(object)
 }

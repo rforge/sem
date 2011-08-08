@@ -8,6 +8,8 @@ export(ram, standardizedResiduals, normalizedResiduals, readMoments,
     specifyModel, bootSem, rawMoments, cov2raw, fscores,
     AICc, CAIC,
     classifyVariables, combineModels, removeRedundantPaths,
+    optimizerNlm, optimizerOptim, optimizerNlminb,
+    objectiveML, objectiveGLS,
     # deprecated:
     standardized.residuals, normalized.residuals, read.moments,
     standardized.coefficients, std.coef, mod.indices, path.diagram,

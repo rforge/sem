@@ -15,6 +15,7 @@
 specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs)
 
 classifyVariables(model)
+
 removeRedundantPaths(model, warn=TRUE)
 \method{combineModels}{semmod}(..., warn=TRUE)
 \method{update}{semmod}(object, file = "", ...)
@@ -41,6 +42,7 @@ removeRedundantPaths(model, warn=TRUE)
 }
 
 \details{
+  The principal function for model specification is \code{specifyModel}.
   Each line of the RAM specification consists of three (unquoted) entries, 
   separated by commas:
   
@@ -67,10 +69,32 @@ removeRedundantPaths(model, warn=TRUE)
   Lines may end in a comment following \code{\#}.
       
   See \code{\link{sem}} for further details on model specification.
+  
+  \code{classifyVariables} classifies the variables in a model as endogenous or exogenous.
+  
+  \code{combineModels} and \code{removeRundantPaths} take \code{semmod} objects as arguments amd do what their names imply.
+  
+  The \code{file} input to the \code{update} method for \code{semmod} objects, which by default comes from the
+  standard input stream, is a set of update directives, one per line. There are three kinds of directives. In each case
+  the directive begins with the directive name, followed by one or more fields separated by commas.
+  
+  \describe{
+  
+  	\item{1. delete:}{Remove a path from the model. Example: \code{delete, RSES -> FGenAsp}}
+  	
+  	\item{2. add:}{Add a path to the model. Example: \code{add, RSES -> FGenAsp, gam14,  NA}}
+  	
+  	\item{3. replace:}{Replace every occurrence of the first string with the second in the variables and
+  		parameters of the model. This directive may be used, for example, to change one variable to
+  		another or to rename a parameter. Example: \code{replace, gam, gamma}, substitutes the string \code{"gamma"}
+  		for \code{"gam"} wherever the latter appears, presumably in parameter names.}
+  }
+  
 }
 
 \value{
-  \code{specifyModel} and \code{removeRedundantPaths} return an object of class \code{semmod}, suitable as input for \code{\link{sem}}.
+  \code{specifyModel}, \code{removeRedundantPaths}, \code{combineModels}, and \code{update} return an object of class \code{semmod}, suitable as input for \code{\link{sem}}.
+  
   \code{classifyVariables} returns a list with two character vectors: \code{endogenous}, containing the names of endogenous
   variables in the model; and \code{exogenous}, containing the names of exogenous variables.
 }
@@ -156,6 +180,26 @@ FGenAsp  -> FEdAsp,  lam42,  NA
 model.dhp
 
 classifyVariables(model.dhp)
+
+# updating the model to impose equality constraints
+#  and to rename the latent variables and gamma parameters
+
+model.dhp.eq <- update(model.dhp)
+delete, RSES -> FGenAsp
+delete, FSES -> FGenAsp
+delete, FIQ  -> FGenAsp
+delete, FParAsp -> FGenAs
+delete, RGenAsp  -> FGenAsp
+add, RSES     -> FGenAsp, gam14,  NA
+add, FSES     -> FGenAsp, gam13,  NA
+add, FIQ      -> FGenAsp, gam12,  NA
+add, FParAsp  -> FGenAsp, gam26,  NA
+add, RGenAsp  -> FGenAsp, beta12, NA
+replace, gam, gamma
+replace, Gen, General
+
+model.dhp.eq
+
     }
 }
 
