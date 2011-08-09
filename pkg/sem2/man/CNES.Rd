@@ -7,7 +7,7 @@
   National Election Study, and are intended to tap attitude towards \dQuote{traditional
   values.}
 }
-\usage{data(CNES)}
+\usage{CNES}
 \format{
   A data frame with 1529 observations on the following 4 variables.
   \describe{

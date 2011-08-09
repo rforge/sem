@@ -9,7 +9,7 @@ This data set includes four measures of democracy and two points in
 time, 1960 and 1965, and theree measures of industrialization in 1960
 for 75 developing countries.
 }
-\usage{data(Bollen)}
+\usage{Bollen}
 \format{
   A data frame with 75 observations on the following 11 variables.
   \describe{
@@ -40,7 +40,5 @@ personal communication from Ken Bollen.
 Bollen, K. A. (1989) \emph{Structural Equations With Latent Variables}. Wiley. 
 
 }
-\examples{
-data(Bollen)
-}
+
 \keyword{datasets}
