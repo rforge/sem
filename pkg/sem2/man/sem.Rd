@@ -610,7 +610,42 @@ mod.McArdle <- specifyModel()
 
 sem.McArdle <- sem(mod.McArdle, M.McArdle, 204, fixed.x="UNIT", raw=TRUE)
 summary(sem.McArdle)
-    }
+    
+#------------ Bollen industrialization and democracy example -----------------
+# This model, from Bollen (1989, Ch. 8), illustrates the use in sem() of a
+# case-by-variable data set rather than a covariance or moment matrix
+
+model.bollen <- specifyModel()
+	Demo60 -> y1, NA, 1
+	Demo60 -> y2, lam2, 
+	Demo60 -> y3, lam3, 
+	Demo60 -> y4, lam4, 
+	Demo65 -> y5, NA, 1
+	Demo65 -> y6, lam2, 
+	Demo65 -> y7, lam3, 
+	Demo65 -> y8, lam4, 
+	Indust -> x1, NA, 1
+	Indust -> x2, lam6, 
+	Indust -> x3, lam7, 
+	y1 <-> y5, theta15
+	y2 <-> y4, theta24
+	y2 <-> y6, theta26
+	y3 <-> y7, theta37
+	y4 <-> y8, theta48
+	y6 <-> y8, theta68
+	Indust -> Demo60, gamma11, 
+	Indust -> Demo65, gamma21, 
+	Demo60 -> Demo65, beta21, 
+	Indust <-> Indust, phi
+	
+sem.bollen <- sem(model.bollen, data=Bollen)
+summary(sem.bollen)
+summary(sem.bollen, robust=TRUE) # robust SEs and tests
+summary(sem.bollen, analytic.se=FALSE) # uses numeric rather than analytic Hessian
+
+sem.bollen.gls <- sem(model.bollen, data=Bollen, objective=objectiveGLS) # GLS rather than ML estimator
+summary(sem.bollen.gls)
+	}
 }   
 
 \keyword{models}
