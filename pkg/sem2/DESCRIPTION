@@ -1,6 +1,6 @@
 Package: sem2
 Version: 2.0-0
-Date: 2010/08/08
+Date: 2010/08/09
 Title: Structural Equation Models
 Author: John Fox <jfox@mcmaster.ca> and Jarrett Byrnes <byrnes@nceas.ucsb.edu>, with contributions from Michael Culbertson, Michael Friendly, and Adam Kramer.
 Maintainer: John Fox <jfox@mcmaster.ca>
@@ -8,6 +8,7 @@ Depends: R (>= 1.6.0), stats, MASS, matrixcalc
 Suggests: boot, tcltk, polycor
 LazyLoad: yes
 LazyData: yes
+ByteCompile: yes
 Description: This package contains functions for fitting general linear structural
     equation models (with observed and unobserved variables) using the RAM approach, 
     and for fitting structural equations in observed-variable models by two-stage least squares.
