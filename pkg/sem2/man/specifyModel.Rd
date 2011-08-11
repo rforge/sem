@@ -38,7 +38,7 @@ removeRedundantPaths(model, warn=TRUE)
   \item{x, model, object}{An object of class \code{semmod}, as produced by
     \code{specifyModel}.}
   \item{warn}{print a warning if redundant paths are detected.}
-  \item{...}{\code{sem} objects.}
+  \item{...}{\code{sem} objects; ignored in the \code{update} and \code{print} methods.}
 }
 
 \details{
@@ -63,7 +63,7 @@ removeRedundantPaths(model, warn=TRUE)
         more arrows results in an equality constraint. Specifying the parameter name
         as \code{NA} produces a fixed parameter.}
       \item{3. Value:}{start value for a free parameter or value of a fixed parameter.
-        If given as \code{NA}, \code{sem} will compute the start value.}
+        If given as \code{NA} (or simply omitted), \code{sem} will compute the start value.}
       }
       
   Lines may end in a comment following \code{\#}.
@@ -72,10 +72,10 @@ removeRedundantPaths(model, warn=TRUE)
   
   \code{classifyVariables} classifies the variables in a model as endogenous or exogenous.
   
-  \code{combineModels} and \code{removeRundantPaths} take \code{semmod} objects as arguments amd do what their names imply.
+  \code{combineModels} and \code{removeRedundantPaths} take \code{semmod} objects as arguments and do what their names imply.
   
-  The \code{file} input to the \code{update} method for \code{semmod} objects, which by default comes from the
-  standard input stream, is a set of update directives, one per line. There are three kinds of directives. In each case
+  The \code{file} input to the \code{update} method for \code{semmod} objects, which by default comes from
+  standard input, is a set of update directives, one per line. There are three kinds of directives. In each case
   the directive begins with the directive name, followed by one or more fields separated by commas.
   
   \describe{
@@ -99,7 +99,7 @@ removeRedundantPaths(model, warn=TRUE)
   variables in the model; and \code{exogenous}, containing the names of exogenous variables.
 }
 
-\author{John Fox \email{jfox@mcmaster.ca}}
+\author{John Fox \email{jfox@mcmaster.ca} and Jarrett Byrnes}
 
 \seealso{\code{\link{sem}}}
 
@@ -137,24 +137,25 @@ model.dhp <- specifyModel()
 model.dhp
     
 # an equivalent specification, allowing specifyModel() to generate
-#  variance parameters for endogenous variables:
+#  variance parameters for endogenous variables (and suppressing
+#  the unnecessary trailing NAs):
  
 model.dhp <- specifyModel()
-RParAsp  -> RGenAsp, gam11,  NA
-RIQ      -> RGenAsp, gam12,  NA
-RSES     -> RGenAsp, gam13,  NA
-FSES     -> RGenAsp, gam14,  NA
-RSES     -> FGenAsp, gam23,  NA
-FSES     -> FGenAsp, gam24,  NA
-FIQ      -> FGenAsp, gam25,  NA
-FParAsp  -> FGenAsp, gam26,  NA
-FGenAsp  -> RGenAsp, beta12, NA
-RGenAsp  -> FGenAsp, beta21, NA
+RParAsp  -> RGenAsp, gam11
+RIQ      -> RGenAsp, gam12
+RSES     -> RGenAsp, gam13
+FSES     -> RGenAsp, gam14
+RSES     -> FGenAsp, gam23
+FSES     -> FGenAsp, gam24
+FIQ      -> FGenAsp, gam25
+FParAsp  -> FGenAsp, gam26
+FGenAsp  -> RGenAsp, beta12
+RGenAsp  -> FGenAsp, beta21
 RGenAsp  -> ROccAsp,  NA,     1
-RGenAsp  -> REdAsp,  lam21,  NA
+RGenAsp  -> REdAsp,  lam21
 FGenAsp  -> FOccAsp,  NA,     1
-FGenAsp  -> FEdAsp,  lam42,  NA
-RGenAsp <-> FGenAsp, ps12,   NA
+FGenAsp  -> FEdAsp,  lam42
+RGenAsp <-> FGenAsp, ps12
 
 model.dhp
 
@@ -162,20 +163,20 @@ model.dhp
 #   variances and covariance of RGenAsp and FGenAsp:
  
 model.dhp <- specifyModel(covs="RGenAsp, FGenAsp")
-RParAsp  -> RGenAsp, gam11,  NA
-RIQ      -> RGenAsp, gam12,  NA
-RSES     -> RGenAsp, gam13,  NA
-FSES     -> RGenAsp, gam14,  NA
-RSES     -> FGenAsp, gam23,  NA
-FSES     -> FGenAsp, gam24,  NA
-FIQ      -> FGenAsp, gam25,  NA
-FParAsp  -> FGenAsp, gam26,  NA
-FGenAsp  -> RGenAsp, beta12, NA
-RGenAsp  -> FGenAsp, beta21, NA
+RParAsp  -> RGenAsp, gam11
+RIQ      -> RGenAsp, gam12
+RSES     -> RGenAsp, gam13
+FSES     -> RGenAsp, gam14
+RSES     -> FGenAsp, gam23
+FSES     -> FGenAsp, gam24
+FIQ      -> FGenAsp, gam25
+FParAsp  -> FGenAsp, gam26
+FGenAsp  -> RGenAsp, beta12
+RGenAsp  -> FGenAsp, beta21
 RGenAsp  -> ROccAsp,  NA,     1
-RGenAsp  -> REdAsp,  lam21,  NA
+RGenAsp  -> REdAsp,  lam21
 FGenAsp  -> FOccAsp,  NA,     1
-FGenAsp  -> FEdAsp,  lam42,  NA
+FGenAsp  -> FEdAsp,  lam42
 
 model.dhp
 

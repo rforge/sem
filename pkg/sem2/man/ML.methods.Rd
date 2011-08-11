@@ -48,7 +48,11 @@ and \code{\link{objectiveGLS}} (generalized least squares) objective function. .
   \item{analytic.se}{use analytic (as opposed to numeric) coefficient standard errors.}
 }
 
-\author{John Fox \email{jfox@mcmaster.ca}}
+\author{John Fox \email{jfox@mcmaster.ca} and Jarrett Byrnes}
+
+\references{
+See \code{\link{sem}}.
+}
 
 \seealso{
 \code{\link{sem}}, \code{\link{objective.functions}}, \code{\link{modIndices.objectiveML}} 

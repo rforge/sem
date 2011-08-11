@@ -1,9 +1,11 @@
+# these functions originally by Jarrett Byrnes
+
 # methods to generate 
 # various information criteria from
 # sem or adjchisq objects
 # as well as generate and AIC table
 
-# last modified 2011-08-07 by J. Fox
+# last modified 2011-08-10 by J. Fox
 
 logLik.objectiveML <- function(object, ...){
 	deviance(object)*-2	
@@ -29,7 +31,7 @@ AICc.objectiveML <- function(object, ...) {
 
 # Consistent Akaike Information Criterion
 CAIC.objectiveML <- function(object, ...) {
-	props<-semProps(object)
+	props <- semProps(object)
 	props$chisq - props$df*(1 + log(object$N))
 }
 

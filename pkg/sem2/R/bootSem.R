@@ -1,6 +1,6 @@
 # bootstrapped standard errors and confidence intervals for sem
 
-# last modified 2011-08-07 by J. Fox
+# last modified 2011-08-10 by J. Fox
 
 boot.sem <- function(...) {
 	.Deprecated("bootSem", package="sem")
@@ -57,7 +57,7 @@ bootSem <- function(model, R=100, cov=cov, data=model$data, ...){
     res
     }   
         
-print.bootsem <- function(x, digits = getOption("digits"), ...){
+print.bootsem <- function(x, digits=getOption("digits"), ...){
     t <- x$t
     t0 <- x$t0
     result <- data.frame("Estimate"=t0, "Bias"=colMeans(t) - t0, 
@@ -98,7 +98,7 @@ summary.bootsem <- function(object,
     result
     }
 
-print.summary.bootsem <- function(x, digits = getOption("digits"), ...){
+print.summary.bootsem <- function(x, digits=getOption("digits"), ...){
     cat("Call: ")
     dput(x$call)
     cat("\n")

@@ -8,8 +8,6 @@
   in a structural-equation model.
 }
 \usage{
-fscores(model, ...)
-
 \method{fscores}{sem}(model, data=model$data, center=TRUE, scale=FALSE, ...)
 }
 
@@ -25,7 +23,7 @@ fscores(model, ...)
     if the model is estimated from a covariance or correlation matrix among the
     observed variables.}
   \item{scale}{if \code{TRUE}, the possibly centered variables are divided by their
-    room-mean-squares; the default is \code{FALSE}.
+    root-mean-squares; the default is \code{FALSE}.
     One would normally use this option if the model is estimated
     from a correlation matrix among the observed variables. Centering and scaling 
     are performed by the \code{\link[base]{scale}} function.}

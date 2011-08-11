@@ -5,8 +5,8 @@
 Bollen's Data on Industrialization and Political Democracy
 }
 \description{
-This data set includes four measures of democracy and two points in
-time, 1960 and 1965, and theree measures of industrialization in 1960
+This data set includes four measures of democracy at two points in
+time, 1960 and 1965, and three measures of industrialization in 1960,
 for 75 developing countries.
 }
 \usage{Bollen}

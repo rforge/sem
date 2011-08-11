@@ -1,23 +1,24 @@
-# last modified 2011-08-03 by J. Fox
+# last modified 2011-08-10 by J. Fox
 
 anova.objectiveML <- function(object, model.2, robust=FALSE, ...){
-	anovaAdjchisq<-function(adjobj0, adjobj1){
+	anovaAdjchisq <- function(adjobj0, adjobj1){
+		# this subfunction oringally by Jarrett Byrnes
 		#from http://www.statmodel.com/chidiff.shtml
 		# Satorra-bentler adjusted chi sq
 		#switching to get order right
-		sbs.nested<-adjobj0
-		sbs.full<-adjobj1
-		t0<-sbs.nested$chisq
-		tr0<-sbs.nested$chisq.scaled
-		t1<-sbs.full$chisq
-		tr1<-sbs.full$chisq.scaled		
-		c0<-sbs.nested$c
-		c1<-sbs.full$c		
-		d0<-sbs.nested$df
-		d1<-sbs.full$df		
-		cd = (d0 * c0 - d1*c1)/(d0 - d1)
-		trd = abs((t0 - t1)/cd) 		
-		df<-abs(d0-d1)		
+		sbs.nested <- adjobj0
+		sbs.full <- adjobj1
+		t0 <- sbs.nested$chisq
+		tr0 <- sbs.nested$chisq.scaled
+		t1 <- sbs.full$chisq
+		tr1 <- sbs.full$chisq.scaled		
+		c0 <- sbs.nested$c
+		c1 <- sbs.full$c		
+		d0 <- sbs.nested$df
+		d1 <- sbs.full$df		
+		cd <- (d0 * c0 - d1*c1)/(d0 - d1)
+		trd <- abs((t0 - t1)/cd) 		
+		df <- abs(d0 - d1)		
 		table <- data.frame(c(d0, d1), c(tr0, tr1), c(NA, df), c(NA, trd),
 				c(NA, pchisq(trd, df, lower.tail=FALSE)))		
 		return(table)

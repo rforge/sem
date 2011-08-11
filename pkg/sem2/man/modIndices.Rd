@@ -12,8 +12,6 @@
 }
 
 \usage{
-modIndices(model, ...)
-
 \method{modIndices}{objectiveML}(model, ...)
 
 \method{print}{modIndices}(x, n.largest=5, ...)
@@ -24,8 +22,8 @@ modIndices(model, ...)
     
 \arguments{
   \item{model}{an object of class \code{sem}, produced by the \code{\link{sem}} function.}
-  \item{object, x}{an object of class \code{sem.modind}, produced by the 
-    \code{mod.indices} function.}
+  \item{object, x}{an object of class \code{modIndices}, produced by the 
+    \code{modIndices} function.}
   \item{n.largest}{number of modification indices to print in each of the \eqn{A} and
     \eqn{P} matrices of the RAM model.}
   \item{round}{number of places to the right of the decimal point in printing 
@@ -39,7 +37,7 @@ modIndices(model, ...)
   Modification indices are one-df chi-square score (\dQuote{Lagrange-multiplier}) test statistics for the fixed and constrained
   parameters in a structural equation model. They may be regarded as an estimate of the improvement
   in the likelihood-ratio chi-square statistic for the model if the corresponding parameter is
-  respecified as a free parameter. The \code{mod.indices} function also estimates the change in the
+  respecified as a free parameter. The \code{modIndices} function also estimates the change in the
   value of a fixed or constrained parameter if the parameter is respecified as free. When several
   parameters are set equal, modification indices and estimated changes are given for all but the first.
   Modification indices and estimated parameter changes for currently free parameters are given as
@@ -49,7 +47,7 @@ modIndices(model, ...)
 }
 
 \value{
-  \code{mod.indices} returns an object of class \code{sem.modind} with the following elements:
+  \code{modIndices} returns an object of class \code{modIndices} with the following elements:
   \item{mod.A}{modification indices for the elements of the \eqn{A} matrix.}
   \item{mod.P}{modification indices for the elements of the \eqn{P} matrix.}
   \item{par.A}{estimated parameter changes for the elements of the \eqn{A} matrix.}
@@ -75,7 +73,7 @@ modIndices(model, ...)
 	\dontrun{
 # This example is adapted from the SAS manual
 
-S.wh <- read.moments(names=c('Anomia67','Powerless67','Anomia71',
+S.wh <- readMoments(names=c('Anomia67','Powerless67','Anomia71',
                                     'Powerless71','Education','SEI'))
    11.834                                    
     6.947    9.364                            
@@ -84,7 +82,7 @@ S.wh <- read.moments(names=c('Anomia67','Powerless67','Anomia71',
    -3.839   -3.889   -3.841   -3.625   9.610     
   -21.899  -18.831  -21.748  -18.775  35.522  450.288
 
-model.wh <- specify.model()
+model.wh <- specifyModel()
     Alienation67   ->  Anomia67,      NA,   1
     Alienation67   ->  Powerless67,   NA,   0.833
     Alienation71   ->  Anomia71,      NA,   1

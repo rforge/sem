@@ -1,4 +1,4 @@
-# last modified 2011-08-05 by J. Fox
+# last modified 2011-08-10 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -294,7 +294,7 @@ vcov.sem <- function(object, robust=FALSE, analytic=inherits(object, "objectiveM
 		vcov <- (2/(N - (!raw))) * solve(h)
 		if (any(diag(vcov) < 0)) {
 			attr(vcov, "aliased") <- param.names[diag(vcov) < 0]
-			warning("Negative parameter variances.\nModel is probably underidentified.\n")
+			warning("Negative parameter variances.\nModel may be underidentified.\n")
 		}
 	}
 	colnames(vcov) <- rownames(vcov) <- param.names

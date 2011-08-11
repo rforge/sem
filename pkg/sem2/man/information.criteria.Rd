@@ -22,7 +22,7 @@ CAIC(object, ...)
   \item{\ldots}{possible additional arguments for methods.}
 }
 
-\author{John Fox \email{jfox@mcmaster.ca}}
+\author{Jarrett Byrnes and John Fox \email{jfox@mcmaster.ca}}
 
 \references{
  *** TO BE SUPPLIED

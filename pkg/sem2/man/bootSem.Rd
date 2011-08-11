@@ -24,7 +24,7 @@ bootSem(model, R=100, cov=cov, data=model$data, ...)
   \item{R}{the number of bootstrap replications; the default is 100, which should
     be enough for computing standard errors, but not confidence intervals
     (except for the normal-theory intervals).}
-  \item{cov}{a function to compute the input covariance matrix; the default is
+  \item{cov}{a function to compute the input covariance or moment matrix; the default is
     \code{\link[stats]{cov}}. Use \code{\link[stats]{cor}} if the model is fit
     to the correlation matrix. The function \code{\link[polycor]{hetcor}} in the 
     \code{polycor} package will compute product-moment, polychoric, and
@@ -53,7 +53,7 @@ bootSem(model, R=100, cov=cov, data=model$data, ...)
   in the boot package for more complex sampling schemes and additional options.
   
   Bootstrapping is implemented by resampling the observations in
-  \code{data}, recalculating the input covariance matrix with \code{cov} 
+  \code{data}, recalculating the input covariance matrix with \code{cov},
   and refitting the model with \code{\link{sem}}, using the
   parameter estimates from the original sample as start-values.
   
@@ -105,16 +105,16 @@ library(polycor)
 
 hcor <- function(data) hetcor(data, std.err=FALSE)$correlations
 
-model.cnes <- specify.model()
-F -> MBSA2, lam1, NA
-F -> MBSA7, lam2, NA
-F -> MBSA8, lam3, NA
-F -> MBSA9, lam4, NA
+model.cnes <- specifyModel()
+F -> MBSA2, lam1
+F -> MBSA7, lam2
+F -> MBSA8, lam3
+F -> MBSA9, lam4
 F <-> F, NA, 1
-MBSA2 <-> MBSA2, the1, NA
-MBSA7 <-> MBSA7, the2, NA
-MBSA8 <-> MBSA8, the3, NA
-MBSA9 <-> MBSA9, the4, NA
+MBSA2 <-> MBSA2, the1
+MBSA7 <-> MBSA7, the2
+MBSA8 <-> MBSA8, the3
+MBSA9 <-> MBSA9, the4
 
 R.cnes <- hcor(CNES)
 

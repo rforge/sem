@@ -13,13 +13,13 @@
   \code{sem} fits general structural equation models (with both observed and
   unobserved variables). Observed variables are also called \emph{indicators} or 
   \emph{manifest variables}; unobserved variables are also called \emph{factors}
-  or \emph{latent variables}. Normally, the generic function (\code{sem}) would
-  be used, though the user may wish to specify various arguments to the methods.
+  or \emph{latent variables}. Normally, the generic function (\code{sem}) is
+  called directly with a \code{semmod} first argument, invoking the \code{sem.semmod}
+  method, which in turn sets up a call to the \code{sem.default} method; thus, the user
+  may wish to specify arguments accepted by the \code{semmod} and \code{default} methods.
 }
 
 \usage{
-sem(model, ...)
-
 \method{sem}{semmod}(model, S, N, data, raw=FALSE, obs.variables=rownames(S), 
 		fixed.x=NULL, formula= ~ ., robust=!missing(data), debug=FALSE, ...)
     
@@ -42,8 +42,7 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     or as a character matrix), invoking \code{sem.semmod}, which calls \code{sem.default} 
     after setting up the model,
     or (less conveniently) in numeric form, invoking \code{sem.default} directly, which is
-    not recommended.
-    (see \bold{Details} below).}
+    not recommended (see \bold{Details} below).}
   \item{S}{covariance matrix among observed variables; may be input as a symmetric matrix,
     or as a lower- or upper-triangular matrix. \code{S} may also be a raw (i.e., \dQuote{uncorrected})
     moment matrix --- that is, a sum-of-squares-and-products matrix divided by \code{N}. This
@@ -57,32 +56,33 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   \item{N}{number of observations on which the covariance matrix is based.}
   \item{data}{As a generally preferable alternative to specifying \code{S} and 
  	\code{N}, the user may supply a data frame containing the data to which the model is to be fit.}
-  \item{raw}{\code{TRUE} if \code{S} is a raw moment matrix or a raw moment matrix ---  as
+  \item{raw}{\code{TRUE} if \code{S} is a raw moment matrix or if a raw moment matrix ---  as
     opposed to a covariance matrix --- is to be
   	computed from \code{data}; the default is \code{FALSE}.}
   \item{obs.variables}{names of observed variables, by default taken from the row names of
-    the covariance matrix \code{S}.}
+    the covariance or moment matrix \code{S}, which may be given directly or generated according to the
+    \code{data} and \code{formula} arguments.}
   \item{fixed.x}{names (if the \code{ram} matrix is given in symbolic form) or indices 
     (if it is in numeric form) of fixed exogenous variables. Specifying these obviates
     the necessity of having to fix the variances and covariances among these 
     variables (and produces correct degrees of freedom for the model chisquare).}
   \item{formula}{a one-sided formula, to be applied to \code{data} to generate the variables for
-  	which covariance or raw moments are computed. The default formula is \code{~.}, i.e., all of the
+  	which covariances or raw moments are computed. The default formula is \code{~.}, i.e., all of the
   	variables in the data, including an implied intercept; if a covariance matrix is to be computed,
   	the constant is suppressed.}
-  \item{robust}{In \code{sem}: if \code{TRUE}, then quantities are computed that can be used to compute robust
+  \item{robust}{In \code{sem}: if \code{TRUE}, then quantities are calculated that can be used to compute robust
   	estimates of coefficient standard errors and robust tests when the model is fit by multinormal maximum likelihood;
   	the default is \code{TRUE} when the \code{data} argument is \code{TRUE}, and this option is only
-  	available when the data are given. In \code{vcov}: if \code{TRUE}, return a robust coefficient covariance matrix
+  	available when the \code{data} argument is given. In \code{vcov}: if \code{TRUE}, return a robust coefficient covariance matrix
   	(if \code{object} contains the requisite information).}
   \item{semmod}{a \code{semmod} object containing the description of the model; optional, and normally supplied
   	not directly by the user but via the \code{semmod} method for \code{sem}.}
   \item{debug}{if \code{TRUE}, some information is printed to help you debug the symbolic
     model specification; for example, if a variable name is misspelled, \code{sem} will
     assume that the variable is a (new) latent variable. Information about
-    the optimization will also be printed, but details will vary with the optimizer eployed. 
+    the optimization will also be printed, but details will vary with the optimizer employed. 
      The default is \code{FALSE}.}
-  \item{...}{arguments to be passed down, including from \code{sem.default} to the \code{\link[stats]{nlm}}
+  \item{...}{arguments to be passed down, including from \code{sem.default} to the 
     optimizer.}
   \item{param.names}{names of the \eqn{t} free parameters, given in their numerical order;
     default names are \code{Param1}, \ldots, \code{Param}\emph{t}. Note: Should not be
@@ -107,10 +107,10 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     used depends upon the optimizer employed.}
   \item{start.tol, tol}{if the magnitude of an automatic start value is less than \code{start.tol}, then
     it is set to \code{start.tol}; defaults to 1E-6.}
-  \item{optimizer}{A function to be used to minimize the objective function; the default is 
+  \item{optimizer}{a function to be used to minimize the objective function; the default is 
   	\code{\link{optimizerNlm}}, which employs the standard R \code{\link[stats]{nlm}} optimizer.
-  	Alternatives are \code{link{optimizerOptim}}, which employs \code{link[stats]{optim}},
-  	and \code{link{optimizerNlminb}}, which uses \code{\link[stats]{nlminb}} --- or
+  	Alternatives are \code{\link{optimizerOptim}}, which employs \code{\link[stats]{optim}},
+  	and \code{\link{optimizerNlminb}}, which uses \code{\link[stats]{nlminb}} --- or
   	the user can supply an optimizer.}
   \item{objective}{An objective function to be minimized, sometimes called a \dQuote{fit} function 
   	in the SEM literature. The default is \code{\link{objectiveML}},
@@ -158,7 +158,7 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
       }
       
   It is simplest to construct the RAM matrix with the \code{\link{specifyModel}} function,
-  which returns an object of class \code{mod}, and also incorporates some model-specification\
+  which returns an object of class \code{semmod}, and also incorporates some model-specification
   convenience shortcuts. This process is illustrated in the examples below. 
   
   A numeric \code{ram} matrix consists of five columns, as follows:
@@ -202,8 +202,8 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
 }
 
 \value{
-  \code{sem} returns an object of class \code{c("}\emph{objective}\code{", "sem")}, where \emph{objective}
-  	is the name of the objective function that was optimized (e.g., \code{objectiveML}), with the following elements:
+  \code{sem} returns an object of class \code{c(}\emph{objective}\code{, "sem")}, where \emph{objective}
+  	is the name of the objective function that was optimized (e.g., \code{"objectiveML"}), with the following elements:
   \item{var.names}{vector of variable names.}
   \item{ram}{RAM matrix, including any rows generated for covariances
     among fixed exogenous variables; column 5 includes computed start values.}
@@ -216,7 +216,7 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   \item{t}{number of free parameters.}
   \item{raw}{\code{TRUE} if the model is fit to a raw moment matrix, \code{FALSE} otherwise.}
   \item{data}{the observed-variable data matrix, or \code{NULL} if data are not supplied.}
-  \item{semmod}{the \code{semmod} specification object for the model.}
+  \item{semmod}{the \code{semmod} specification object for the model, if one was supplied; otherwise \code{NULL}.}
   \item{optimizer}{the optimizer function.}
   \item{objective}{the objective function.}
   \item{coeff}{estimates of free parameters.}
@@ -257,7 +257,8 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     If there are missing variances, a warning message will be printed, and estimation will almost surely 
     fail in some manner. Missing
     variances might well indicate that there are missing covariances too, but it is not possible 
-    to deduce this in a mechanical manner.
+    to deduce this in a mechanical manner. Note that \code{\link{specifyModel}} will by default supply
+    error-variance parameters if these are missing.
 }
 
 \references{
@@ -295,11 +296,15 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     
     Raftery, A. E. (1995)
     Bayesian model selection in social research (with discussion).
-    \emph{Sociological Methodology} \bold{25}, 111--196,
+    \emph{Sociological Methodology} \bold{25}, 111--196.
     
+    Satorra, A. (2000)
+	Scaled and adjusted restricted tests in multi-sample analysis of moment structures. 
+	pp. 233--247 in Heijmans, R.D.H., Pollock, D.S.G. & Satorra, A. (eds.)
+	\emph{Innovations in Multivariate Statistical Analysis. A Festschrift for Heinz Neudecker }, Kluwer. 
 }
 
-\author{John Fox \email{jfox@mcmaster.ca}}
+\author{John Fox \email{jfox@mcmaster.ca} and Jarrett Byrnes}
 
 \seealso{\code{\link{rawMoments}}, \code{\link{startvalues}}, 
 	\code{\link{objectiveML}}, \code{\link{objectiveGLS}},  
@@ -358,43 +363,44 @@ model.dhp <- specifyModel()
     FEdAsp  <-> FEdAsp,  theta4, NA
     
 # an equivalent specification, allowing specifyModel() to generate
-#  variance parameters for endogenous variables:
+#  variance parameters for endogenous variables (and suppressing the
+#  unnecessary NAs):
  
 model.dhp <- specifyModel()
-RParAsp  -> RGenAsp, gam11,  NA
-RIQ      -> RGenAsp, gam12,  NA
-RSES     -> RGenAsp, gam13,  NA
-FSES     -> RGenAsp, gam14,  NA
-RSES     -> FGenAsp, gam23,  NA
-FSES     -> FGenAsp, gam24,  NA
-FIQ      -> FGenAsp, gam25,  NA
-FParAsp  -> FGenAsp, gam26,  NA
-FGenAsp  -> RGenAsp, beta12, NA
-RGenAsp  -> FGenAsp, beta21, NA
+RParAsp  -> RGenAsp, gam11
+RIQ      -> RGenAsp, gam12
+RSES     -> RGenAsp, gam13
+FSES     -> RGenAsp, gam14
+RSES     -> FGenAsp, gam23
+FSES     -> FGenAsp, gam24
+FIQ      -> FGenAsp, gam25
+FParAsp  -> FGenAsp, gam26
+FGenAsp  -> RGenAsp, beta12
+RGenAsp  -> FGenAsp, beta21
 RGenAsp  -> ROccAsp,  NA,     1
-RGenAsp  -> REdAsp,  lam21,  NA
+RGenAsp  -> REdAsp,  lam21
 FGenAsp  -> FOccAsp,  NA,     1
-FGenAsp  -> FEdAsp,  lam42,  NA
-RGenAsp <-> FGenAsp, ps12,   NA
+FGenAsp  -> FEdAsp,  lam42
+RGenAsp <-> FGenAsp, ps12
 
 # Another equivalent specification, telling specifyModel to add paths for 
 #   variances and covariance of RGenAsp and FGenAsp:
  
 model.dhp <- specifyModel(covs="RGenAsp, FGenAsp")
-RParAsp  -> RGenAsp, gam11,  NA
-RIQ      -> RGenAsp, gam12,  NA
-RSES     -> RGenAsp, gam13,  NA
-FSES     -> RGenAsp, gam14,  NA
-RSES     -> FGenAsp, gam23,  NA
-FSES     -> FGenAsp, gam24,  NA
-FIQ      -> FGenAsp, gam25,  NA
-FParAsp  -> FGenAsp, gam26,  NA
-FGenAsp  -> RGenAsp, beta12, NA
-RGenAsp  -> FGenAsp, beta21, NA
+RParAsp  -> RGenAsp, gam11
+RIQ      -> RGenAsp, gam12
+RSES     -> RGenAsp, gam13
+FSES     -> RGenAsp, gam14
+RSES     -> FGenAsp, gam23
+FSES     -> FGenAsp, gam24
+FIQ      -> FGenAsp, gam25
+FParAsp  -> FGenAsp, gam26
+FGenAsp  -> RGenAsp, beta12
+RGenAsp  -> FGenAsp, beta21
 RGenAsp  -> ROccAsp,  NA,     1
-RGenAsp  -> REdAsp,  lam21,  NA
+RGenAsp  -> REdAsp,  lam21
 FGenAsp  -> FOccAsp,  NA,     1
-FGenAsp  -> FEdAsp,  lam42,  NA
+FGenAsp  -> FEdAsp,  lam42
  
 sem.dhp.1 <- sem(model.dhp, R.DHP, 329,
     fixed.x=c('RParAsp', 'RIQ', 'RSES', 'FSES', 'FIQ', 'FParAsp'))
@@ -514,6 +520,7 @@ summary(sem.wh.2)
 
 anova(sem.wh.1, sem.wh.2)
 
+
 # ----------------------- Thurstone data ---------------------------------------
 #  Second-order confirmatory factor analysis, from the SAS manual for PROC CALIS
 
@@ -530,18 +537,18 @@ R.thur <- readMoments(diag=FALSE, names=c('Sentences','Vocabulary',
     .38   .358    .359   .424    .446   .325   .598   .452  
             
 model.thur <- specifyModel()
-    F1 -> Sentences,                      lam11, NA
-    F1 -> Vocabulary,                     lam21, NA
-    F1 -> Sent.Completion,                lam31, NA
-    F2 -> First.Letters,                  lam41, NA
-    F2 -> 4.Letter.Words,                 lam52, NA
-    F2 -> Suffixes,                       lam62, NA
-    F3 -> Letter.Series,                  lam73, NA
-    F3 -> Pedigrees,                      lam83, NA
-    F3 -> Letter.Group,                   lam93, NA
-    F4 -> F1,                             gam1,  NA
-    F4 -> F2,                             gam2,  NA
-    F4 -> F3,                             gam3,  NA 
+    F1 -> Sentences,                      lam11
+    F1 -> Vocabulary,                     lam21
+    F1 -> Sent.Completion,                lam31
+    F2 -> First.Letters,                  lam41
+    F2 -> 4.Letter.Words,                 lam52
+    F2 -> Suffixes,                       lam62
+    F3 -> Letter.Series,                  lam73
+    F3 -> Pedigrees,                      lam83
+    F3 -> Letter.Group,                   lam93
+    F4 -> F1,                             gam1
+    F4 -> F2,                             gam2
+    F4 -> F3,                             gam3
     F1 <-> F1,                            NA,     1
     F2 <-> F2,                            NA,     1
     F3 <-> F3,                            NA,     1
@@ -563,21 +570,21 @@ R.kerch <- readMoments(diag=FALSE, names=c('Intelligence','Siblings',
      .335  -.153  .303   .331   .478   .651   
     
 model.kerch <- specifyModel()
-    Intelligence -> Grades,       gam51,    NA
-    Siblings -> Grades,           gam52,    NA
-    FatherEd -> Grades,           gam53,    NA
-    FatherOcc -> Grades,          gam54,    NA
-    Intelligence -> EducExp,      gam61,    NA
-    Siblings -> EducExp,          gam62,    NA
-    FatherEd -> EducExp,          gam63,    NA
-    FatherOcc -> EducExp,         gam64,    NA
-    Grades -> EducExp,            beta65,   NA
-    Intelligence -> OccupAsp,     gam71,    NA
-    Siblings -> OccupAsp,         gam72,    NA
-    FatherEd -> OccupAsp,         gam73,    NA
-    FatherOcc -> OccupAsp,        gam74,    NA
-    Grades -> OccupAsp,           beta75,   NA
-    EducExp -> OccupAsp,          beta76,   NA
+    Intelligence -> Grades,       gam51
+    Siblings -> Grades,           gam52
+    FatherEd -> Grades,           gam53
+    FatherOcc -> Grades,          gam54
+    Intelligence -> EducExp,      gam61
+    Siblings -> EducExp,          gam62
+    FatherEd -> EducExp,          gam63
+    FatherOcc -> EducExp,         gam64
+    Grades -> EducExp,            beta65
+    Intelligence -> OccupAsp,     gam71
+    Siblings -> OccupAsp,         gam72
+    FatherEd -> OccupAsp,         gam73
+    FatherOcc -> OccupAsp,        gam74
+    Grades -> OccupAsp,           beta75
+    EducExp -> OccupAsp,          beta76
                        
 sem.kerch <- sem(model.kerch, R.kerch, 737, fixed.x=c('Intelligence','Siblings',
     'FatherEd','FatherOcc'))

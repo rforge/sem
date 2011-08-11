@@ -5,19 +5,19 @@
 \alias{objectiveGLS}
 
 \title{
-sem Objective Function Builders
+sem Objective-Function Builders
 }
 
 \description{
 These functions return objective functions suitable for use with optimizers called by \code{\link{sem}}. The user would not
-normally call these functions directly, but rather merely supply one of them in the \code{objective} argument to
+normally call these functions directly, but rather supply one of them in the \code{objective} argument to
 \code{sem}.
 }
 
 \usage{
-objectiveML(gradient = TRUE)
+objectiveML(gradient=TRUE)
 
-objectiveGLS(gradient = FALSE)
+objectiveGLS(gradient=FALSE)
 }
 
 \arguments{
@@ -32,6 +32,10 @@ These functions return an object of class \code{"semObjective"}, with up to two 
 }
 
 \author{John Fox \email{jfox@mcmaster.ca}}
+
+\references{
+See \code{\link{sem}}.
+}
 
 \seealso{
 \code{\link{sem}}, \code{\link{optimizers}}

@@ -1,4 +1,4 @@
-# last modified 2011-07-30 by J. Fox
+# last modified 2011-08-10 by J. Fox
 
 optimizerNlm <- function(start, objective=objectiveML, 
 	gradient=TRUE, maxiter, debug, par.size, model.description, warn, ...){
@@ -32,7 +32,7 @@ optimizerNlm <- function(start, objective=objectiveML,
 				vcov <- (2/(N - (!raw))) * solve(res$hessian)
 				if (any(diag(vcov) < 0)) {
 					result$aliased <- param.names[diag(vcov) < 0]
-					warning("Negative parameter variances.\nModel is probably underidentified.\n")
+					warning("Negative parameter variances.\nModel may be underidentified.\n")
 				}
 			}
 			colnames(vcov) <- rownames(vcov) <- param.names

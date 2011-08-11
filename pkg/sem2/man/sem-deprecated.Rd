@@ -16,7 +16,7 @@
 
 \description{
   These functions are provided for compatibility with older versions of the \pkg{sem} package only, 
-  and may be removed eventually. Although an effort has been made to insure downwards-compatibility,
+  and may be removed eventually. Although an effort has been made to insure backwards-compatibility,
   commands that worked in versions of the \pkg{sem} package prior to version 2.0-0
   will not necessarily work in version 2.0-0 and beyond, or may not work in the same manner.
 }
@@ -35,7 +35,7 @@ std.coef(...)
 }
 
 \arguments{
-  \item{\dots}{pass arguments down.}
+  \item{\dots}{pass arguments down to replacements for deprecated functions.}
 }
 
 \details{

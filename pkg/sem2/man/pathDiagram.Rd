@@ -14,20 +14,18 @@
 }
 
 \usage{
-pathDiagram(model, ...)
-
-\method{pathDiagram}{sem}(model, file, min.rank = NULL, max.rank = NULL,
-	same.rank = NULL, variables = model$var.names, parameters = rownames(model$ram),
-	ignore.double = TRUE, edge.labels = c("names", "values", "both"), 
-	size = c(8, 8), node.font = c("Helvetica", 14),
-	edge.font = c("Helvetica", 10), rank.direction = c("LR", "TB"), 
-	digits = 2, standardize = FALSE, output.type=c("graphics", "dot"),
+\method{pathDiagram}{sem}(model, file, min.rank=NULL, max.rank=NULL,
+	same.rank=NULL, variables=model$var.names, parameters=rownames(model$ram),
+	ignore.double=TRUE, edge.labels=c("names", "values", "both"), 
+	size=c(8, 8), node.font=c("Helvetica", 14),
+	edge.font=c("Helvetica", 10), rank.direction=c("LR", "TB"), 
+	digits=2, standardize=FALSE, output.type=c("graphics", "dot"),
 	graphics.fmt="pdf", dot.options=NULL, ...)
 }
 
 \arguments{
   \item{model}{a structural-equation-model object produced by \code{sem}.}
-  \item{\dots}{arguments to be passed down to \code{path.diagram.sem}.}
+  \item{\dots}{ignored.}
   \item{file}{a file name, given \emph{without} an extension, to which to write the \emph{dot} description of the
     path diagram and, by default, to use that to draw a graph of the model; 
     if not specified, the \emph{dot} description is written to standard output (normally the R Console).
@@ -60,7 +58,7 @@ pathDiagram(model, ...)
   \item{standardize}{if \code{TRUE}, display standardized coefficients; default is \code{FALSE}.}
   \item{output.type}{if \code{"graphics"}, the default, \emph{both} a ".dot" file and a
   	graphics file will be created.}
-  \item{graphics.fmt}{a graphics format recognized by the \emph{dot} program; the default is "pdf";
+  \item{graphics.fmt}{a graphics format recognized by the \emph{dot} program; the default is \code{"pdf"};
   	\code{graphics.fmt} is also used for the extension of the graphics file that is created.}
   \item{dot.options}{options to be passed to the \emph{dot} program, given as a character string.}
 }
@@ -84,7 +82,7 @@ pathDiagram(model, ...)
 	\dontrun{
 # The Duncan, Haller, and Portes Peer-Influences Model
 
-R.DHP <- read.moments(diag=FALSE, names=c('ROccAsp', 'REdAsp', 'FOccAsp', 
+R.DHP <- readMoments(diag=FALSE, names=c('ROccAsp', 'REdAsp', 'FOccAsp', 
                 'FEdAsp', 'RParAsp', 'RIQ', 'RSES', 'FSES', 'FIQ', 'FParAsp'))
     .6247                                                              
     .3269  .3669                                                        
@@ -96,7 +94,7 @@ R.DHP <- read.moments(diag=FALSE, names=c('ROccAsp', 'REdAsp', 'FOccAsp',
     .2995  .2863  .5191  .5007  .0782  .3355  .2302  .2950        
     .0760  .0702  .2784  .1988  .1147  .1021  .0931 -.0438  .2087  
 
-model.dhp <- specify.model()
+model.dhp <- specifyModel()
     RParAsp  -> RGenAsp, gam11,  NA
     RIQ      -> RGenAsp, gam12,  NA
     RSES     -> RGenAsp, gam13,  NA
@@ -122,7 +120,7 @@ model.dhp <- specify.model()
 sem.dhp <- sem(model.dhp, R.DHP, 329,
     fixed.x=c('RParAsp', 'RIQ', 'RSES', 'FSES', 'FIQ', 'FParAsp'))
     
-path.diagram(sem.dhp, min.rank='RIQ, RSES, RParAsp, FParAsp, FSES, FIQ', 
+pathDiagram(sem.dhp, min.rank='RIQ, RSES, RParAsp, FParAsp, FSES, FIQ', 
     max.rank='ROccAsp, REdAsp, FEdAsp, FOccAsp')
 	}
 }

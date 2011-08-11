@@ -11,8 +11,6 @@
  number of observations.
 }
 \usage{
-rawMoments(object, ...)
-
 \method{rawMoments}{formula}(formula, data, subset, na.action, 
     contrasts=NULL, ...)
 
@@ -36,7 +34,7 @@ cov2raw(cov, mean, N, sd)
     used in computing moments.}
   \item{na.action}{a function that indicates what should happen when the data 
     contain \code{NA}s. The default is set by the \code{na.action} option.}
-  \item{contrasts}{an optional list. See the \code{contrasts.arg} of 
+  \item{contrasts}{an optional list. See the \code{contrasts.arg} argument of 
     \code{\link[stats:model.matrix]{model.matrix.default}}}.
   \item{na.rm}{if \code{TRUE}, any data rows with missing data will be removed.}
   \item{cov}{a covariance or correlation matrix.}
@@ -61,8 +59,10 @@ cov2raw(cov, mean, N, sd)
 \seealso{\code{\link{sem}}}
 
 \examples{
-data(Kmenta)
+# the following are all equivalent (with the exception of the name of the intercept):
+
 rawMoments(cbind(1, Kmenta))
+
 rawMoments(~ Q + P + D + F + A, data=Kmenta)
 
 Cov <- with(Kmenta, cov(cbind(Q, P, D, F, A)))

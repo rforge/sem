@@ -8,9 +8,9 @@
 \title{sem Optimizers}
 
 \description{
-These functions call optimizers (\code{\link[stats]{nlm}}, \code{\link[stats]{optim}}, or \code{\link[stats]{nlminb}}, 
+These functions call optimizers (\code{\link[stats]{nlm}}, \code{\link[stats]{optim}}, or \code{\link[stats]{nlminb}}), 
 to fit structural equation models, and are called by the \code{\link{sem}} function. 
-The user would not normally call these functions directly, but rather merely supply one of them in the \code{optimizer} argument to
+The user would not normally call these functions directly, but rather supply one of them in the \code{optimizer} argument to
 \code{sem}.
 }
 
@@ -31,7 +31,7 @@ debug, par.size, model.description, warn, ...)
   
   \item{objective}{the objective function to be optimized; see \link{objective.functions}.}
   
-  \item{gradient}{\code{TRUE} if an analytic gradient is to be used.}
+  \item{gradient}{\code{TRUE} if an analytic gradient is to be used (if one is available).}
   
   \item{maxiter}{the maximum number of iterations allowed.}
   
@@ -72,6 +72,6 @@ An object of class \code{"semResult"}, with elements:
 
 \author{John Fox \email{jfox@mcmaster.ca}}
 
-\seealso{\code{\link{sem}}, \code{\link{objective.functions}}, \code{\link[stats]{nlm}}, \code{\link[stats]{optim}}, \code{\link[stats]{nlminb}})}
+\seealso{\code{\link{sem}}, \code{\link{objective.functions}}, \code{\link[stats]{nlm}}, \code{\link[stats]{optim}}, \code{\link[stats]{nlminb}}}
 
 \keyword{models}

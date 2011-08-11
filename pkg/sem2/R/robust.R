@@ -1,4 +1,6 @@
-# last modified 2011-08-07 by J. Fox
+# these functions originally by Jarrett Byrnes
+
+# last modified 2011-08-10 by J. Fox
 
 robustVcov <- function(sem.obj, adj.obj, data.obj, use.fit=FALSE, use.ginv=FALSE){
 	if (missing(adj.obj) && missing(data.obj)) 
@@ -88,47 +90,6 @@ mlWmat <- function(sem.obj, use.fit=FALSE) {
 	return(w_mat)
 }
 
-#deltaMatrix <- function (sem.object, adj = 1e-04) 
-#{
-#	p.star <- sem.object$n * (sem.object$n + 1)/2
-#	par.idx <- which(sem.object$ram[, "parameter"] > 0)
-#	nparams <- length(par.idx)
-#	delta.mat <- matrix(0, nparams, p.star)
-#	rownames(delta.mat) <- rep(NA, nparams)
-#	colnames(delta.mat) <- vech(matrixNames(sem.object$C))
-#	vars <- sem.object$var.names
-#	C.vect <- vech(sem.object$C)
-#	J <- sem.object$J
-#	m <- sem.object$m
-#	for (i in 1:nparams) {
-#		A <- sem.object$A
-#		P <- sem.object$P
-#		from <- sem.object$ram[par.idx[i], 2]
-#		to <- sem.object$ram[par.idx[i], 3]
-#		path_type <- sem.object$ram[par.idx[i], 1]
-#		if (path_type == 1) {
-#			adjust <- abs(A[from, to])*adj
-#			A[from, to] <- A[from, to] + adjust
-#		}
-#		else {
-#			adjust <- abs(P[from, to])*adj
-#			P[from, to] <- P[from, to] + adjust
-#			P[to, from] <- P[to, from]
-#		}
-#		I.Ainv <- solve(diag(m) - A)
-#		C <- J %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J)
-#		C.vech <- vech(C)
-#		delta.mat[i, ] <- (C.vech - C.vect)/adjust
-#		rownames(delta.mat)[i] <- rownames(sem.object$ram)[par.idx[i]]
-#		if (rownames(delta.mat)[i] == "") {
-#			rownames(delta.mat)[i] <- paste(vars[sem.object$ram[par.idx[i], 
-#						3]], vars[sem.object$ram[par.idx[i], 2]], sep = "-")
-#		}
-#	}
-#	delta.mat <- t(delta.mat)
-#	return(delta.mat)
-#}
-
 deltaMatrix <- function(sem.object, adj=1e-04) {
 	p.star <- sem.object$n * (sem.object$n + 1)/2
 	pars <- names(sem.object$coeff)
@@ -162,19 +123,6 @@ deltaMatrix <- function(sem.object, adj=1e-04) {
 	t(delta.mat)
 }
 
-
-#AICc.adjchisq <- function(adj.obj){
-#	t <- adj.obj$t
-#	N <- adj.obj$N
-#	ret <- adj.obj$chisq.scaled + 2*t*(t + 1)/(N - t - 1)
-#	return(ret)
-#}
-#
-#BIC.adjchisq <- function (adj.obj){
-#	ret <- adj.obj$chisq.scaled - adj.obj$df * log(adj.obj$N)
-#	return(ret)
-#}
-
 semProps <- function(object){
 	N <- object$N
 	n <- object$n
@@ -189,15 +137,6 @@ Ktrans <- function(num.vars){
 }
 
 matrixNames <- function(mat, sep="_"){
-# replaced code bugged
-#	rnames <- rownames(mat)
-#	cnames <- colnames(mat)
-#	for (i in 1:length(mat[, 1])) {
-#		for (j in 1:length(mat[, 2])) {
-#			mat[i, j] <- paste(rnames[i], cnames[j], sep = sep)
-#		}
-#	}
-#	return(mat)
 	outer(rownames(mat), colnames(mat), function(x, y) paste(x, y, sep=sep))
 }
 

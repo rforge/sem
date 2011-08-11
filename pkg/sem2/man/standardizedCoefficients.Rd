@@ -5,8 +5,8 @@
 \title{Standardized Coefficients for Structural Equation Models}
 \description{
   These functions calculate standardized regression coefficients
-  for structural equation models. The function \code{std.coef} is
-  simply an abbreviation for \code{standardized.coefficients}.
+  for structural equation models. The function \code{stdCoef} is
+  simply an abbreviation for \code{standardizedCoefficients}.
 }
 
 \usage{
@@ -25,7 +25,7 @@ stdCoef(...)
 }
 
 \value{
-  Returns a data frame with the standardized coefficients, labelled 
+  Returns a data frame with the coefficients, labelled 
   both by parameter names and by arrows in the path diagram for the
   model.
 }

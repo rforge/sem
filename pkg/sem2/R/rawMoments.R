@@ -1,4 +1,4 @@
-# last modified 2011-07-30 by J. Fox
+# last modified 2011-08-10 by J. Fox
 
 raw.moments <- function(...){
 	.Deprecated("rawMoments", package="sem")
@@ -7,7 +7,7 @@ raw.moments <- function(...){
 
 rawMoments <- function(object, ...) UseMethod("rawMoments")
 
-rawMoments.formula <- function (formula, data, subset, na.action, 
+rawMoments.formula <- function(formula, data, subset, na.action, 
 	contrasts = NULL, ...) {
 	if (missing(na.action))
 		na.action <- options()$na.action

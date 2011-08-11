@@ -1,10 +1,10 @@
-# last modified 2011-07-30 by J. Fox
+# last modified 2011-08-10 by J. Fox
 
 optimizerOptim <- function(start, objective=objectiveML, 
 	gradient=TRUE, maxiter, debug, par.size, model.description, warn, method="CG", ...){
 	with(model.description, {
 			obj <- objective(gradient=gradient)
-			grad <- obj$gradient
+			grad <- if (gradient) obj$gradient else NULL
 			obj <- obj$objective
 			typsize <- if (par.size == 'startvalues') abs(start) else rep(1, t)
 			if (!warn) save.warn <- options(warn=-1)
@@ -34,12 +34,12 @@ optimizerOptim <- function(start, objective=objectiveML,
 				vcov <- (2/(N - (!raw))) * solve(res$hessian)
 				if (any(diag(vcov) < 0)) {
 					result$aliased <- param.names[diag(vcov) < 0]
-					warning("Negative parameter variances.\nModel is probably underidentified.\n")
+					warning("Negative parameter variances.\nModel may be underidentified.\n")
 				}
 			}
 			colnames(vcov) <- rownames(vcov) <- param.names
 			result$vcov <- vcov
-			result$criterion <- res$value # c(result$obj) - n - log(det(S))
+			result$criterion <- res$value 
 			if (!raw) {
 				CC <- diag(diag(S))
 				result$chisqNull <- (N - 1) * 
