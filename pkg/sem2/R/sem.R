@@ -1,4 +1,4 @@
-# last modified 2011-08-10 by J. Fox
+# last modified 2011-10-28 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -273,7 +273,8 @@ vcov.sem <- function(object, robust=FALSE, analytic=inherits(object, "objectiveM
 		par.names <- c(names(one.free), names(two.free))
 		par.names <- par.names[par.names != ""]
 		rownames(hessian) <- colnames(hessian) <- par.names
-		hessian
+		nms <- names(coef(object))
+		hessian[nms, nms]
 	}
 	h <- hessian(object)
 	t <- object$t

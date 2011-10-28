@@ -25,8 +25,9 @@
     
 \method{sem}{default}(model, S, N, data=NULL, raw=FALSE, param.names, 
 		var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
-		analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c("ones", "startvalues"), 
-		start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...) 
+		analytic.gradient=TRUE, warn=FALSE, maxiter=500, 
+		par.size=c("ones", "startvalues"), start.tol=1E-6, 
+		optimizer=optimizerNlm, objective=objectiveML, ...) 
     
 startvalues(S, ram, debug=FALSE, tol=1E-6)
 
@@ -86,11 +87,11 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     optimizer.}
   \item{param.names}{names of the \eqn{t} free parameters, given in their numerical order;
     default names are \code{Param1}, \ldots, \code{Param}\emph{t}. Note: Should not be
-    specified when the \code{ram} matrix is given in symbolic form.}
+    specified when the model is given in symbolic form.}
   \item{var.names}{names of the \eqn{m} entries of the \eqn{v} vector
     (typically the observed and latent variables --- see below), given in their
     numerical order; default names are \code{Var1}, \ldots, \code{Var}\emph{m}.
-    Note: Should not be specified when the \code{ram} matrix is given in symbolic form.}
+    Note: Should not be specified when the model is given in symbolic form.}
   \item{analytic.gradient}{if \code{TRUE} (the default), then analytic first derivatives are
     used in the maximization of the likelihood if the optimzer employed will accept them; 
     otherwise numeric derivatives are used, again if the optimizer will compute them.}
@@ -184,6 +185,8 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
             the parameter estimates when the program is rerun.}
         }
         
+  The numeric \code{ram} matrix is normally generated automatically, not specified directly by the user.
+        
   \code{sem} fits the model by calling the optimizer specified in the \code{optimizer} argument
   to minimize the objective function specified in the \code{objective} argument.
   If the optimization fails to converge, a warning message is printed.
@@ -257,7 +260,7 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     If there are missing variances, a warning message will be printed, and estimation will almost surely 
     fail in some manner. Missing
     variances might well indicate that there are missing covariances too, but it is not possible 
-    to deduce this in a mechanical manner. Note that \code{\link{specifyModel}} will by default supply
+    to deduce this in a mechanical manner. The \code{\link{specifyModel}} funciton will by default supply
     error-variance parameters if these are missing.
 }
 

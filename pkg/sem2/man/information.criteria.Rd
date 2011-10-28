@@ -25,7 +25,8 @@ CAIC(object, ...)
 \author{Jarrett Byrnes and John Fox \email{jfox@mcmaster.ca}}
 
 \references{
- *** TO BE SUPPLIED
+     Burnham, K. P., and Anderson, D. R. (1998)
+    \emph{Model Selection and Inference: A Practical Information-Theoretical Approach.} Springer.
 }
 
 \seealso{

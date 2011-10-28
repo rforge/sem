@@ -74,7 +74,7 @@ removeRedundantPaths(model, warn=TRUE)
   
   \code{combineModels} and \code{removeRedundantPaths} take \code{semmod} objects as arguments and do what their names imply.
   
-  The \code{file} input to the \code{update} method for \code{semmod} objects, which by default comes from
+  The \code{file} input argument to the \code{update} method for \code{semmod} objects, which by default comes from
   standard input, is a set of update directives, one per line. There are three kinds of directives. In each case
   the directive begins with the directive name, followed by one or more fields separated by commas.
   

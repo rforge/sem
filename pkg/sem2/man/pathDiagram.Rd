@@ -5,7 +5,7 @@
 
 \title{Draw Path Diagram}
 \description{
-  \code{path.diagram} creates a description of the path diagram
+  \code{pathDiagram} creates a description of the path diagram
   for a structural-equation-model object to be processed by the
   graph-drawing program \emph{dot}, which can be called
   automatically; see Koutsofios and North (2002)
@@ -64,7 +64,7 @@
 }
 
 \value{
-  \code{NULL}: \code{path.diagram} is used for its side-effect, producing a
+  \code{NULL}: \code{pathDiagram} is used for its side-effect, producing a
   graph description of the model.
 }
 

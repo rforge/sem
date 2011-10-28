@@ -11,7 +11,7 @@
 These functions call optimizers (\code{\link[stats]{nlm}}, \code{\link[stats]{optim}}, or \code{\link[stats]{nlminb}}), 
 to fit structural equation models, and are called by the \code{\link{sem}} function. 
 The user would not normally call these functions directly, but rather supply one of them in the \code{optimizer} argument to
-\code{sem}.
+\code{sem}. Users may also write them own optimizer functions.
 }
 
 \usage{

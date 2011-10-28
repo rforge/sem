@@ -41,12 +41,12 @@ bootSem(model, R=100, cov=cov, data=model$data, ...)
     default is \code{"perc"} (percentile); see 
     \code{\link[boot]{boot.ci}} for details.}
   \item{level}{level for confidence intervals; default is \code{0.95}.}
-  \item{...}{in \code{boot.sem}, arguments to be passed to 
+  \item{...}{in \code{bootSem}, arguments to be passed to 
     \code{\link{sem}}; otherwise ignored.} 
 }
 
 \details{
-  \code{boot.sem} implements the nonparametric bootstrap, assuming an
+  \code{bootSem} implements the nonparametric bootstrap, assuming an
   independent random sample. Convergence failures in the bootstrap resamples
   are discarded (and a warning printed); 10 consecutive convergence failures
   result in an error. You can use the \code{\link[boot]{boot}} function
@@ -61,7 +61,7 @@ bootSem(model, R=100, cov=cov, data=model$data, ...)
 }
 
 \value{
-  \code{boot.sem} returns an object of class \code{bootsem}, which inherits
+  \code{bootSem} returns an object of class \code{bootsem}, which inherits
     from class \code{boot}, supported by the \code{boot} package. The returned
     object contains the following components:
     
@@ -69,14 +69,14 @@ bootSem(model, R=100, cov=cov, data=model$data, ...)
   \item{t}{a matrix containing the bootstrapped estimates, one bootstrap
     replication per row.}
   \item{data}{the data frame containing the data to which the model was fit.}
-  \item{seed}{the value of \code{.Random.seed} when \code{boot.sem} was called.}  
+  \item{seed}{the value of \code{.Random.seed} when \code{bootSem} was called.}  
   \item{statistic}{the function used to produce the bootstrap replications;
-    this is always the local function \code{refit} from \code{boot.sem}.}
+    this is always the local function \code{refit} from \code{bootSem}.}
   \item{sim}{always set to \code{"ordinary"}; see the documentation for the
     \code{\link[boot]{boot}} function.}
   \item{stype}{always set to \code{"i"}; see the documentation for the
     \code{\link[boot]{boot}} function.}
-  \item{call}{the call of the \code{boot.sem} function.}
+  \item{call}{the call of the \code{bootSem} function.}
   \item{strata}{always a vector of ones.} 
 }
 
@@ -123,7 +123,7 @@ summary(sem.cnes)
 
 #  Note: this can take a couple of minutes:
 
-system.time(boot.cnes <- boot.sem(sem.cnes, R=100, cov=hcor, data=CNES))
+system.time(boot.cnes <- bootSem(sem.cnes, R=100, cov=hcor, data=CNES))
 summary(boot.cnes, type="norm")  
 # cf., standard errors to those computed by summary(sem.cnes)
     }

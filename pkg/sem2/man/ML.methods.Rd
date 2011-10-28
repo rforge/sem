@@ -15,12 +15,12 @@
 \alias{print.summary.objectiveML}
 
 \title{
-Methods for sem Objects Fit Using the \code{objectiveML} and \code{objectiveGLS} Objective Function
+Methods for sem Objects Fit Using the \code{objectiveML} and \code{objectiveGLS} Objective Functions
 }
 
 \description{
 These functions are for objects fit by \code{\link{sem}} using the \code{\link{objectiveML}} (multivariate-normal full-information maximum-likelihood) 
-and \code{\link{objectiveGLS}} (generalized least squares) objective function. .
+and \code{\link{objectiveGLS}} (generalized least squares) objective functions.
 }
 
 \usage{
