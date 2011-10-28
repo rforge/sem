@@ -1,4 +1,4 @@
-# last modified 2011-08-10 by J. Fox
+# last modified 2011-10-28 by J. Fox
 
 mod.indices <- function(...){
 	.Deprecated("modIndices", package="sem")
@@ -63,10 +63,12 @@ modIndices.objectiveML <- function(model, ...){
 	dF.dBdP <- accumulate.asym(AA %*% Cinv %*% t(AA), t(BB) %*% Cinv %*% t(AA),
 			AA %*% Cinv %*% t(AA), t(BB) %*% Cinv %*% t(AA), m)    
 	correct.BB <- correct.PP <- correct.BP <- matrix(1, m^2, m^2)
-	correct.BB[diag(m)==0, diag(m)==0] <- 2
-	correct.PP[diag(m)==1, diag(m)==1] <- 0.5
-	correct.PP[diag(m)==0, diag(m)==0] <- 2
-	correct.BP[diag(m)==0, diag(m)==0] <- 2
+	d0 <- as.vector(diag(m) ==0 )
+	d1 <- as.vector(diag(m) == 1)
+	correct.BB[d0, d0] <- 2
+	correct.PP[d1, d1] <- 0.5
+	correct.PP[d0, d0] <- 2
+	correct.BP[d0, d0] <- 2
 	Hessian <- NM*rbind(cbind(dF.dBdB * correct.BB,    dF.dBdP * correct.BP),
 			cbind(t(dF.dBdP * correct.BP), dF.dPdP * correct.PP))
 	ram <- model$ram   
