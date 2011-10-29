@@ -209,3 +209,7 @@ Changes to Version 0.9-21
 Changes to Version 0.9-22
 
   o  tsls() modified to report error when number of IVs less than number of coefficients (surfaced in problem reported by Jeffrey Racine).
+  
+Changes to Version 0.9-23
+  
+  o  renamed package to sem1
