@@ -1,4 +1,4 @@
-# last modified 2011-08-03 by J. Fox
+# last modified 2011-10-29 by J. Fox
 
 
 summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=TRUE, ...) {
@@ -85,7 +85,7 @@ summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, 
 							upper.tri(diag(n), diag=TRUE))/(n*(n + 1)/2))
 	ans <- list(chisq=chisq, df=df, chisqNull=chisqNull, dfNull=dfNull,
 			GFI=GFI, AGFI=AGFI, RMSEA=RMSEA, NFI=NFI, NNFI=NNFI, CFI=CFI, BIC=BIC, SRMR=SRMR, 
-			AIC=AIC, AICc=AICc, CAIC=CAIC,
+			AIC=AIC, AICc=AICc, CAIC=CAIC, Rsq=Rsq(object),
 			norm.res=norm.res, coeff=coeff, digits=digits, 
 			iterations=object$iterations, aliased=object$aliased, raw=object$raw,
 			robust=robust, robust.vcov=object$robust.vcov, adj.obj=object$adj.obj)
@@ -134,12 +134,14 @@ print.summary.objectiveML <- function(x, ...){
 	cat("\n CAIC = ", x$CAIC, "\n")
 	cat("\n Normalized Residuals\n")
 	print(summary(as.vector(x$norm.res)))
+	cat("\n R-square for Endogenous Variables\n")
+	print(round(x$Rsq, 4))
 	if (!is.null(x$coeff)){
 		cat("\n Parameter Estimates\n")
 		print(x$coeff, right=FALSE)
 		if (!is.na(x$iterations)) cat("\n Iterations = ", x$iterations, "\n")
 		if (!is.null(x$aliased)) cat("\n Aliased parameters:", x$aliased, "\n")
-	}	
+	}
 	invisible(x)
 }
 
@@ -156,4 +158,14 @@ df.residual.sem <- function(object, ...) {
 	n <- object$n
 	t <- object$t
 	n*(n + 1)/2 - t - n.fix*(n.fix + 1)/2
+}
+
+Rsq <- function(model){
+	A <- model$A
+	P <- model$P
+	IAinv <- solve(diag(nrow(A)) - A)
+	C <- IAinv %*% P %*% t(IAinv)
+	R2 <- 1 - diag(P)/diag(C)
+	R2 <- R2[classifyVariables(model$semmod)$endogenous]
+	R2
 }
