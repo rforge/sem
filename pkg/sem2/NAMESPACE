@@ -1,4 +1,4 @@
-# last modified 2011-08-08 by J. Fox
+# last modified 2011-10-31 by J. Fox
 
 import(stats)
 
@@ -16,6 +16,7 @@ export(ram, standardizedResiduals, normalizedResiduals, readMoments,
     specify.model, boot.sem, raw.moments
     )
 
+S3method(effects, sem)
 S3method(logLik, objectiveML)
 S3method(residuals, sem)
 S3method(standardizedResiduals, sem)
@@ -40,7 +41,8 @@ S3method(print, summary.objectiveML)
 S3method(summary, modIndices)
 S3method(print, modIndices)
 S3method(modIndices, objectiveML)
-S3method(pathDiagram, sem)     
+S3method(pathDiagram, sem)
+S3method(print, semeffects)     
 S3method(print, semmod)
 S3method(print, bootsem)
 S3method(print, objectiveML)

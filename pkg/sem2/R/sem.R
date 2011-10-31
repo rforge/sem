@@ -1,4 +1,4 @@
-# last modified 2011-10-28 by J. Fox
+# last modified 2011-10-30 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -156,7 +156,7 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 	result <- list(var.names=var.names, ram=ram, S=S, J=J, n.fix=n.fix, n=n, N=N, m=m, t=t, raw=raw,
 		data=data, semmod=semmod, optimizer=optimizer, objective=objective,
 		# remaining values to be supplied after optimization
-		coeff=NULL, vcov=NULL, par.posn=NULL, convergence=NULL, iteractions=NULL, criterion=NULL, C=NULL, A=NULL, P=NULL,
+		coeff=NULL, vcov=NULL, par.posn=NULL, convergence=NULL, iterations=NULL, criterion=NULL, C=NULL, A=NULL, P=NULL,
 		adj.obj=NULL, robust.vcov=NULL)
 	if (length(param.names)== 0){
 		warning("there are no free parameters in the model")
