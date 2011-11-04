@@ -1,4 +1,4 @@
-# added 2011-10-31 by J. Fox
+# added 2011-11-04 by J. Fox
 
 effects.sem <- function(object, ...) {
 	A <- object$A
@@ -15,11 +15,17 @@ effects.sem <- function(object, ...) {
 }
 
 print.semeffects <- function(x, digits=getOption("digits"), ...){
-	cat("\n Total Effects\n")
-	print(x$Total, digits=digits)
+	cat("\n Total Effects (column on row)\n")
+	Total <- x$Total
+	Direct <- x$Direct
+	Indirect <- x$Indirect
+	select <- !(apply(Total, 2, function(x) all( x == 0)) & 
+				apply(Direct, 2, function(x) all( x == 0)) & 
+				apply(Indirect, 2, function(x) all( x == 0)))
+	print(Total[, select], digits=digits)
 	cat("\n Direct Effects\n")
-	print(x$Direct, digits=digits)
+	print(Direct[, select], digits=digits)
 	cat("\n Indirect Effects\n")
-	print(x$Indirect, digits=digits)
+	print(Indirect[, select], digits=digits)
 	invisible(x)
 }

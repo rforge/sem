@@ -3,7 +3,8 @@
 \alias{standardizedResiduals}
 \alias{standardizedResiduals.sem}
 \alias{normalizedResiduals}
-\alias{normalizedResiduals.sem}
+\alias{normalizedResiduals.objectiveML}
+\alias{normalizedResiduals.objectiveGLS}
 
 \title{Residual Covariances for a Structural Equation Model}
 \description{
@@ -17,11 +18,13 @@
 
 \method{standardizedResiduals}{sem}(object, ...)
 
-\method{normalizedResiduals}{sem}(object, ...)
+\method{normalizedResiduals}{objectiveML}(object, ...)
+
+\method{normalizedResiduals}{objectiveGLS}(object, ...)
 }
 
 \arguments{
-  \item{object}{an object of class \code{sem} returned by the \code{\link{sem}} function.}
+  \item{object}{an object inheriting from class \code{sem} returned by the \code{\link{sem}} function.}
   \item{...}{not for the user.}
 }
 

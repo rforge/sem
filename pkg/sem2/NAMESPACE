@@ -1,4 +1,4 @@
-# last modified 2011-10-31 by J. Fox
+# last modified 2011-11-04 by J. Fox
 
 import(stats)
 
@@ -20,7 +20,8 @@ S3method(effects, sem)
 S3method(logLik, objectiveML)
 S3method(residuals, sem)
 S3method(standardizedResiduals, sem)
-S3method(normalizedResiduals, sem)
+S3method(normalizedResiduals, objectiveML)
+S3method(normalizedResiduals, objectiveGLS)
 S3method(tsls, default)
 S3method(tsls, formula)
 S3method(print, tsls)
