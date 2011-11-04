@@ -5,7 +5,7 @@
 # sem or adjchisq objects
 # as well as generate and AIC table
 
-# last modified 2011-08-10 by J. Fox
+# last modified 2011-11-03 by J. Fox
 
 logLik.objectiveML <- function(object, ...){
 	deviance(object)*-2	
@@ -38,6 +38,16 @@ CAIC.objectiveML <- function(object, ...) {
 BIC.objectiveML <- function(object, ...) {
 	deviance(object) + object$t*log(object$N)
 }
+
+# the following are not exported and are just place-keepers for the summary method
+
+BIC.objectiveGLS <- function(object, ...) NULL
+
+AIC.objectiveGLS <- function(object, ...) NULL
+
+AICc.objectiveGLS <- function(object, ...) NULL
+
+CAIC.objectiveGLS <- function(object, ...) NULL
 
 # weights
 

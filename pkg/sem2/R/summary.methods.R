@@ -1,4 +1,4 @@
-# last modified 2011-10-29 by J. Fox
+# last modified 2011-11-03 by J. Fox
 
 
 summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=TRUE, ...) {
@@ -128,10 +128,10 @@ print.summary.objectiveML <- function(x, ...){
 		cat("\n Bentler CFI = ", x$CFI)
 		cat("\n SRMR = ", x$SRMR)
 	}
-	cat("\n AIC = ", x$AIC)
-	cat("\n AICc = ", x$AICc)
-	cat("\n BIC = ", x$BIC)
-	cat("\n CAIC = ", x$CAIC, "\n")
+	if (!is.null(x$AIC)) cat("\n AIC = ", x$AIC)
+	if (!is.null(x$AICc)) cat("\n AICc = ", x$AICc)
+	if (!is.null(x$BIC)) cat("\n BIC = ", x$BIC)
+	if (!is.null(x$CAIC)) cat("\n CAIC = ", x$CAIC, "\n")
 	cat("\n Normalized Residuals\n")
 	print(summary(as.vector(x$norm.res)))
 	cat("\n R-square for Endogenous Variables\n")
