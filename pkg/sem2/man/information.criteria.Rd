@@ -27,6 +27,10 @@ CAIC(object, ...)
 \references{
      Burnham, K. P., and Anderson, D. R. (1998)
     \emph{Model Selection and Inference: A Practical Information-Theoretical Approach.} Springer.
+    
+     Bozdogan, H. (1987)
+     Model selection and Akaike's information criterion (AIC).
+	\emph{Psychometrika}  bold{52}, 345--370.
 }
 
 \seealso{
