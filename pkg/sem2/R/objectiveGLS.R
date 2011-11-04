@@ -1,3 +1,5 @@
+# last modified 2011-11-04 by J. Fox
+
 objectiveGLS <- function (gradient = FALSE) 
 {
     result <- list(objective = function(par, model.description) {
@@ -8,7 +10,7 @@ objectiveGLS <- function (gradient = FALSE)
             P[arrows.2t] <- P[arrows.2] <- val[!one.head]
             I.Ainv <- solve(diag(m) - A)
             C <- J %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J)
-            Cinv <- solve(C)
+#            Cinv <- solve(C)
             SS <- invS %*% (S - C)
             f <- 0.5 * sum(diag(SS %*% SS))
             attributes(f) <- list(C = C, A = A, P = P)

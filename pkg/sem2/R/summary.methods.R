@@ -1,4 +1,4 @@
-# last modified 2011-11-03 by J. Fox
+# last modified 2011-11-04 by J. Fox
 
 
 summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=TRUE, ...) {
@@ -147,7 +147,15 @@ print.summary.objectiveML <- function(x, ...){
 
 summary.objectiveGLS <- function(object, ...){
 	summary <- summary.objectiveML(object, ..., analytic.se=FALSE)
-	summary$chisqNull <- chisqNull(object) # object$chisqNull
+#	summary$chisqNull <- chisqNull(object) # object$chisqNull
+	S <- object$S
+	Sinv <- solve(S)
+	C <- object$C
+	SinvSmC <- Sinv %*% (S - C)
+	SinvS <- Sinv %*% S
+	n <- object$n
+	summary$GFI <- 1 - sum(diag(SinvSmC %*% SinvSmC))/sum(diag(SinvS %*% SinvS))
+	summary$AGFI <-  1 - (n*(n + 1)/(2*summary$df))*(1 - summary$GFI)
 	summary
 }
 

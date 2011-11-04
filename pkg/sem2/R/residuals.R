@@ -1,4 +1,4 @@
-# last modified 2011-08-08 by J. Fox
+# last modified 2011-11-04 by J. Fox
 
 residuals.sem <- function(object, ...){
     object$S - object$C
@@ -28,10 +28,19 @@ normalizedResiduals <- function(object, ...){
 	UseMethod("normalizedResiduals")
 }
     
-normalizedResiduals.sem <- function(object, ...){
+normalizedResiduals.objectiveML <- function(object, ...){
     res <- residuals(object)
     N <- object$N - (!object$raw)
     C <- object$C
     c <- diag(C)
     res/sqrt((outer(c,c) + C^2)/N)
     }
+	
+normalizedResiduals.objectiveGLS <- function(object, ...){
+	res <- residuals(object)
+	N <- object$N - (!object$raw)
+	S <- object$S
+	s <- diag(S)
+	res/sqrt((outer(s,s) + S^2)/N)
+}
+	
