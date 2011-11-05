@@ -317,11 +317,13 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
 
 \examples{
 
-# Note: These examples can't be run via example() because the default file
+# Note: The first set of examples can't be run via example() because the default file
 #  argument of specifyModel() and readMoments() requires that the model 
 #  specification and covariances, correlations, or raw moments be entered
 #  at the command prompt. The examples can be copied and run in the R console,
 #  however. See ?specifyModel and ?readMoments for further information.
+#  These examples are repeated below using file input to specifyModel() and
+#  readMoments(). The second version of the examples may be executed through example().
 
     \dontrun{
 
@@ -623,7 +625,7 @@ summary(sem.McArdle)
     
 #------------ Bollen industrialization and democracy example -----------------
 # This model, from Bollen (1989, Ch. 8), illustrates the use in sem() of a
-# case-by-variable data set rather than a covariance or moment matrix
+# case-by-variable data (see ?Bollen) set rather than a covariance or moment matrix
 
 model.bollen <- specifyModel()
 	Demo60 -> y1, NA, 1
@@ -656,6 +658,103 @@ summary(sem.bollen, analytic.se=FALSE) # uses numeric rather than analytic Hessi
 sem.bollen.gls <- sem(model.bollen, data=Bollen, objective=objectiveGLS) # GLS rather than ML estimator
 summary(sem.bollen.gls)
 	}
+
+## ===============================================================================
+	
+# The following examples use file input and may be executed via example():
+
+etc <- file.path(.path.package(package="sem")[1], "etc") # path to data and model files
+
+# ------------- Duncan, Haller and Portes peer-influences model ----------------------
+# A nonrecursive SEM with unobserved endogenous variables and fixed exogenous variables
+
+(R.DHP <- readMoments(file=file.path(etc, "R-DHP.txt"),
+				diag=FALSE, names=c("ROccAsp", "REdAsp", "FOccAsp", 
+                "FEdAsp", "RParAsp", "RIQ", "RSES", "FSES", "FIQ", "FParAsp")))
+(model.dhp <- specifyModel(file=file.path(etc, "model-DHP.txt")))
+sem.dhp.1 <- sem(model.dhp, R.DHP, 329,
+    fixed.x=c('RParAsp', 'RIQ', 'RSES', 'FSES', 'FIQ', 'FParAsp'))
+summary(sem.dhp.1)
+
+
+# -------------------- Wheaton et al. alienation data ----------------------
+
+(S.wh <- readMoments(file=file.path(etc, "S-Wheaton.txt"),
+					names=c('Anomia67','Powerless67','Anomia71',
+                            'Powerless71','Education','SEI')))
+
+# This is the model in the SAS manual for PROC CALIS: A Recursive SEM with
+# latent endogenous and exogenous variables.
+# Curiously, both factor loadings for two of the latent variables are fixed.
+
+(model.wh.1 <- specifyModel(file=file.path(etc, "model-Wheaton-1.txt")))                    
+sem.wh.1 <- sem(model.wh.1, S.wh, 932)
+summary(sem.wh.1)
+
+# The same model, but treating one loading for each latent variable as free
+# (and equal to each other).
+
+(model.wh.2 <- specifyModel(file=file.path(etc, "model-Wheaton-2.txt")))
+sem.wh.2 <- sem(model.wh.2, S.wh, 932)
+summary(sem.wh.2)
+
+# Compare the two models by a likelihood-ratio test:
+
+anova(sem.wh.1, sem.wh.2)
+
+
+# ----------------------- Thurstone data ---------------------------------------
+
+#  Second-order confirmatory factor analysis, from the SAS manual for PROC CALIS
+
+(R.thur <- readMoments(file=file.path(etc, "R-Thurstone.txt"),
+		diag=FALSE, names=c('Sentences','Vocabulary',
+        'Sent.Completion','First.Letters','4.Letter.Words','Suffixes',
+        'Letter.Series','Pedigrees', 'Letter.Group')))
+(model.thur <- specifyModel(file=file.path(etc, "model-Thurstone.txt")))
+sem.thur <- sem(model.thur, R.thur, 213)
+summary(sem.thur)
+
+
+#------------------------- Kerchoff/Kenney path analysis ---------------------
+
+# An observed-variable recursive SEM from the LISREL manual
+
+(R.kerch <- readMoments(file=file.path(etc, "R-Kerchoff.txt"),
+					   diag=FALSE, names=c('Intelligence','Siblings',
+                        'FatherEd','FatherOcc','Grades','EducExp','OccupAsp')))
+(model.kerch <- specifyModel(file=file.path(etc, "model-Kerchoff.txt")))
+sem.kerch <- sem(model.kerch, R.kerch, 737, fixed.x=c('Intelligence','Siblings',
+    'FatherEd','FatherOcc'))
+summary(sem.kerch)
+
+
+#------------------- McArdle/Epstein latent-growth-curve model -----------------
+
+# This model, from McArdle and Epstein (1987, p.118), illustrates the use of a 
+# raw moment matrix to fit a model with an intercept. (The example was suggested
+# by Mike Stoolmiller.)
+
+(M.McArdle <- readMoments(file=file.path(etc, "M-McArdle.txt"),
+						 names=c('WISC1', 'WISC2', 'WISC3', 'WISC4', 'UNIT')))
+(mod.McArdle <- specifyModel(file=file.path(etc, "model-McArdle.txt")))
+sem.McArdle <- sem(mod.McArdle, M.McArdle, 204, fixed.x="UNIT", raw=TRUE)
+summary(sem.McArdle)
+
+
+#------------ Bollen industrialization and democracy example -----------------
+
+# This model, from Bollen (1989, Ch. 8), illustrates the use in sem() of a
+# case-by-variable data set (see ?Bollen) rather than a covariance or moment matrix
+
+(model.bollen <- specifyModel(file=file.path(etc, "model-Bollen.txt")))
+sem.bollen <- sem(model.bollen, data=Bollen)
+summary(sem.bollen)
+summary(sem.bollen, robust=TRUE) # robust SEs and tests
+summary(sem.bollen, analytic.se=FALSE) # uses numeric rather than analytic Hessian
+
+sem.bollen.gls <- sem(model.bollen, data=Bollen, objective=objectiveGLS) # GLS rather than ML estimator
+summary(sem.bollen.gls)
 }   
 
 \keyword{models}

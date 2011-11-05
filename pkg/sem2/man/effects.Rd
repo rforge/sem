@@ -44,6 +44,11 @@ and indirect effects for a fitted structural equation model according to the met
 
 # These examples are from Fox (1980)
 
+# In the first pair of examples, readMoments() and specifyModel() read from the
+# input stream. These examples cannot be executed via example() but can be entered
+# at the command prompt. The Blau and Duncan example is repeated using file input;
+# this example can be executed via example(). 
+
 # The recursive Blau and Duncan basic stratification model:
 #  x1 is father's education, x2 father's SES, y3 respondent's education,
 #  y4 SES of respondent's first job, y5 respondent's SES in 1962
@@ -102,6 +107,21 @@ sem.dhp <- sem(model.dhp, R.DHP, 329,
 summary(sem.dhp)
 effects(sem.dhp)
     }
+    
+## the following example may be executed via example()
+
+etc <- file.path(.path.package(package="sem")[1], "etc") # path to data and model files
+
+# The recursive Blau and Duncan basic stratification model:
+#  x1 is father's education, x2 father's SES, y3 respondent's education,
+#  y4 SES of respondent's first job, y5 respondent's SES in 1962
+
+(R.bd <- readMoments(file=file.path(etc, "R-Blau-Duncan.txt"),
+					names=c("x1", "x2", "y3", "y4", "y5")))
+(mod.bd <- specifyModel(file=file.path(etc, "model-Blau-Duncan.txt")))
+sem.bd <- sem(mod.bd, R.bd, N=20700, fixed.x=c("x1", "x2"))
+summary(sem.bd)
+effects(sem.bd)
 }
 
 

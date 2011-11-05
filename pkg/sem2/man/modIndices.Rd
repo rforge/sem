@@ -70,6 +70,10 @@
 \seealso{\code{\link{sem}}}
 
 \examples{
+# In the first example, readMoments() and specifyModel() read from the
+# input stream. This example cannot be executed via example() but can be entered
+# at the command prompt. The example is repeated using file input;
+# this example can be executed via example(). 
 	\dontrun{
 # This example is adapted from the SAS manual
 
@@ -107,6 +111,17 @@ model.wh <- specifyModel()
 sem.wh <- sem(model.wh, S.wh, 932)
 modIndices(sem.wh)
 	}
+	
+# The following example can be executed via example():
+
+etc <- file.path(.path.package(package="sem")[1], "etc") # path to data and model files
+
+(S.wh <- readMoments(file=file.path(etc, "S-Wheaton.txt"),
+					names=c('Anomia67','Powerless67','Anomia71',
+                            'Powerless71','Education','SEI')))
+(model.wh <- specifyModel(file=file.path(etc, "model-Wheaton-1.txt")))                    
+(sem.wh <- sem(model.wh, S.wh, 932))
+modIndices(sem.wh)
 }
 
 \keyword{models}
