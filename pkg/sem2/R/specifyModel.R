@@ -1,11 +1,11 @@
-# last modified 2011-11-11
+# last modified 2011-11-08
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
 	specifyModel(...)
 }
 
-specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE, covs){
+specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE, covs, quiet=FALSE){
 	add.variances <- function () {
 		variables <- need.variance()
 		nvars <- length(variables)
@@ -46,7 +46,7 @@ specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE, co
 		names(variables)[variables]
 	}
     model <- scan(file=file, what=list(path="", par="", start=1, dump=""), sep=",", 
-        strip.white=TRUE, comment.char="#", fill=TRUE) 
+        strip.white=TRUE, comment.char="#", fill=TRUE, quiet=quiet) 
             # dump permits comma at line end
 	model$par[model$par == ""] <- NA
     model <- cbind(model$path, model$par, model$start)
@@ -133,4 +133,68 @@ removeRedundantPaths <- function(model, warn=TRUE){
 	model
 }
 
+
+specifyEquations <- function(file="", ...){
+	trim.blanks <- function(text){
+		gsub("^ *", "", gsub(" *$", "", text))
+	}
+	parseEquation <- function(eqn){
+		save <- options(warn=-1)
+		on.exit(options(save))
+		eq <- eqn
+		eqn <- strsplit(eqn, "=")[[1]]
+		if (length(eqn) != 2) stop("Parse error in equation: ", eq,
+					"\n  An equation must have a left- and right-hand side separated by =.")
+		lhs <- trim.blanks(eqn[1])
+		rhs <- trim.blanks(eqn[2])
+		if (length(grep("^[cC]\\(", lhs)) > 0){
+			lhs <- sub("[cC]\\(", "", lhs)
+			lhs <- sub("\\)", "", lhs)
+			lhs <- gsub(" *", "", lhs)
+			variables <- strsplit(lhs, ",")[[1]]
+			if (length(variables) != 2) stop("Parse error in equation: ", eq,
+						"\n  A covariance must be in the form C(var1, var2) = cov12")
+			if (is.na(as.numeric(rhs))){
+				ram <- paste(variables[1], " <-> ", variables[2], ", ", rhs, sep="")
+			}
+			else{
+				ram <- paste(variables[1], " <-> ", variables[2], ", NA, ", rhs, sep="")
+			}
+		}
+		else if (length(grep("^[vV]\\(", lhs)) > 0){
+			lhs <- sub("[vV]\\(", "", lhs)
+			lhs <- sub("\\)", "", lhs)
+			lhs <- gsub(" *", "", lhs)
+			if (is.na(as.numeric(rhs))){
+				ram <- paste(lhs, " <-> ", lhs, ", ", rhs, sep="")
+			}
+			else{
+				ram <- paste(lhs, " <-> ", lhs, ", NA, ", rhs, sep="")
+			}
+		}
+		else{
+			terms <- strsplit(rhs, "\\+")[[1]]
+			terms <- strsplit(terms, "\\*")
+			ram <- character(length(terms))
+			for (term in 1:length(terms)){
+				trm <- terms[[term]]
+				if (length(trm) != 2) stop("Parse error in equation: ", eq,
+							'\n  The term  "', trim.blanks(trm), '" is malformed.',
+							'\n  Each term on the right-hand side of a structural equation must be of the form "parameter*variable".')
+				coef <-  trim.blanks(trm[1])
+				if (is.na(as.numeric(coef))){
+					ram[term] <- paste(trim.blanks(trm[2]), " -> ", lhs, ", ", coef, sep="")
+				}
+				else{
+					ram[term] <- paste(trim.blanks(trm[2]), " -> ", lhs, ", NA, ", coef, sep="")
+				}
+			}
+		}
+		ram
+	}
+	equations <- scan(file=file, what=list(equation=""), sep=";", strip.white=TRUE, comment.char="#")$equation
+	ram <- character()
+	for (equation in equations) ram <- c(ram, parseEquation(equation))
+	specifyModel(file=textConnection(ram), ..., quiet=TRUE)
+}
 

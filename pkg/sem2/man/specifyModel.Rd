@@ -1,5 +1,6 @@
 \name{specifyModel}
 \alias{specifyModel}
+\alias{specifyEquations}
 \alias{print.semmod}
 \alias{classifyVariables}
 \alias{removeRedundantPaths}
@@ -12,7 +13,9 @@
   Create the RAM specification of a structural equation model.
 }
 \usage{
-specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs)
+specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs, quiet=FALSE)
+
+specifyEquations(file="", ...)
 
 classifyVariables(model)
 
@@ -35,15 +38,22 @@ removeRedundantPaths(model, warn=TRUE)
   \item{covs}{optional: a character vector of one or more elements, with each element
   	giving a string of variable names, separated by commas. Variances and covariances
   	among all variables in each such string are added to the model.}
+  \item{quiet}{if \code{FALSE}, the default, then the number of input lines is reported.}
   \item{x, model, object}{An object of class \code{semmod}, as produced by
     \code{specifyModel}.}
   \item{warn}{print a warning if redundant paths are detected.}
-  \item{...}{\code{sem} objects; ignored in the \code{update} and \code{print} methods.}
+  \item{...}{for \code{specifyEquations}, arguments such as \code{covs} to be 
+     passed to \code{specifyModel}; for \code{combineModels}, \code{sem} objects; 
+     ignored in the \code{update} and \code{print} methods.}
 }
 
 \details{
-  The principal function for model specification is \code{specifyModel}.
-  Each line of the RAM specification consists of three (unquoted) entries, 
+  The principal functions for model specification are \code{specifyModel},
+  to specify a model in RAM format via single- and double-headed arrows; and
+  \code{specifyEquations}, to specify a model in equation format, which is then
+  translated into RAM format.
+  
+  Each line of the RAM specification for \code{specifyModel} consists of three (unquoted) entries, 
   separated by commas:
   
     \describe{
@@ -69,6 +79,22 @@ removeRedundantPaths(model, warn=TRUE)
   Lines may end in a comment following \code{\#}.
       
   See \code{\link{sem}} for further details on model specification.
+  
+  For \code{specifyEquations}, each line is either a regression equation or the specification
+  of a variance or covariance. Regression equations are of the form
+  
+  \code{y = par1*x1 + par2*x2 + ... + park*xk}
+  
+  where \code{y} and the \code{x}s are variables in the model (either observed or latent),
+  and the \code{par}s are parameters. If a parameter is given as a numeric value (e.g.,
+  \code{1}) then it is treated as fixed.
+  
+  Variances are specified in the form \code{V(var) = par} and covariances in the form
+  \code{C(var1, var2) = par}, where the \code{var}s are variables (observed or unobserved) in
+  the model. The symbols \code{V} and \code{C} may be in either lower- or upper-case. If \code{par}
+  is a numeric value (e.g., \code{1}) then it is treated as fixed. In conformity with the RAM model,
+  a variance or covariance for an endogenous variable in the model is an ``error'' variance or
+  covariance.
   
   \code{classifyVariables} classifies the variables in a model as endogenous or exogenous.
   
