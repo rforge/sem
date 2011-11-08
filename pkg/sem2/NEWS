@@ -1,3 +1,9 @@
 Changes to Version 2.0-0
 
     o Completely reworked version of the sem package. See CHANGES file for changes to older versions.
+    
+Changes to Version 2.1-0
+
+	o Added equation-style model specification, via specifyEquations()
+	
+	o Fixed bug in classifyVariables() when <- used in the model.

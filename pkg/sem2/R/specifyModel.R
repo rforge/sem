@@ -1,4 +1,4 @@
-# last modified 2011-08-07
+# last modified 2011-11-11
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
@@ -99,7 +99,7 @@ classifyVariables <- function(model) {
 		}
 		else if (grepl("<-", vars)){
 			vars <- strsplit(vars, "<-")[[1]]
-			if (is.na(variables[vars[1]])) variables[vars[2]] <- FALSE
+			if (is.na(variables[vars[2]])) variables[vars[2]] <- FALSE
 			variables[vars[1]] <- TRUE
 		}
 		else stop("incorrectly specified model")
