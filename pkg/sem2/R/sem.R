@@ -196,7 +196,7 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 	result
 }
 
-vcov.sem <- function(object, robust=FALSE, analytic=inherits(object, "objectiveML"), ...) {
+vcov.sem <- function(object, robust=FALSE, analytic=inherits(object, "objectiveML") && object$t <= 100, ...) {
 	if (robust) return(object$robust.vcov)
 	if (!analytic) return(object$vcov)
 	if (!inherits(object, "objectiveML")) stop("analytic coefficient covariance matrix unavailable")

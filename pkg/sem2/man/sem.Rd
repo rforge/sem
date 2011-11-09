@@ -32,7 +32,8 @@
 startvalues(S, ram, debug=FALSE, tol=1E-6)
 
 \method{coef}{sem}(object, standardized=FALSE, ...)
-\method{vcov}{sem}(object, robust=FALSE, analytic=inherits(object, "objectiveML"), ...)
+\method{vcov}{sem}(object, robust=FALSE, 
+	analytic=inherits(object, "objectiveML") && object$t <= 100, ...)
 \method{df.residual}{sem}(object, ...)
 }
 
@@ -122,7 +123,8 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   \item{object}{an object of class \code{"sem"}, returned by \code{sem}.}
   \item{standardized}{if \code{TRUE}, return standardized coefficients.}
   \item{analytic}{return an analytic (as opposed to numeric) estimate of the coefficient covariance matrix;
-  	at present only available for the \code{\link{objectiveML}} objective function.}
+  	at present only available for the \code{\link{objectiveML}} objective function. The default is \code{FALSE}
+  	for this objective function if there are no more than 100 parameters and \code{FALSE} otherwise.}
 } 
 
 \details{
