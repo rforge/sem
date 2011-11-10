@@ -221,7 +221,6 @@ specifyEquations <- function(file="", ...){
 		ram
 	}
 	equations <- scan(file=file, what=list(equation=""), sep=";", strip.white=TRUE, comment.char="#")$equation
-	ram <- character()
-	for (equation in equations) ram <- c(ram, parseEquation(equation))
+	ram <- unlist(lapply(equations, parseEquation))
 	specifyModel(file=textConnection(ram), ..., quiet=TRUE)
 }
