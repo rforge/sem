@@ -134,9 +134,6 @@ removeRedundantPaths <- function(model, warn=TRUE){
 }
 
 specifyEquations <- function(file="", ...){
-	trim.blanks <- function(text){
-		gsub("^ *", "", gsub(" *$", "", text))
-	}
 	not.number <- function(constant){
 		save <- options(warn = -1)
 		on.exit(save)
@@ -149,8 +146,8 @@ specifyEquations <- function(file="", ...){
 		par.start <- strsplit(coef, "\\(")[[1]]
 		if (length(par.start) != 2) stop("Parse error in equation: ", eq,
 					'\n  Start values must be given in the form "parameter(value)".')
-		par <- trim.blanks(par.start[[1]])
-		start <- trim.blanks(par.start[[2]])
+		par <- par.start[[1]]
+		start <- par.start[[2]]
 		if (length(grep("\\)$", start)) == 0) stop("Parse error in equation: ", eq,
 					"\n  Unbalanced parentheses.")
 		start <- sub("\\)", "", start)
@@ -159,16 +156,16 @@ specifyEquations <- function(file="", ...){
 	parseEquation <- function(eqn){
 		eq <- eqn
 		eqn <- strsplit(eqn, "=")[[1]]
+		eqn <- gsub(" *", "", eqn)
 		if (length(eqn) != 2) stop("Parse error in equation: ", eq,
 					"\n  An equation must have a left- and right-hand side separated by =.")
-		lhs <- trim.blanks(eqn[1])
-		rhs <- trim.blanks(eqn[2])
+		lhs <- eqn[1]
+		rhs <- eqn[2]
 		if (length(grep("^[cC]\\(", lhs)) > 0){
 			if (length(grep("\\)$", lhs)) == 0) stop("Parse error in equation: ", eq,
 						"\n  Unbalanced parentheses.")
 			lhs <- sub("[cC]\\(", "", lhs)
 			lhs <- sub("\\)", "", lhs)
-			lhs <- gsub(" *", "", lhs)
 			variables <- strsplit(lhs, ",")[[1]]
 			if (length(variables) != 2) stop("Parse error in equation: ", eq,
 						"\n  A covariance must be in the form C(var1, var2) = cov12")
@@ -188,7 +185,6 @@ specifyEquations <- function(file="", ...){
 			if (length(grep("\\)$", lhs)) == 0) stop("Parse error in equation: ", eq,
 						"\n  Unbalanced parentheses.")
 			lhs <- sub("\\)", "", lhs)
-			lhs <- gsub(" *", "", lhs)
 			if (not.number(rhs)){
 				par.start <- par.start(rhs, eq)
 				if (not.number(par.start[2]) && (par.start[2] != "NA")) 
@@ -207,18 +203,18 @@ specifyEquations <- function(file="", ...){
 			for (term in 1:length(terms)){
 				trm <- terms[[term]]
 				if (length(trm) != 2) stop("Parse error in equation: ", eq,
-							'\n  The term  "', trim.blanks(trm), '" is malformed.',
+							'\n  The term  "', trm, '" is malformed.',
 							'\n  Each term on the right-hand side of a structural equation must be of the form "parameter*variable".')
-				coef <-  trim.blanks(trm[1])
+				coef <-  trm[1]
 				if (not.number(coef)){
 					par.start <- par.start(coef, eq)
 					if (not.number(par.start[2]) && (par.start[2] != "NA")) 
 						stop("Parse error in equation: ", eq,
 								"\n  Start values must be numeric constants.")
-					ram[term] <- paste(trim.blanks(trm[2]), " -> ", lhs, ", ", par.start[1], ", ", par.start[2], sep="")
+					ram[term] <- paste(trm[2], " -> ", lhs, ", ", par.start[1], ", ", par.start[2], sep="")
 				}
 				else{
-					ram[term] <- paste(trim.blanks(trm[2]), " -> ", lhs, ", NA, ", coef, sep="")
+					ram[term] <- paste(trm[2], " -> ", lhs, ", NA, ", coef, sep="")
 				}
 			}
 		}
