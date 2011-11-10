@@ -137,6 +137,11 @@ specifyEquations <- function(file="", ...){
 	trim.blanks <- function(text){
 		gsub("^ *", "", gsub(" *$", "", text))
 	}
+	not.number <- function(constant){
+		save <- options(warn = -1)
+		on.exit(save)
+		is.na(as.numeric(constant))
+	}
 	par.start <- function(coef, eq){
 		if (length(grep("\\(", coef)) == 0){
 			return(c(coef, "NA"))
@@ -152,8 +157,6 @@ specifyEquations <- function(file="", ...){
 		return(c(par, start))  
 	}
 	parseEquation <- function(eqn){
-		save <- options(warn=-1)
-		on.exit(options(save))
 		eq <- eqn
 		eqn <- strsplit(eqn, "=")[[1]]
 		if (length(eqn) != 2) stop("Parse error in equation: ", eq,
@@ -169,8 +172,11 @@ specifyEquations <- function(file="", ...){
 			variables <- strsplit(lhs, ",")[[1]]
 			if (length(variables) != 2) stop("Parse error in equation: ", eq,
 						"\n  A covariance must be in the form C(var1, var2) = cov12")
-			if (is.na(as.numeric(rhs))){
+			if (not.number(rhs)){
 				par.start <- par.start(rhs, eq)
+				if (not.number(par.start[2]) && (par.start[2] != "NA")) 
+					stop("Parse error in equation: ", eq,
+							"\n  Start values must be numeric constants.")
 				ram <- paste(variables[1], " <-> ", variables[2], ", ", par.start[1], ", ", par.start[2], sep="")
 			}
 			else{
@@ -183,8 +189,11 @@ specifyEquations <- function(file="", ...){
 						"\n  Unbalanced parentheses.")
 			lhs <- sub("\\)", "", lhs)
 			lhs <- gsub(" *", "", lhs)
-			if (is.na(as.numeric(rhs))){
+			if (not.number(rhs)){
 				par.start <- par.start(rhs, eq)
+				if (not.number(par.start[2]) && (par.start[2] != "NA")) 
+					stop("Parse error in equation: ", eq,
+							"\n  Start values must be numeric constants.")
 				ram <- paste(lhs, " <-> ", lhs, ", ", par.start[1], ", ", par.start[2], sep="")
 			}
 			else{
@@ -201,8 +210,11 @@ specifyEquations <- function(file="", ...){
 							'\n  The term  "', trim.blanks(trm), '" is malformed.',
 							'\n  Each term on the right-hand side of a structural equation must be of the form "parameter*variable".')
 				coef <-  trim.blanks(trm[1])
-				if (is.na(as.numeric(coef))){
+				if (not.number(coef)){
 					par.start <- par.start(coef, eq)
+					if (not.number(par.start[2]) && (par.start[2] != "NA")) 
+						stop("Parse error in equation: ", eq,
+								"\n  Start values must be numeric constants.")
 					ram[term] <- paste(trim.blanks(trm[2]), " -> ", lhs, ", ", par.start[1], ", ", par.start[2], sep="")
 				}
 				else{
@@ -217,5 +229,3 @@ specifyEquations <- function(file="", ...){
 	for (equation in equations) ram <- c(ram, parseEquation(equation))
 	specifyModel(file=textConnection(ram), ..., quiet=TRUE)
 }
-
-
