@@ -209,6 +209,9 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   is a numeric value (e.g., \code{1}) then it is treated as fixed. In conformity with the RAM model,
   a variance or covariance for an endogenous variable in the model is an \dQuote{error} variance or
   covariance.
+  
+  To set a start value for a free parameter, enclose the numeric start value in parentheses after the
+  parameter name, as \code{parameter(value)}.
         
   \code{sem} fits the model by calling the optimizer specified in the \code{optimizer} argument
   to minimize the objective function specified in the \code{objective} argument.
@@ -432,13 +435,13 @@ FGenAsp  -> FEdAsp,  lam42
 
 # Yet another equivalent specification using specifyEquations():
 
-model.dhp <- specifyEquations(covs="RGenAsp, FGenAsp")
+model.dhp.1 <- specifyEquations(covs="RGenAsp, FGenAsp")
 RGenAsp = gam11*RParAsp + gam12*RIQ + gam13*RSES + gam14*FSES + beta12*FGenAsp
 FGenAsp = gam23*RSES + gam24*FSES + gam25*FIQ + gam26*FParAsp + beta21*RGenAsp
 ROccAsp = 1*RGenAsp
-REdAsp = lam21*RGenAsp
+REdAsp = lam21(1)*RGenAsp  # to illustrate setting start values
 FOccAsp = 1*FGenAsp
-FEdAsp = lam42*FGenAsp
+FEdAsp = lam42(1)*FGenAsp
  
 sem.dhp.1 <- sem(model.dhp, R.DHP, 329,
     fixed.x=c('RParAsp', 'RIQ', 'RSES', 'FSES', 'FIQ', 'FParAsp'))

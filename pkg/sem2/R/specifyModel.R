@@ -1,4 +1,4 @@
-# last modified 2011-11-08
+# last modified 2011-11-10
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
@@ -133,10 +133,23 @@ removeRedundantPaths <- function(model, warn=TRUE){
 	model
 }
 
-
 specifyEquations <- function(file="", ...){
 	trim.blanks <- function(text){
 		gsub("^ *", "", gsub(" *$", "", text))
+	}
+	par.start <- function(coef, eq){
+		if (length(grep("\\(", coef)) == 0){
+			return(c(coef, "NA"))
+		}
+		par.start <- strsplit(coef, "\\(")[[1]]
+		if (length(par.start) != 2) stop("Parse error in equation: ", eq,
+					'\n  Start values must be given in the form "parameter(value)".')
+		par <- trim.blanks(par.start[[1]])
+		start <- trim.blanks(par.start[[2]])
+		if (length(grep("\\)$", start)) == 0) stop("Parse error in equation: ", eq,
+					"\n  Unbalanced parentheses.")
+		start <- sub("\\)", "", start)
+		return(c(par, start))  
 	}
 	parseEquation <- function(eqn){
 		save <- options(warn=-1)
@@ -148,6 +161,8 @@ specifyEquations <- function(file="", ...){
 		lhs <- trim.blanks(eqn[1])
 		rhs <- trim.blanks(eqn[2])
 		if (length(grep("^[cC]\\(", lhs)) > 0){
+			if (length(grep("\\)$", lhs)) == 0) stop("Parse error in equation: ", eq,
+						"\n  Unbalanced parentheses.")
 			lhs <- sub("[cC]\\(", "", lhs)
 			lhs <- sub("\\)", "", lhs)
 			lhs <- gsub(" *", "", lhs)
@@ -155,7 +170,8 @@ specifyEquations <- function(file="", ...){
 			if (length(variables) != 2) stop("Parse error in equation: ", eq,
 						"\n  A covariance must be in the form C(var1, var2) = cov12")
 			if (is.na(as.numeric(rhs))){
-				ram <- paste(variables[1], " <-> ", variables[2], ", ", rhs, sep="")
+				par.start <- par.start(rhs, eq)
+				ram <- paste(variables[1], " <-> ", variables[2], ", ", par.start[1], ", ", par.start[2], sep="")
 			}
 			else{
 				ram <- paste(variables[1], " <-> ", variables[2], ", NA, ", rhs, sep="")
@@ -163,10 +179,13 @@ specifyEquations <- function(file="", ...){
 		}
 		else if (length(grep("^[vV]\\(", lhs)) > 0){
 			lhs <- sub("[vV]\\(", "", lhs)
+			if (length(grep("\\)$", lhs)) == 0) stop("Parse error in equation: ", eq,
+						"\n  Unbalanced parentheses.")
 			lhs <- sub("\\)", "", lhs)
 			lhs <- gsub(" *", "", lhs)
 			if (is.na(as.numeric(rhs))){
-				ram <- paste(lhs, " <-> ", lhs, ", ", rhs, sep="")
+				par.start <- par.start(rhs, eq)
+				ram <- paste(lhs, " <-> ", lhs, ", ", par.start[1], ", ", par.start[2], sep="")
 			}
 			else{
 				ram <- paste(lhs, " <-> ", lhs, ", NA, ", rhs, sep="")
@@ -183,7 +202,8 @@ specifyEquations <- function(file="", ...){
 							'\n  Each term on the right-hand side of a structural equation must be of the form "parameter*variable".')
 				coef <-  trim.blanks(trm[1])
 				if (is.na(as.numeric(coef))){
-					ram[term] <- paste(trim.blanks(trm[2]), " -> ", lhs, ", ", coef, sep="")
+					par.start <- par.start(coef, eq)
+					ram[term] <- paste(trim.blanks(trm[2]), " -> ", lhs, ", ", par.start[1], ", ", par.start[2], sep="")
 				}
 				else{
 					ram[term] <- paste(trim.blanks(trm[2]), " -> ", lhs, ", NA, ", coef, sep="")
@@ -197,4 +217,5 @@ specifyEquations <- function(file="", ...){
 	for (equation in equations) ram <- c(ram, parseEquation(equation))
 	specifyModel(file=textConnection(ram), ..., quiet=TRUE)
 }
+
 
