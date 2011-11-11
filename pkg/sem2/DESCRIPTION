@@ -1,6 +1,6 @@
 Package: sem
 Version: 2.1-0
-Date: 2010/11/10
+Date: 2010/11/11
 Title: Structural Equation Models
 Author: John Fox <jfox@mcmaster.ca> and Jarrett Byrnes <byrnes@nceas.ucsb.edu>, with contributions from Michael Culbertson, Michael Friendly, Adam Kramer, and Georges Monette.
 Maintainer: John Fox <jfox@mcmaster.ca>

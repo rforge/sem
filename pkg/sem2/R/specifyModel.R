@@ -1,4 +1,4 @@
-# last modified 2011-11-10
+# last modified 2011-11-11
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
@@ -155,8 +155,8 @@ specifyEquations <- function(file="", ...){
 	}
 	parseEquation <- function(eqn){
 		eq <- eqn
-		eqn <- strsplit(eqn, "=")[[1]]
 		eqn <- gsub(" *", "", eqn)
+		eqn <- strsplit(eqn, "=")[[1]]
 		if (length(eqn) != 2) stop("Parse error in equation: ", eq,
 					"\n  An equation must have a left- and right-hand side separated by =.")
 		lhs <- eqn[1]
@@ -220,7 +220,7 @@ specifyEquations <- function(file="", ...){
 		}
 		ram
 	}
-	equations <- scan(file=file, what=list(equation=""), sep=";", strip.white=TRUE, comment.char="#")$equation
+	equations <- scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
 	ram <- unlist(lapply(equations, parseEquation))
 	specifyModel(file=textConnection(ram), ..., quiet=TRUE)
 }
