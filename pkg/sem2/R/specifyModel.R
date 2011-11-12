@@ -1,4 +1,4 @@
-# last modified 2011-11-11
+# last modified 2011-11-12
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
@@ -155,7 +155,7 @@ specifyEquations <- function(file="", ...){
 	}
 	parseEquation <- function(eqn){
 		eq <- eqn
-		eqn <- gsub(" *", "", eqn)
+		eqn <- gsub("\\s*", "", eqn)
 		eqn <- strsplit(eqn, "=")[[1]]
 		if (length(eqn) != 2) stop("Parse error in equation: ", eq,
 					"\n  An equation must have a left- and right-hand side separated by =.")
