@@ -1,4 +1,4 @@
-# last modified 2011-11-11 by J. Fox
+# last modified 2011-11-14 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -282,6 +282,7 @@ vcov.sem <- function(object, robust=FALSE, analytic=inherits(object, "objectiveM
 	t <- object$t
 	N <- object$N
 	raw <- object$raw
+	param.names <- rownames(h)
 	vcov <- matrix(NA, t, t)
 	qr.hess <- try(qr(h), silent=TRUE)
 	if (class(qr.hess) == "try-error"){
