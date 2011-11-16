@@ -798,7 +798,7 @@ c(y4, y8) = theta48
 c(y6, y8) = theta68
 Demo60 = gamma11*Indust
 Demo65 = gamma21*Indust + beta21*Demo60
-c(Indust, Indust) = phi
+v(Indust) = phi
 	}
 
 ## ===============================================================================
