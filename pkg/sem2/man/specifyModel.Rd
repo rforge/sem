@@ -1,6 +1,7 @@
 \name{specifyModel}
 \alias{specifyModel}
 \alias{specifyEquations}
+\alias{cfa}
 \alias{print.semmod}
 \alias{classifyVariables}
 \alias{removeRedundantPaths}
@@ -16,6 +17,8 @@
 specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs, quiet=FALSE)
 
 specifyEquations(file="", ...)
+
+cfa(file="", covs=paste(factors, collapse=","), ...)
 
 classifyVariables(model)
 
@@ -37,21 +40,28 @@ removeRedundantPaths(model, warn=TRUE)
     are added for the endogenous variables that lack them.}
   \item{covs}{optional: a character vector of one or more elements, with each element
   	giving a string of variable names, separated by commas. Variances and covariances
-  	among all variables in each such string are added to the model.}
+  	among all variables in each such string are added to the model. For confirmatory
+  	factor analysis models specified via \code{cfa}, \code{covs} defaults to all of
+  	the factors in the model, thus specifying all covariances (correlations, because
+  	the factor variances are set to 1) among these factors.}
   \item{quiet}{if \code{FALSE}, the default, then the number of input lines is reported.}
   \item{x, model, object}{An object of class \code{semmod}, as produced by
     \code{specifyModel}.}
   \item{warn}{print a warning if redundant paths are detected.}
-  \item{...}{for \code{specifyEquations}, arguments such as \code{covs} to be 
+  \item{...}{for \code{specifyEquations} and \code{cfa}, arguments (such as \code{covs},
+  	 in the case of \code{specifyEquations}) to be 
      passed to \code{specifyModel}; for \code{combineModels}, \code{sem} objects; 
      ignored in the \code{update} and \code{print} methods.}
 }
 
 \details{
   The principal functions for model specification are \code{specifyModel},
-  to specify a model in RAM (path) format via single- and double-headed arrows; and
+  to specify a model in RAM (path) format via single- and double-headed arrows;
   \code{specifyEquations}, to specify a model in equation format, which is then
-  translated by the function into RAM format.
+  translated by the function into RAM format; and \code{cfa}, for compact
+  specification of simple confirmatory factor analysis models.
+  
+  \code{specifyModel}:
   
   Each line of the RAM specification for \code{specifyModel} consists of three (unquoted) entries, 
   separated by commas:
@@ -77,6 +87,8 @@ removeRedundantPaths(model, warn=TRUE)
       }
       
   Lines may end in a comment following \code{\#}.
+  
+  \code{specifyEquations}:
 
   For \code{specifyEquations}, each input line is either a regression equation or the specification
   of a variance or covariance. Regression equations are of the form
@@ -100,7 +112,21 @@ removeRedundantPaths(model, warn=TRUE)
   To set a start value for a free parameter, enclose the numeric start value in parentheses after the
   parameter name, as \code{parameter(value)}.
   
-  See \code{\link{sem}} for further details on model specification.
+  \code{cfa}:
+  
+  For \code{cfa}, each input line includes the names of the variables, separated by commas, 
+  that load on the corresponding factor; the name of the factor is given optionally at the beginning
+  of the line, followed by a colon. If necessary, the variables that load on a factor may be continued
+  across two or more input lines; in this case, each such line but the last must end in a comma. A
+  variable may load on more than one factor (as long as the resulting model is identified, of course),
+  but each factor may appear in only one input line (or set of input lines, if the variable list
+  is continued onto the next line). \code{cfa} will fix the variance of each factor to 1, and by
+  default include covariances (i.e., correlations) among all pairs of factors. Specifying the argument
+  \code{covs=NULL} implicitly fixes the factor intercorrelations to 0.
+  
+  See \code{\link{sem}} and the examples for further details on model specification.
+  
+  Other Functions:
   
   \code{classifyVariables} classifies the variables in a model as endogenous or exogenous.
   
@@ -245,6 +271,67 @@ replace, Gen, General
 
 model.dhp.eq
 
+# A three-factor CFA model for the Thurstone mental-tests data, specified three equivalent ways:
+
+R.thur <- readMoments(diag=FALSE, names=c('Sentences','Vocabulary',
+                                          'Sent.Completion','First.Letters','4.Letter.Words','Suffixes',
+                                          'Letter.Series','Pedigrees', 'Letter.Group'))
+.828                                              
+.776   .779                                        
+.439   .493    .46                                 
+.432   .464    .425   .674                           
+.447   .489    .443   .59    .541                    
+.447   .432    .401   .381    .402   .288              
+.541   .537    .534   .35    .367   .32   .555        
+.38   .358    .359   .424    .446   .325   .598   .452
+
+	#  (1) in CFA format:
+
+mod.cfa.thur.c <- cfa()
+FA: Sentences, Vocabulary, Sent.Completion
+FB: First.Letters, 4.Letter.Words, Suffixes
+FC: Letter.Series, Pedigrees, Letter.Group
+
+cfa.thur.c <- sem(mod.cfa.thur.c, R.thur, 213)
+summary(cfa.thur.c)
+
+	#  (2) in equation format:
+
+mod.cfa.thur.e <- specifyEquations(covs="F1, F2, F3")
+Sentences = lam11*F1
+Vocabulary = lam21*F1
+Sent.Completion = lam31*F1
+First.Letters = lam42*F2
+4.Letter.Words = lam52*F2
+Suffixes = lam62*F2
+Letter.Series = lam73*F3
+Pedigrees = lam83*F3
+Letter.Group = lam93*F3
+V(F1) = 1
+V(F2) = 1
+V(F3) = 1
+
+cfa.thur.e <- sem(mod.cfa.thur.e, R.thur, 213)
+summary(cfa.thur.e)
+
+	#  (3) in path format:
+
+mod.cfa.thur.p <- specifyModel(covs="F1, F2, F3")
+F1 -> Sentences,                      lam11
+F1 -> Vocabulary,                     lam21
+F1 -> Sent.Completion,                lam31
+F2 -> First.Letters,                  lam41
+F2 -> 4.Letter.Words,                 lam52
+F2 -> Suffixes,                       lam62
+F3 -> Letter.Series,                  lam73
+F3 -> Pedigrees,                      lam83
+F3 -> Letter.Group,                   lam93
+F1 <-> F1,                            NA,     1
+F2 <-> F2,                            NA,     1
+F3 <-> F3,                            NA,     1
+
+cfa.thur.p <- sem(mod.cfa.thur.p, R.thur, 213)
+summary(cfa.thur.p)
     }
 }
 
