@@ -1,4 +1,4 @@
-# last modified 2011-11-19 by J. Fox
+# last modified 2011-11-20 by J. Fox
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
@@ -220,7 +220,7 @@ specifyEquations <- function(file="", ...){
 	specifyModel(file=textConnection(ram), ..., quiet=TRUE)
 }
 
-cfa <- function(file="", covs=paste(factors, collapse=","), ...){
+cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators=FALSE, ...){
 	Lines <- scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
 	lines <- character(0)
 	current.line <- ""
@@ -249,6 +249,10 @@ cfa <- function(file="", covs=paste(factors, collapse=","), ...){
 			variables <- strsplit(line[2], ",")[[1]]
 		}
 		else stop("Parse error in ", Line)
+		if (reference.indicators){
+			ram <- c(ram, paste(factors[i], " -> ", variables[1], ", NA, 1", sep=""))
+			variables <- variables[-1]
+		}
 		for (variable in variables){
 			if (length(grep("\\(", variable)) > 0){
 				if (length(grep("\\)", variable)) == 0) stop ("Parse error in ", Line)
@@ -263,10 +267,14 @@ cfa <- function(file="", covs=paste(factors, collapse=","), ...){
 			ram <- c(ram, paste(factors[i], " -> ", variable, ", lam[", variable, ":", factors[i], "], ", start, sep=""))
 		}
 	}
-	ram <- c(ram, sapply(factors, function(factor) paste(factor, " <-> ", factor, ", NA, 1", sep="")))
+	ram <- if (reference.indicators) {
+				c(ram, sapply(factors, function(factor) paste(factor, " <-> ", factor, ", ", paste("V[", factor, "]", sep="") , ", NA", sep="")))
+			}
+			else{
+				c(ram, sapply(factors, function(factor) paste(factor, " <-> ", factor, ", NA, 1", sep="")))
+			}
 	specifyModel(file=textConnection(ram), covs=covs, ..., quiet=TRUE)
 }
-
 
 # the following function (not exported) checks whether a text string can be converted into a number
 

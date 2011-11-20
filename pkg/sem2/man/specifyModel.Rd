@@ -18,7 +18,7 @@ specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs, quiet=FA
 
 specifyEquations(file="", ...)
 
-cfa(file="", covs=paste(factors, collapse=","), ...)
+cfa(file="", covs=paste(factors, collapse=","), reference.indicators=FALSE, ...)
 
 classifyVariables(model)
 
@@ -42,8 +42,11 @@ removeRedundantPaths(model, warn=TRUE)
   	giving a string of variable names, separated by commas. Variances and covariances
   	among all variables in each such string are added to the model. For confirmatory
   	factor analysis models specified via \code{cfa}, \code{covs} defaults to all of
-  	the factors in the model, thus specifying all covariances (correlations, because
-  	the factor variances are set to 1) among these factors.}
+  	the factors in the model, thus specifying all covariances among these factors.}
+  \item{reference.indicators}{if \code{FALSE}, the default, variances of factors are
+    set to 1 by \code{cfa}; if \code{TRUE}, variances of factors are free parameters
+    to estimate from the data, and instead the first factor loading for each factor is set
+    to 1 to identify the model.}
   \item{quiet}{if \code{FALSE}, the default, then the number of input lines is reported.}
   \item{x, model, object}{An object of class \code{semmod}, as produced by
     \code{specifyModel}.}
@@ -120,9 +123,13 @@ removeRedundantPaths(model, warn=TRUE)
   across two or more input lines; in this case, each such line but the last must end in a comma. A
   variable may load on more than one factor (as long as the resulting model is identified, of course),
   but each factor may appear in only one input line (or set of input lines, if the variable list
-  is continued onto the next line). \code{cfa} will fix the variance of each factor to 1, and by
-  default include covariances (i.e., correlations) among all pairs of factors. Specifying the argument
-  \code{covs=NULL} implicitly fixes the factor intercorrelations to 0.
+  is continued onto the next line). If the argument \code{reference.indicators=FALSE}, the default,
+  \code{cfa} will fix the variance of each factor to 1, and by
+  default include covariances (i.e., correlations) among all pairs of factors. Alternatively,
+  if \code{reference.indicators=TRUE}, then the factor variances are free parameters to be estimated
+  from the data, and the first loading for each factor is set to 1 to identify the model. These two
+  approaches produce equivalent models, with the same fit to the data, but alternative parametrizations.
+  Specifying the argument \code{covs=NULL} implicitly fixes the factor intercorrelations to 0.
   
   See \code{\link{sem}} and the examples for further details on model specification.
   
@@ -151,7 +158,8 @@ removeRedundantPaths(model, warn=TRUE)
 }
 
 \value{
-  \code{specifyModel}, \code{removeRedundantPaths}, \code{combineModels}, and \code{update} return an object of class \code{semmod}, suitable as input for \code{\link{sem}}.
+  \code{specifyModel}, \code{specifyEquations}, \code{cfa}, \code{removeRedundantPaths}, \code{combineModels}, 
+  and \code{update} return an object of class \code{semmod}, suitable as input for \code{\link{sem}}.
   
   \code{classifyVariables} returns a list with two character vectors: \code{endogenous}, containing the names of endogenous
   variables in the model; and \code{exogenous}, containing the names of exogenous variables.
@@ -285,7 +293,7 @@ R.thur <- readMoments(diag=FALSE, names=c('Sentences','Vocabulary',
 .541   .537    .534   .35    .367   .32   .555        
 .38   .358    .359   .424    .446   .325   .598   .452
 
-	#  (1) in CFA format:
+	#  (1a) in CFA format:
 
 mod.cfa.thur.c <- cfa()
 FA: Sentences, Vocabulary, Sent.Completion
@@ -294,6 +302,16 @@ FC: Letter.Series, Pedigrees, Letter.Group
 
 cfa.thur.c <- sem(mod.cfa.thur.c, R.thur, 213)
 summary(cfa.thur.c)
+
+	#  (1b) in CFA format, using reference indicators:
+	
+mod.cfa.thur.r <- cfa(reference.indicators=TRUE)
+FA: Sentences, Vocabulary, Sent.Completion
+FB: First.Letters, 4.Letter.Words, Suffixes
+FC: Letter.Series, Pedigrees, Letter.Group
+
+cfa.thur.r <- sem(mod.cfa.thur.r, R.thur, 213)
+summary(cfa.thur.r)
 
 	#  (2) in equation format:
 
