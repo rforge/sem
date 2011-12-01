@@ -13,3 +13,7 @@ Changes to Version 2.1-0
 Changes to Version 2.1-1
 
     o Added cfa() for compact specification of confirmatory factor analysis models.
+    
+Changes to Version 2.1-2
+
+    o Suppress R^2s when raw moments used (they were not computed correctly).
