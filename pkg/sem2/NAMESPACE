@@ -1,4 +1,4 @@
-# last modified 2011-11-19 by J. Fox
+# last modified 2011-12-20 by J. Fox
 
 import(stats)
 
@@ -64,3 +64,4 @@ S3method(CAIC, objectiveML)
 S3method(BIC, objectiveML)
 S3method(combineModels, semmod)
 S3method(update, semmod)
+S3method(edit, semmod)

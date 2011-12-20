@@ -8,6 +8,7 @@
 \alias{combineModels}
 \alias{combineModels.semmod}
 \alias{update.semmod}
+\alias{edit.semmod}
 
 \title{Specify a Structural Equation Model}
 \description{
@@ -25,6 +26,7 @@ classifyVariables(model)
 removeRedundantPaths(model, warn=TRUE)
 \method{combineModels}{semmod}(..., warn=TRUE)
 \method{update}{semmod}(object, file = "", ...)
+\method{edit}{semmod}(name, ...)
 
 \method{print}{semmod}(x, ...)
 }
@@ -48,7 +50,7 @@ removeRedundantPaths(model, warn=TRUE)
     to estimate from the data, and instead the first factor loading for each factor is set
     to 1 to identify the model.}
   \item{quiet}{if \code{FALSE}, the default, then the number of input lines is reported.}
-  \item{x, model, object}{An object of class \code{semmod}, as produced by
+  \item{x, model, object, name}{An object of class \code{semmod}, as produced by
     \code{specifyModel}.}
   \item{warn}{print a warning if redundant paths are detected.}
   \item{...}{for \code{specifyEquations} and \code{cfa}, arguments (such as \code{covs},
@@ -140,26 +142,32 @@ removeRedundantPaths(model, warn=TRUE)
   \code{combineModels} and \code{removeRedundantPaths} take \code{semmod} objects as arguments and do what their names imply.
   
   The \code{file} input argument to the \code{update} method for \code{semmod} objects, which by default comes from
-  standard input, is a set of update directives, one per line. There are three kinds of directives. In each case
+  standard input, is a set of update directives, one per line. There are five kinds of directives. In each case
   the directive begins with the directive name, followed by one or more fields separated by commas.
   
   \describe{
   
   	\item{1. delete:}{Remove a path from the model. Example: \code{delete, RSES -> FGenAsp}}
   	
-  	\item{2. add:}{Add a path to the model. Example: \code{add, RSES -> FGenAsp, gam14,  NA}}
+  	\item{2. add:}{Add a path to the model. Example (the \code{NA} for the start value is optional): \code{add, RSES -> FGenAsp, gam14,  NA}}
   	
   	\item{3. replace:}{Replace every occurrence of the first string with the second in the variables and
   		parameters of the model. This directive may be used, for example, to change one variable to
   		another or to rename a parameter. Example: \code{replace, gam, gamma}, substitutes the string \code{"gamma"}
   		for \code{"gam"} wherever the latter appears, presumably in parameter names.}
+  		
+  	\item{4. fix:}{Fix a parameter that was formerly free. Example: \code{fix, RGenAsp  -> REdAsp, 1}}
+  	
+  	\item{5. free:}{Free a parameter that was formerly fixed. Example (the \code{NA} for the start value is optional): 
+  	\code{free, RGenAsp  -> ROccAsp, lam11, NA}}
   }
   
+  The \code{edit} method for \code{semmod} objects opens the model in the R editor.
 }
 
 \value{
   \code{specifyModel}, \code{specifyEquations}, \code{cfa}, \code{removeRedundantPaths}, \code{combineModels}, 
-  and \code{update} return an object of class \code{semmod}, suitable as input for \code{\link{sem}}.
+  \code{update}, and \code{edit} return an object of class \code{semmod}, suitable as input for \code{\link{sem}}.
   
   \code{classifyVariables} returns a list with two character vectors: \code{endogenous}, containing the names of endogenous
   variables in the model; and \code{exogenous}, containing the names of exogenous variables.

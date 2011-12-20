@@ -1,9 +1,14 @@
 Package: sem
 Version: 2.1-2
-Date: 2010/12/01
+Date: 2010/12/20
 Title: Structural Equation Models
-Author: John Fox <jfox@mcmaster.ca> and Jarrett Byrnes <byrnes@nceas.ucsb.edu>, with contributions from Michael Culbertson, Michael Friendly, Adam Kramer, and Georges Monette.
-Maintainer: John Fox <jfox@mcmaster.ca>
+Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
+    person("Jarrett", "Byrnes", role = "aut", email="byrnes@nceas.ucsb.edu"),
+    person("Michael", "Culbertson", role = "ctb"),
+    person("Michael", "Friendly", role = "ctb"),
+    person("Adam", "Kramer", role = "ctb"),
+    person("Georges", "Monette", role = "ctb")
+	)
 Depends: R (>= 2.14.0), stats, MASS, matrixcalc
 Suggests: boot, tcltk, polycor
 LazyLoad: yes
