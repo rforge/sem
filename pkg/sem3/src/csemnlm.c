@@ -232,48 +232,6 @@ static void returnAPCfcn(int n, const double x[], double *A, double *P, double *
 		return;
 }
 
-static double *fixparam(SEXP p, int *n)
-{
-    double *x;
-    int i;
-
-    if (!isNumeric(p))
-	error(("numeric parameter expected"));
-
-    if (*n) {
-	if (LENGTH(p) != *n)
-	    error(("conflicting parameter lengths"));
-    }
-    else {
-	if (LENGTH(p) <= 0)
-	    error(("invalid parameter length"));
-	*n = LENGTH(p);
-    }
-
-    x = (double*)R_alloc(*n, sizeof(double));
-    switch(TYPEOF(p)) {
-    case LGLSXP:
-    case INTSXP:
-	for (i = 0; i < *n; i++) {
-	    if (INTEGER(p)[i] == NA_INTEGER)
-		error(("missing value in parameter"));
-	    x[i] = INTEGER(p)[i];
-	}
-	break;
-    case REALSXP:
-	for (i = 0; i < *n; i++) {
-	    if (!R_FINITE(REAL(p)[i]))
-		error(("missing value in parameter"));
-	    x[i] = REAL(p)[i];
-	}
-	break;
-    default:
-	error(("invalid parameter type"));
-    }
-    return x;
-}
-
-
 	/* Fatal errors - we don't deliver an answer */
 
 static void opterror(int nerr)
@@ -356,7 +314,7 @@ SEXP csemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian,
 				double stepmx, double steptol, int itnlim, model_info *model, myfcn_p myobjfun, 
 				int optimize)
 {
-    SEXP value, names, v ;
+    SEXP value, names;
 
 		if(SEM_DEBUG) Rprintf("Optimize: [%d]\n", optimize);
 

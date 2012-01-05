@@ -1,7 +1,7 @@
 # last modified 2011-12-20 by J. Fox
 
-useDynLib(sem)
-useDynLib(sem, csemSolve)
+useDynLib(sem3)
+useDynLib(sem3, csemSolve)
 
 import(stats)
 
