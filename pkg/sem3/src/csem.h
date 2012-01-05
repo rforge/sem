@@ -47,6 +47,7 @@
 #include <sys/stat.h>    
 #include <math.h> 
 #include <cmath> 
+#include <limits>
 
 #include <R.h>
 #include <Rdefines.h>
