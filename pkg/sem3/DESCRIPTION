@@ -1,0 +1,21 @@
+Package: sem
+Version: 2.1-2
+Date: 2010/12/20
+Title: Structural Equation Models
+Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
+    person("Jarrett", "Byrnes", role = "aut", email="byrnes@nceas.ucsb.edu"),
+    person("Michael", "Culbertson", role = "ctb"),
+    person("Michael", "Friendly", role = "ctb"),
+    person("Adam", "Kramer", role = "ctb"),
+    person("Georges", "Monette", role = "ctb")
+	)
+Depends: R (>= 2.14.0), stats, MASS, matrixcalc
+Suggests: boot, tcltk, polycor
+LazyLoad: yes
+LazyData: yes
+ByteCompile: yes
+Description: This package contains functions for fitting general linear structural
+    equation models (with observed and unobserved variables) using the RAM approach, 
+    and for fitting structural equations in observed-variable models by two-stage least squares.
+License: GPL (>= 2)
+URL: http://www.r-project.org, http://socserv.socsci.mcmaster.ca/jfox/
