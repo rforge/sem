@@ -13,14 +13,24 @@
 \alias{summary.objectiveML}
 \alias{summary.objectiveGLS}
 \alias{print.summary.objectiveML}
+\alias{print.msemObjectiveML}
+\alias{summary.msemObjectiveML}
+\alias{deviance.msemObjectiveML}
+\alias{AIC.msemObjectiveML}
+\alias{AICc.msemObjectiveML}
+\alias{BIC.msemObjectiveML}
+\alias{deviance.msemObjectiveML}
+\alias{anova.msemObjectiveML}
+\alias{logLik.msemObjectiveML}
+
 
 \title{
-Methods for sem Objects Fit Using the \code{objectiveML} and \code{objectiveGLS} Objective Functions
+Methods for sem Objects Fit Using the \code{objectiveML}, \code{objectiveGLS} and \code{msemObjectiveML} Objective Functions
 }
 
 \description{
 These functions are for objects fit by \code{\link{sem}} using the \code{\link{objectiveML}} (multivariate-normal full-information maximum-likelihood) 
-and \code{\link{objectiveGLS}} (generalized least squares) objective functions.
+\code{\link{objectiveGLS}} (generalized least squares), and \code{\link{objectiveML}} (multigroup multivariate-normal FIML) objective functions.
 }
 
 \usage{
@@ -28,19 +38,25 @@ and \code{\link{objectiveGLS}} (generalized least squares) objective functions.
 
 \method{logLik}{objectiveML}(object, ...)
 \method{deviance}{objectiveML}(object, ...)
+\method{deviance}{msemObjectiveML}(object, ...) 
 \method{AIC}{objectiveML}(object, ..., k)
+\method{AIC}{msemObjectiveML}(object, ..., k)
 \method{AICc}{objectiveML}(object, ...)
+\method{AICc}{msemObjectiveML}(object, ...)
 \method{BIC}{objectiveML}(object, ...)
+\method{BIC}{msemObjectiveML}(object, ...)
 \method{CAIC}{objectiveML}(object, ...)
 
 \method{print}{objectiveML}(x, ...)
 \method{print}{objectiveGLS}(x, ...)
+\method{print}{msemObjectiveML}(x, ...)
 \method{summary}{objectiveML}(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 100, ...)
 \method{summary}{objectiveGLS}(object, ...)
+\method{summary}{msemObjectiveML}(object, digits=5, conf.level=.90, ...)
 }
 
 \arguments{
-  \item{object, model.2, x}{an object inheriting from class \code{objectiveML} or \code{objectiveGLS}.}
+  \item{object, model.2, x}{an object inheriting from class \code{objectiveML}, \code{objectiveGLS}, or \code{msemObjectiveML}.}
   \item{robust}{if \code{TRUE}, compute robust standard errors or test.}
   \item{k, \ldots}{ignored.}
   \item{digits}{digits to be printed.}

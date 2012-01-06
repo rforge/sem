@@ -3,10 +3,15 @@
 \alias{sem}
 \alias{sem.semmod}
 \alias{sem.default}
+\alias{sem.semmodList}
+\alias{sem.msemmod}
 \alias{startvalues}
 \alias{coef.sem}
 \alias{vcov.sem}
 \alias{df.residual.sem}
+\alias{coef.msem}
+\alias{vcov.msem}
+\alias{df.residual.msem}
 
 \title{General Structural Equation Models}
 \description{
@@ -17,6 +22,9 @@
   called directly with a \code{semmod} first argument, invoking the \code{sem.semmod}
   method, which in turn sets up a call to the \code{sem.default} method; thus, the user
   may wish to specify arguments accepted by the \code{semmod} and \code{default} methods.
+  Similarly, for a multigroup model, \code{sem} would normally be called with a
+  \code{semmodList} object produced by \code{\link{multigroupModel}} as its first argument,
+  and would then generate a call to the code \code{msemmod} method.
 }
 
 \usage{
@@ -28,13 +36,25 @@
 		analytic.gradient=TRUE, warn=FALSE, maxiter=500, 
 		par.size=c("ones", "startvalues"), start.tol=1E-6, 
 		optimizer=optimizerNlm, objective=objectiveML, ...) 
+		
+\method{sem}{semmodList}(model, S, N, data, raw=FALSE, fixed.x=NULL, 
+		formula, group="Group", debug=FALSE, ...)
+		
+\method{sem}{msemmod}(model, S, N, group="Group", groups=names(model), raw=FALSE, fixed.x, 
+		param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
+		maxiter=1000, par.size = c("ones", "startvalues"), start.tol = 1e-06, 
+		startvalues=c("initial.fit", "startvalues"),
+		optimizer = msemOptimizerNlm, objective = msemObjectiveML, ...){
     
 startvalues(S, ram, debug=FALSE, tol=1E-6)
 
 \method{coef}{sem}(object, standardized=FALSE, ...)
+\method{coef}{msem}(object, ...)
 \method{vcov}{sem}(object, robust=FALSE, 
 	analytic=inherits(object, "objectiveML") && object$t <= 100, ...)
+\method{vcov}{msem}(object, ...)
 \method{df.residual}{sem}(object, ...)
+\method{df.residual}{msem}(object, ...)
 }
 
 \arguments{
@@ -45,7 +65,8 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     or as a character matrix), invoking \code{sem.semmod}, which calls \code{sem.default} 
     after setting up the model,
     or (less conveniently) in numeric form, invoking \code{sem.default} directly, which is
-    not recommended (see \bold{Details} below).}
+    not recommended (see \bold{Details} below). The \code{model} argument may also be a
+    multigroup-model specification, as produced by \code{\link{multigroupModel}}.}
   \item{S}{covariance matrix among observed variables; may be input as a symmetric matrix,
     or as a lower- or upper-triangular matrix. \code{S} may also be a raw (i.e., \dQuote{uncorrected})
     moment matrix --- that is, a sum-of-squares-and-products matrix divided by \code{N}. This
@@ -54,9 +75,12 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     of course, the raw mean square for the unit variable is 1. Raw-moment matrices may be computed
     by \code{\link{rawMoments}}. If the \code{ram} argument is given in symbolic form, then
     the observed-variable covariance or raw-moment matrix may contain variables that do not appear in the model,
-    in which case a warning is printed. As an alternative to specifying \code{S} the user may
+    in which case a warning is printed. \code{S} may also be a list of covariance or moment matrices for each
+    group in a multigroup model.
+    As an alternative to specifying \code{S} the user may
     supply a data frame containing the data for the model (see the argument \code{data}).}
-  \item{N}{number of observations on which the covariance matrix is based.}
+  \item{N}{number of observations on which the covariance matrix is based; for a multigroup model, a vector
+    of group \eqn{N}s.}
   \item{data}{As a generally preferable alternative to specifying \code{S} and 
  	\code{N}, the user may supply a data frame containing the data to which the model is to be fit.}
   \item{raw}{\code{TRUE} if \code{S} is a raw moment matrix or if a raw moment matrix ---  as
@@ -110,22 +134,30 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     used depends upon the optimizer employed.}
   \item{start.tol, tol}{if the magnitude of an automatic start value is less than \code{start.tol}, then
     it is set to \code{start.tol}; defaults to 1E-6.}
-  \item{optimizer}{a function to be used to minimize the objective function; the default is 
-  	\code{\link{optimizerNlm}}, which employs the standard R \code{\link[stats]{nlm}} optimizer.
-  	Alternatives are \code{\link{optimizerOptim}}, which employs \code{\link[stats]{optim}},
+  \item{optimizer}{a function to be used to minimize the objective function; the default for singel-group models is 
+  	\code{\link{optimizerSem}}.
+  	Alternatives are \code{\link[stats]{nlm}}, which employs the standard R optimizer \code{\link[stats]{nlm}};
+  	\code{\link{optimizerOptim}}, which employs \code{\link[stats]{optim}};
   	and \code{\link{optimizerNlminb}}, which uses \code{\link[stats]{nlminb}} --- or
-  	the user can supply an optimizer.}
+  	the user can supply an optimizer. For multigroup model, the only optimizer currently 
+  	available is \code{msemOptimizerNlm}.}
   \item{objective}{An objective function to be minimized, sometimes called a \dQuote{fit} function 
-  	in the SEM literature. The default is \code{\link{objectiveML}},
+  	in the SEM literature. The default for single-group models is \code{\link{objectiveML}},
   	which produces maximum-likelihood estimates assuming multinormality. An alternative is 
   	\code{\link{objectiveGLS}}, which produced generalized least squares estimates --- or the user
-  	can supply an objective function to be minimzed.}
+  	can supply an objective function to be minimzed. For multigroup models, the only objective function currently
+  	available is \code{\link{msemObjectiveML}}.}
   \item{ram}{numeric RAM matrix.}
-  \item{object}{an object of class \code{"sem"}, returned by \code{sem}.}
+  \item{object}{an object of class \code{"sem"} or \code{"msem"}, returned by \code{sem}.}
   \item{standardized}{if \code{TRUE}, return standardized coefficients.}
   \item{analytic}{return an analytic (as opposed to numeric) estimate of the coefficient covariance matrix;
   	at present only available for the \code{\link{objectiveML}} objective function. The default is \code{FALSE}
   	for this objective function if there are no more than 100 parameters and \code{FALSE} otherwise.}
+  \item{group}{for a multigroup model, the quoted name of the group variable; if the \code{data} argument is given,
+    then this should be a factor in the data set or a variable coercible to a factor.}
+  \item{groups}{a character vector giving the names of the groups.}
+  \item{startvalues}{if \code{"initial.fit"} (the default), start values are computed by first fitting the intra-group
+    models separately by group; if \code{"startvalues"}, then start values are computed as for a single-group model.}
 } 
 
 \details{
@@ -265,6 +297,8 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   	\code{robust} is \code{FALSE}.}
   \item{robust.vcov}{robust estimated coefficient covariance matrix; \code{NULL} if
   	\code{robust} is \code{FALSE}.}
+  	
+  For multigroup models, \code{sem} returns an object of class \code{c("msemObjectiveML", "msem")}.
 }
 
 \section{Warning}{

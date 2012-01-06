@@ -1,17 +1,20 @@
-# last modified 2011-08-10 by J. Fox
-# Modeifled for Compiled Objective and nlm in C/C++.
+# last modified 2012-01-06 by J. Fox
+# Modified for Compiled Objective and nlm in C/C++ by Zhenghua Nie.
 
-optimizerCompiledNlm <- function(start, objective=objectiveCompiledML,  
+optimizerSem <- function(start, objective=objectiveML,  
 	gradient=TRUE, maxiter, debug, par.size, model.description, warn, ...){
 	with(model.description, {
 			obj <- objective(gradient=gradient)$objective
 			typsize <- if (par.size == 'startvalues') abs(start) else rep(1, t) #we move typesize in csem.cpp.
 
-			objectiveCompiled <- "objectiveML"
-			if(identical(objective, objectiveCompiledML) || identical(objective, objectiveML)) 
-					objectiveCompiled <- "objectiveML"
-			if(identical(objective, objectiveCompiledGLS) || identical(objective, objectiveGLS))
-					objectiveCompiled <- "objectiveGLS"
+#			objectiveCompiled <- "objectiveML"
+#			if(identical(objective, objectiveCompiledML) || identical(objective, objectiveML)) 
+#					objectiveCompiled <- "objectiveML"
+#			if(identical(objective, objectiveCompiledGLS) || identical(objective, objectiveGLS))
+#					objectiveCompiled <- "objectiveGLS"
+				
+			objectiveCompiled <- deparse(substitute(objective))
+			if (!objectiveCompiled %in% c("objectiveML", "objectiveGLS")) stop("optimizerSem requires the objectiveML or objectiveGLS objective function")
 
 			if (!warn) save.warn <- options(warn=-1)
 

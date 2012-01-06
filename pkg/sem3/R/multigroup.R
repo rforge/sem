@@ -1,0 +1,756 @@
+### multigroup SEMs  
+# last modified J. Fox 2012-01-06
+
+## model definition
+
+multigroupModel <- function(..., groups=names(models), allEqual=FALSE){
+	models <- list(...)
+	if (length (models) == 1){
+		if (missing(groups)) stop("group names are missing, yet only 1 model is defined")
+		ngroups <- length(groups)
+		model <- models[[1]]
+		models <- vector(ngroups, mode="list")
+		for (g in 1:ngroups) models[[g]] <- model
+		names(models) <- groups
+		if (!allEqual){
+			for (g in 1:ngroups){
+				model <- models[[g]]
+				models[[g]][!is.na(model[, 2]), 2] <- paste(model[!is.na(model[, 2]), 2], ".", groups[g], sep="")
+			}
+		}
+	}
+	else {
+		if (is.null(names(models)) && missing(groups)) groups <- paste("Group.", 1:length(models), sep="")
+		names(models) <- groups
+	}
+	class(models) <- "semmodList"
+	models
+}
+
+print.semmodList <- function(x, ...){
+	cat("\nMultigroup Structural Equation Model\n")
+	groups <- names(x)
+	for (group in groups){
+		cat("\n Group: ", group, "\n\n")
+		print(x[[group]])
+	}
+	invisible(x)
+}
+
+
+## sem() method for semmodList objects
+
+sem.semmodList <- function(model, S, N, data, raw=FALSE, fixed.x=NULL, formula, group="Group", debug=FALSE, ...){
+	if (missing(S)){
+		if (missing(data) || missing(group)) stop("S and data/group cannot both be missing")
+		if (!is.factor(data[, group])) stop("Groups variable, ", group, ", is not a factor")
+		levels <- levels(data[, group])
+		G <- length(levels)
+		S <- vector(G, mode="list")
+		names(S) <- levels
+		N <- numeric(G)
+		if (missing(formula)) formula <- as.formula(paste("~ . -", group))
+		for (g in 1:G){
+			data.group <- subset(data, subset = data[, group] == levels[g])
+			N.all <- nrow(data.group)
+			data.group <- model.matrix(formula, data=data.group)
+			N[g] <- nrow(data.group)
+			if (N[g] < N.all) warning(N.all - N[g]," observations removed due to missingness in group ", levels[g])
+			S[[g]] <- if (raw) rawMoments(data.group) else{
+						data.group <- data.group[, colnames(data.group) != "(Intercept)"]
+						cov(data.group)
+					}
+		}
+	}
+	pars <-  unique(na.omit(as.vector(sapply(model, function(mod) mod[, 2]))))
+	vars <- rams <- vector(length(model), mode="list")
+	all.par.names <- character(0)
+	all.pars <- numeric(0)
+	for (i in 1:length(model)){
+		obs.variables <- colnames(S[[i]])
+		mod <- model[[i]]
+		if ((!is.matrix(mod)) | ncol(mod) != 3) stop("model argument must be a 3-column matrix")
+		startvalues <- as.numeric(mod[, 3])
+		par.names <- mod[, 2]
+		n.paths <- length(par.names)
+		heads <- from <- to <- rep(0, n.paths)
+		for (p in 1:n.paths){
+			path <- parse.path(mod[p, 1])
+			heads[p] <- abs(path$direction)
+			to[p] <- path$second
+			from[p] <- path$first
+			if (path$direction == -1) {
+				to[p] <- path$first
+				from[p] <- path$second
+			}
+		}
+		ram <- matrix(0, n.paths, 5)
+		all.vars <- unique(c(to, from))
+		latent.vars <- setdiff(all.vars, obs.variables)
+		not.used <- setdiff(obs.variables, all.vars)
+		if (length(not.used) > 0){
+			rownames(S[[i]]) <- colnames(S[[i]]) <- obs.variables
+			obs.variables <- setdiff(obs.variables, not.used)
+			S[[i]] <- S[[i]][obs.variables, obs.variables]
+			warning("The following observed variables are in the input covariance or raw-moment matrix for group ", i,
+					" but do not appear in the model:\n",
+					paste(not.used, collapse=", "), "\n")
+		}
+		vars[[i]] <- c(obs.variables, latent.vars)
+		ram[,1] <- heads
+		ram[,2] <- apply(outer(vars[[i]], to, "=="), 2, which)
+		ram[,3] <- apply(outer(vars[[i]], from, "=="), 2, which)   
+		par.nos <- apply(outer(pars, par.names, "=="), 2, which)
+		if (length(par.nos) > 0)
+			ram[,4] <- unlist(lapply(par.nos, function(x) if (length(x) == 0) 0 else x))
+		ram[,5]<- startvalues
+		colnames(ram) <- c("heads", "to", "from", "parameter", "start value")
+		rams[[i]] <- ram
+		all.pars <- c(all.pars, par.nos)
+		all.par.names <- c(all.par.names, par.names)
+	}
+	all.pars <- unique(unlist(all.pars))
+	all.par.names <- na.omit(all.par.names)
+	class(rams) <- "msemmod"
+	result <- sem(rams, S, N, group=group, groups=names(model), raw=raw, fixed.x=fixed.x, param.names=all.par.names[all.pars], var.names=vars, debug=debug, ...)
+	result$semmodList <- model
+	result$data <- if(missing(data)) NULL else data
+	result
+}
+
+parse.path <- function(path) {                                           
+	path.1 <- gsub("-", "", gsub(" ","", path))
+	direction <- if (regexpr("<>", path.1) > 0) 2 
+			else if (regexpr("<", path.1) > 0) -1
+			else if (regexpr(">", path.1) > 0) 1
+			else stop(paste("ill-formed path:", path))
+	path.1 <- strsplit(path.1, "[<>]")[[1]]
+	list(first=path.1[1], second=path.1[length(path.1)], direction=direction)
+}
+
+
+## sem() method for msemmod objects
+
+sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FALSE, fixed.x, param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
+		maxiter=1000, par.size = c("ones", "startvalues"), start.tol = 1e-06, startvalues=c("initial.fit", "startvalues"),
+		optimizer = msemOptimizerNlm, objective = msemObjectiveML, ...){
+	par.size <- match.arg(par.size)
+	startvalues <- match.arg(startvalues)
+	G <- length(S)
+	if (length(model) != G || length(N) != G) 
+		stop("inconsistent number of groups in model (", length(model), "), S (", G, "), and N (", length(N), ") arguments")
+	if (length(fixed.x) == 1) fixed.x <- lapply(1:G, function(g) fixed.x)
+	n.fix <- 0 
+	if (!is.null(fixed.x)){
+		n.fix <- numeric(G)
+		for (g in 1:G){
+			fx <- fixed.x[[g]]
+			n.fix[g] <- length(fx)
+			if (n.fix[g] == 0) next
+			fx <- which(rownames(S[[g]]) %in% fx)
+			mod <- model[[g]]
+			for (i in 1:n.fix[g]){
+				for (j in 1:i){
+					mod <- rbind(mod, c(2, fx[i], fx[j],
+									0, S[[g]][fx[i], fx[j]]))
+				}
+			}
+			model[[g]] <- mod
+		}
+	}
+	##  browser()
+	t <- max(sapply(model, function(r) max(r[, 4])))
+	if(missing(param.names)) param.names <- paste("Parameter", 1:t, sep=".")
+	if (missing(var.names)) var.names <- lapply(model, function(mod) paste("Variable", 1:max(mod[, c(2,3)]), sep="."))
+	n <- sapply(S, nrow)
+	m <- sapply(model, function(r)  max(r[, c(2, 3)]))
+	logdetS <- sapply(S, function(s) log(det(unclass(s))))
+	sel.free.2 <- sel.free.1 <- arrows.2.free <- arrows.1.free <- arrows.2t <- arrows.2 <- arrows.1 <- 
+			two.free <- one.free <- one.head <- sel.free <- fixed <- par.posn <- correct <- J <- vector(mode="list", length=G)  
+	for (g in 1:G){
+		mod <- model[[g]]
+		tt <- sum(mod[, 4] != 0)
+		mod[mod[, 4] != 0, 4] <- 1:tt
+		start <- if (startvalues == "initial.fit"){
+					##     browser()
+					prelim.fit <- sem(mod, S[[g]], N=N[[g]], raw=raw, param.names=as.character(1:tt), var.names=as.character(1:m[[g]]))
+					coef(prelim.fit)
+				}
+				else startvalues(S[[g]], mod)
+		model[[g]][mod[, 4] != 0, 5] <- ifelse(is.na(mod[mod[, 4] != 0, 5]), start, mod[mod[, 4] != 0, 5])
+		J[[g]] <- matrix(0, n[g], m[g])
+		correct[[g]] <- matrix(2, m[g], m[g])
+		diag(correct[[g]]) <- 1
+		observed <- 1:n[g]
+		J[[g]][cbind(observed, observed)] <- 1
+		par.posn[[g]] <-  sapply(1:t, function(i) which(model[[g]][,4] == i)[1]) # FIXME?
+		colnames(model[[g]]) <- c("heads", "to", "from", "parameter", "start value")
+		rownames(model[[g]]) <- rep("", nrow(model[[g]]))
+		fixed[[g]] <- model[[g]][, 4] == 0
+		sel.free[[g]] <- model[[g]][, 4]
+		sel.free[[g]][fixed[[g]]] <- 1
+		one.head[[g]] <- model[[g]][, 1] == 1
+		one.free[[g]] <- which( (!fixed[[g]]) & one.head[[g]] )
+		two.free[[g]] <- which( (!fixed[[g]]) & (!one.head[[g]]) )
+		arrows.1[[g]] <- model[[g]][one.head[[g]], c(2, 3), drop=FALSE]
+		arrows.2[[g]] <- model[[g]][!one.head[[g]], c(2, 3), drop=FALSE]
+		arrows.2t[[g]] <- model[[g]][!one.head[[g]], c(3 ,2), drop=FALSE]
+		arrows.1.free[[g]] <- model[[g]][one.free[[g]], c(2, 3), drop=FALSE]
+		arrows.2.free[[g]] <- model[[g]][two.free[[g]], c(2, 3), drop=FALSE]
+		sel.free.1[[g]] <- sel.free[[g]][one.free[[g]]]
+		sel.free.2[[g]] <- sel.free[[g]][two.free[[g]]]
+	}
+	unique.free.1 <- lapply(sel.free.1, unique)
+	unique.free.2 <- lapply(sel.free.2, unique)
+	start <- numeric(t)
+	for (j in 1:t) start[j] <- mean(unlist(sapply(model, function(r) r[r[, 4] == j, 5])), na.rm=TRUE)
+	model.description <- list(G=G, m=m, n=n, t=t, fixed=fixed, ram=model, sel.free=sel.free, arrows.1=arrows.1, 
+			one.head=one.head, arrows.2=arrows.2, arrows.2t=arrows.2t, J=J, S=S, logdetS=logdetS, 
+			N=N, raw=raw, correct=correct, unique.free.1=unique.free.1, unique.free.2=unique.free.2, 
+			arrows.1.free=arrows.1.free, arrows.2.free=arrows.2.free, param.names=param.names, 
+			var.names=var.names)
+	result <- optimizer(start=start, objective=objective, gradient=analytic.gradient,
+			maxiter=maxiter, debug=debug, par.size=par.size, model.description=model.description, warn=warn, ...)
+	result <- c(result, list(ram=model, param.names=param.names, var.names=var.names, group=group, groups=groups,
+					S=S, N=N, J=J, n=n, m=m, t=t, raw=raw, optimizer=optimizer, objective=objective, fixed.x=fixed.x, n.fix=n.fix))
+	class(result) <- c(deparse(substitute(objective)), "msem")
+	result
+}
+
+
+## ML objective function for multigroup SEMs
+
+msemObjectiveML <- function(gradient=TRUE){
+	result <- list(
+			objective = function(par, model.description){
+				with(model.description, {
+							f <- numeric(G)
+							AA <- PP <- CC <- vector(G, mode="list")
+							grad.all <- if (gradient) rep(0, t) else NULL
+							for (g in 1:G){
+								A <- P <- matrix(0, m[g], m[g])
+								val <- ifelse (fixed[[g]], ram[[g]][, 5], par[sel.free[[g]]])
+								A[arrows.1[[g]]] <- val[one.head[[g]]]
+								P[arrows.2t[[g]]] <- P[arrows.2[[g]]] <- val[!one.head[[g]]]
+								I.Ainv <- solve(diag(m[g]) - A)
+								C <- J[[g]] %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J[[g]])
+								Cinv <- solve(C)
+								f[g] <- sum(diag(S[[g]] %*% Cinv)) + log(det(C)) - n[[g]] - logdetS[g]
+								CC[[g]] <- C
+								AA[[g]] <- A
+								PP[[g]] <- P
+								if (gradient){
+									#             A <- P <- matrix(0, m[g], m[g])
+									#             val <- ifelse (fixed[[g]], ram[[g]][,5], par[sel.free[[g]]])
+									#             A[arrows.1[[g]]] <- val[one.head[[g]]]
+									#             P[arrows.2t[[g]]] <- P[arrows.2[[g]]] <- val[!one.head[[g]]]
+									#             I.Ainv <- solve(diag(m[g]) - A)
+									#             C <- J[[g]] %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J[[g]])
+									#             Cinv <- solve(C)
+									grad.P <- correct[[g]] * t(I.Ainv) %*% t(J[[g]]) %*% Cinv %*% (C - S[[g]]) %*% Cinv %*% J[[g]] %*% I.Ainv
+									grad.A <- grad.P %*% P %*% t(I.Ainv)        
+									grad <- rep(0, t)
+									grad[unique.free.1[[g]]] <- tapply(grad.A[arrows.1.free[[g]]], ram[[g]][ram[[g]][,1]==1 & ram[[g]][,4]!=0, 4], sum)
+									grad[unique.free.2[[g]]] <- tapply(grad.P[arrows.2.free[[g]]], ram[[g]][ram[[g]][,1]==2 & ram[[g]][,4]!=0, 4], sum)
+									grad.all <- grad.all + ((N[g] - !raw)/(sum(N) - (!raw)*G))*grad
+								}
+							}
+							ff <- f
+							f <- sum((N - !raw)*f)/(sum(N) - !raw*G)
+							attributes(f) <- list(gradient=grad.all, A=AA, P=PP, C=CC, f=ff)
+							f
+						})
+			}
+	)
+	if (gradient)
+		result$gradient <- function(par, model.description){
+			with(model.description, {
+						grad.total <- rep(0, t)
+						for (g in 1:G){
+							A <- P <- matrix(0, m[g], m[g])
+							val <- ifelse (fixed[[g]], ram[[g]][,5], par[sel.free[[g]]])
+							A[arrows.1[[g]]] <- val[one.head[[g]]]
+							P[arrows.2t[[g]]] <- P[arrows.2[[g]]] <- val[!one.head[[g]]]
+							I.Ainv <- solve(diag(m[g]) - A)
+							C <- J[[g]] %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J[[g]])
+							Cinv <- solve(C)
+							grad.P <- correct[[g]] * t(I.Ainv) %*% t(J[[g]]) %*% Cinv %*% (C - S[[g]]) %*% Cinv %*% J[[g]] %*% I.Ainv
+							grad.A <- grad.P %*% P %*% t(I.Ainv)        
+							grad <- rep(0, t)
+							grad[unique.free.1[[g]]] <- tapply(grad.A[arrows.1.free[[g]]], ram[[g]][ram[[g]][,1]==1 & ram[[g]][,4]!=0, 4], sum)
+							grad[unique.free.2[[g]]] <- tapply(grad.P[arrows.2.free[[g]]], ram[[g]][ram[[g]][,1]==2 & ram[[g]][,4]!=0, 4], sum)
+							grad.total <- grad.total + ((N[g] - !raw)/(sum(N) - (!raw)*G))*grad
+						}
+					})
+			grad.total
+		}
+	class(result) <- "msemObjective"
+	result
+}
+
+
+##  nlm()-based optimizer for multigroup SEMs
+
+msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
+		maxiter, debug, par.size, model.description, warn=FALSE, ...){
+	with(model.description, {
+				obj <- objective(gradient=gradient)$objective
+				typsize <- if (par.size == 'startvalues') abs(start) else rep(1, t)
+				if (!warn) save.warn <- options(warn=-1)
+				res <- nlm(obj, start, iterlim=maxiter, print.level=if(debug) 2 else 0,
+						typsize=typsize, hessian=TRUE, model.description=model.description, ...)
+				if (!warn) options(save.warn)
+				result <- list(covergence=NULL, iterations=NULL, coeff=NULL, vcov=NULL, criterion=NULL, C=NULL, A=NULL, P=NULL)
+				result$convergence <- res$code <= 2
+				result$iterations <- res$iterations
+				par <- res$estimate
+				names(par) <- param.names
+				result$coeff <- par
+				if (!result$convergence)
+					warning(paste('Optimization may not have converged; nlm return code = ',
+									res$code, '. Consult ?nlm.\n', sep=""))
+				vcov <- matrix(NA, t, t)
+				qr.hess <- try(qr(res$hessian), silent=TRUE)
+				if (class(qr.hess) == "try-error"){
+					warning("Could not compute QR decomposition of Hessian.\nOptimization probably did not converge.\n")
+				}
+				else if (qr.hess$rank < t){
+					warning(' singular Hessian: model is probably underidentified.\n')
+					which.aliased <- qr.hess$pivot[-(1:qr.hess$rank)]
+					result$aliased <- param.names[which.aliased]
+				}
+				else {
+					df <- sum(N) - (!raw)*G
+					vcov <-  (2/df) * solve(res$hessian)
+					if (any(diag(vcov) < 0)) {
+						result$aliased <- param.names[diag(vcov) < 0]
+						warning("Negative parameter variances.\nModel may be underidentified.\n")
+					}
+				}
+				colnames(vcov) <- rownames(vcov) <- param.names
+				result$vcov <- vcov
+				result$criterion <- res$minimum
+				#    result$df <- df
+				obj <- obj(par, model.description)
+				C <- attr(obj, "C")
+				A <- attr(obj, "A")
+				P <- attr(obj, "P")
+				for (g in 1:G){
+					rownames(C[[g]]) <- colnames(C[[g]]) <-rownames(S[[g]])
+					rownames(A[[g]]) <- colnames(A[[g]]) <- var.names[[g]]
+					rownames(P[[g]]) <- colnames(P[[g]]) <- var.names[[g]]
+				}
+				result$C <- C
+				result$A <- A
+				result$P <- P
+				result$group.criteria <- attr(obj, "f")
+				class(result) <- "msemResult"
+				result
+			})
+}
+
+
+# methods for msem and msemObjectiveML objects
+
+
+print.msemObjectiveML <- function(x, ...){
+	n <- x$n
+	n.fix <- x$n.fix
+	df <- sum(n*(n + 1)/2) - x$t - sum(n.fix*(n.fix + 1)/2)
+	chisq <- sum(x$N - !x$raw)*x$criterion
+	cat("\n Model Chisquare =", chisq, " Df =", df, "\n\n")
+	print(x$coeff)
+	invisible(x)
+}
+
+summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, ...){
+	old.digits <- options(digits = digits)
+	on.exit(options(old.digits))
+	groups <- object$groups
+	G <- length(groups)
+	par <- object$coeff
+	vcov <- object$vcov
+	n <- object$n
+	m <- object$m
+	S <- object$S
+	C <- object$C
+	A <- object$A
+	P <- object$P
+	N <- object$N
+	J <- object$J
+	n.fix <- object$n.fix
+	if (length(n.fix) == 1) n.fix <- rep(n.fix, G)
+	group.criteria <- object$group.criteria
+	var.names <- object$var.names
+	param.names <- object$param.names
+	semmod <- object$semmodList
+	ram <- object$ram
+	group.summaries <- list(G, model="list")
+	for (g in 1:G){
+		par.names <- param.names[ram[[g]][, 4]]
+		par.gr <- par[par.names]
+		group <- list(coeff=par.gr, vcov=vcov[par.names, par.names], n.fix=n.fix[g], n=n[[g]], m=m[[g]], S=S[[g]], C=C[[g]], N=N[[g]],
+				t=length(par.gr), raw=object$raw, var.names=var.names[[g]], ram=ram[[g]],
+				J=J[[g]], A=A[[g]], P=P[[g]], criterion=group.criteria[g], par.posn=ram[[g]][, 4] != 0, 
+				iterations=object$iterations, semmod=semmod[[g]])
+		class(group) <- c("objectiveML", "sem")
+		group.summaries[[g]] <- summary(group, digits=digits, conf.level=conf.level, robust=FALSE, analytic.se=FALSE, ...)
+	}
+	df <- sum(n*(n + 1)/2) - object$t - sum(n.fix*(n.fix + 1)/2)
+	chisq <- sum(N - !object$raw)*object$criterion
+	wt <- (N - object$raw)/(sum(N - object$raw))
+	SRMR <-if (!object$raw) sum(wt*sapply(group.summaries, function(s) s$SRMR)) else NA
+	GFI <- if (!object$raw) sum(wt*sapply(group.summaries, function(s) s$GFI)) else NA
+	chisqNull <- if(!object$raw) sum(sapply(group.summaries, function(s) s$chisqNull)) else NA
+	dfNull <- sum(n*(n - 1)/2)
+	if (!object$raw && df > 0){
+		AGFI <- 1 - (sum(n*(n * 1))/(2*df))*(1 - GFI)
+		NFI <- (chisqNull - chisq)/chisqNull
+		NNFI <- (chisqNull/dfNull - chisq/df)/(chisqNull/dfNull -1)
+		L1 <- max(chisq - df, 0)
+		L0 <- max(L1, chisqNull - dfNull)
+		CFI <- 1 - L1/L0
+		RMSEA <- sqrt(G*max(object$criterion/df - 1/(sum(N - 1)), 0))
+		tail <- (1 - conf.level)/2
+		max <- sum(N)
+		while (max > 1) {
+			res <- optimize(function(lam) (tail - pchisq(chisq, 
+											df, ncp = lam))^2, interval = c(0, max))
+			if (is.na(res$objective) || res$objective < 0) {
+				max <- 0
+				warning("cannot find upper bound of RMSEA")
+				break
+			}
+			if (sqrt(res$objective) < tail/100) 
+				break
+			max <- max/2
+		}
+		lam.U <- if (max <= 1) 
+					NA
+				else res$minimum
+		max <- max(max, 1)
+		while (max > 1) {
+			res <- optimize(function(lam) (1 - tail - pchisq(chisq, 
+											df, ncp = lam))^2, interval = c(0, max))
+			if (sqrt(res$objective) < tail/100) 
+				break
+			max <- max/2
+			if (is.na(res$objective) || res$objective < 0) {
+				max <- 0
+				warning("cannot find lower bound of RMSEA")
+				break
+			}
+		}
+		lam.L <- if (max <= 1) 
+					NA
+				else res$minimum
+		RMSEA.U <- sqrt(G*lam.U/(sum(N - 1) * df))
+		RMSEA.L <- sqrt(G*lam.L/(sum(N - 1) * df))
+	}
+	else RMSEA.U <- RMSEA.L <- RMSEA <- NFI <- NNFI <- CFI <- AGFI <- NA
+	cat("\n Model Chisquare =", chisq, " Df =", df, " Pr(>Chisq) =", pchisq(chisq, df, lower.tail=FALSE))
+	if (!is.na(chisqNull)) cat("\n Chisquare (null model) =", chisqNull, " Df =", dfNull)
+	if (!is.na(GFI)) cat("\n Goodness-of-fit index =", GFI)
+	if (!is.na(AGFI)) cat("\n Adjusted goodness-of-fit index =", AGFI)
+	if (!is.na(RMSEA)) cat("\n RMSEA index = ", RMSEA, " ", 100*conf.level, "% CI: (", RMSEA.L, ", ", RMSEA.U, ")", sep="")
+	if (!is.na(NFI)) cat("\n Bentler-Bonnett NFI =", NFI)
+	if (!is.na(NNFI)) cat("\n Tucker-Lewis NNFI =", NNFI)
+	if (!is.na(CFI)) cat("\n Bentler CFI =", CFI)
+	if (!is.na(SRMR)) cat("\n SRMR =", SRMR)
+	cat("\n AIC =", AIC(object))
+	cat("\n AICc =", AICc(object))
+	cat("\n BIC =", BIC(object))
+	cat("\n\n")
+	cat("Iterations (post initial fits):", object$iterations, "\n\n")
+	for (g in 1:G){
+		cat("\n Group: ", groups[g], "\n\n")
+		print(group.summaries[[g]])
+	}
+	invisible(object)
+}
+
+deviance.msemObjectiveML <- function(object, ...) 
+	object$criterion * sum(object$N - (!object$raw))
+
+AIC.msemObjectiveML <- function(object, ..., k) {
+	deviance(object) + 2*object$t
+}
+
+AICc.msemObjectiveML <- function(object, ...) {
+	deviance(object) + 2*object$t*(object$t + 1)/(sum(object$N) - object$t - 1)
+}
+
+BIC.msemObjectiveML <- function(object, ...) {
+	deviance(object) + object$t*log(sum(object$N))
+}
+
+residuals.msem <- function(object, ...){
+	result <- mapply(function(S, C) S - C, S=object$S, C=object$C, SIMPLIFY=FALSE)
+	result <- lapply(result, function(res) {attr(res, "N") <- NULL; res})
+	result
+}
+
+coef.msem <- function(object, ...) object$coeff
+
+vcov.msem <- function(object, ...) object$vcov
+
+df.residual.msem <- function (object, ...){
+	n <- object$n
+	n.fix <- object$n.fix
+	sum(n*(n + 1)/2) - object$t - sum(n.fix*(n.fix + 1)/2)
+}
+
+deviance.msemObjectiveML <- function(object, ...){
+	object$criterion * sum(object$N - !object$raw)
+}
+
+anova.msemObjectiveML <- function(object, model.2, ...) {
+	dev.1 <- deviance(object)
+	df.1 <- df.residual(object)
+	dev.2 <- deviance(model.2)
+	df.2 <- df.residual(model.2)
+	name.1 <- deparse(substitute(object))
+	name.2 <- deparse(substitute(model.2))
+	df <- abs(df.1 - df.2)
+	if (df == 0) 
+		stop("the models have the same Df")
+	if (all(object$N != model.2$N))
+		stop("the models are fit to different numbers of observations")
+	if (any(sapply(object$S, nrow) != sapply(model.2$S, nrow)) || !all.equal(object$S, model.2$S))
+		stop("the models are fit to different moment matrices")
+	chisq <- abs(dev.1 - dev.2)
+	table <- data.frame(c(df.1, df.2), c(dev.1, dev.2), 
+			c(NA, df), c(NA, chisq), c(NA, pchisq(chisq, df, lower.tail = FALSE)))
+	names(table) <- c("Model Df", "Model Chisq", "Df", "LR Chisq", "Pr(>Chisq)")
+	rownames(table) <- c(name.1, name.2)
+	structure(table, heading = c("LR Test for Difference Between Models", ""), class = c("anova", "data.frame"))
+}
+
+logLik.msemObjectiveML <- function(object, ...) -0.5*deviance(object)
+
+effects.msem <- function(object, ...){
+	eff <- function(A, m, semmod){
+		I <- diag(m)
+		endog <- classifyVariables(semmod)$endogenous
+		AA <- -A
+		diag(AA) <- 1
+		Total <- solve(AA) - I
+		Indirect <- Total - A
+		result <- list(Total = Total[endog, ], Direct = A[endog, ], Indirect = Indirect[endog, ])
+		class(result) <- "semeffects"
+		result
+	}
+	G <- length(object$groups)
+	A <- object$A
+	m <- object$m
+	semmod <- object$semmodList
+	result <- vector(G, mode="list")
+	for (g in 1:G){
+		result[[g]] <- eff(A[[g]], m[g], semmod[[g]])
+	}
+	names(result) <- object$groups
+	class(result) <- "semeffectsList"
+	result
+}
+
+print.semeffectsList <- function (x, digits = getOption("digits"), ...) {
+	groups <- names(x)
+	for (group in groups){
+		cat("\n\n Group: ", group, "\n")
+		print(x[[group]], digits=digits)
+	}
+	invisible(x)
+}
+
+standardizedCoefficients.msem <- function (object, ...){
+	groups <- object$groups
+	G <- length(groups)
+	param.names <- object$param.names
+	ram <- object$ram
+	A <- object$A
+	P <- object$P
+	par <- coef(object)
+	for (g in 1:G){
+		par.names <- param.names[ram[[g]][, 4]]
+		par.gr <- par[par.names]
+		t <- length(par.gr)
+		par.posn <- ram[[g]][, 4] != 0
+		ram[[g]][par.posn, 4] <- 1:t
+		group <- list(coeff=par.gr, t=t, ram=ram[[g]], A=A[[g]], P=P[[g]], par.posn=par.posn, param.names=par.names)
+		class(group) <- "sem"
+		cat("\n\n Group: ", groups[g], "\n")
+		print(standardizedCoefficients(group, ...))
+	}
+}
+
+standardizedResiduals.msem <- function (object, ...) {
+	res <- residuals(object)
+	S <- object$S
+	for (g in 1:length(S)){
+		s <- diag(S[[g]])
+		res[[g]] <- res[[g]]/sqrt(outer(s, s))
+	}
+	res
+}
+
+normalizedResiduals.msemObjectiveML <- function (object, ...) {
+	res <- residuals(object)
+	N <- object$N - (!object$raw)
+	C <- object$C
+	for (g in 1:length(res)){
+		c <- diag(C[[g]])
+		res[[g]] <- res[[g]]/sqrt((outer(c, c) + C[[g]]^2)/N[g])
+	}
+	res
+}
+
+BIC.msemObjectiveML <- function (object, ...) {
+	deviance(object) + object$t * log(sum(object$N))
+}
+
+AICc.msemObjectiveML <- function (object, ...) {
+	deviance(object) + 2 * object$t * (object$t + 1)/(sum(object$N) - object$t - 1)
+}
+
+fscores.msem <- function (model, data = model$data, center = TRUE, scale = FALSE, ...) {
+	m <- model$m
+	P <- model$P
+	A <- model$A
+	var.names <- model$var.names
+	C <- model$C
+	group <- model$group
+	groups <- model$groups
+	G <- length(groups)
+	scores <- B <- vector(G, mode="list")
+	names(scores) <- names(B) <- groups
+	for (g in 1:G){
+		observed <- var.names[[g]] %in% rownames(C[[g]])
+		if (all(observed)) {
+			warning("there are no latent variables in group ", groups[g])
+		}
+		IAinv <- solve(diag(m[g]) - A[[g]])
+		Sigma <- IAinv %*% P[[g]] %*% t(IAinv)
+		B[[g]] <- solve(Sigma[observed, observed]) %*% Sigma[observed, !observed]
+		rownames(B[[g]]) <- var.names[[g]][observed]
+		colnames(B[[g]]) <- var.names[[g]][!observed]
+		if (!is.null(data)){
+			dat <- subset(data, subset=data[, group] == groups[g])
+			X <- as.matrix(dat[, var.names[[g]][observed]])
+			if (center || scale) 
+				X <- scale(X, center = center, scale = scale)
+			scores[[g]] <- X %*% B[[g]]
+		}
+	}
+	if (is.null(data)) return(B)
+	else return(scores)
+}
+
+vcov.msem <- function (object, analytic = inherits(object, "msemObjectiveML") && object$t <= 100, ...) { # FIXME!
+	if (!analytic) 
+		return(object$vcov)
+	if (!inherits(object, "msemObjectiveML")) 
+		stop("analytic coefficient covariance matrix unavailable")
+	hessian <- function(model) {
+		accumulate <- function(A, B, C, D, d) {
+			B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
+		}
+		A <- model$A
+		P <- model$P
+		S <- model$S
+		C <- model$C
+		J <- model$J
+		m <- model$m
+		N <- model$N
+		rams <- model$ram
+		groups <- model$groups
+		G <- length(groups)
+		nms <- names(coef(model))
+		raw <- model$raw
+		Hessian <- matrix(0, nrow=length(nms), ncol=length(nms))
+		rownames(Hessian) <- colnames(Hessian) <- nms
+		wts <- (N - !raw)/(sum(N) - !raw*G)
+		for (g in 1:G){
+			I.Ainv <- solve(diag(m[g]) - A[[g]])
+			Cinv <- solve(C[[g]])
+			AA <- t(I.Ainv) %*% t(J[[g]])
+			BB <- J[[g]] %*% I.Ainv %*% P[[g]] %*% t(I.Ainv)
+			CC <- t(I.Ainv) %*% t(J[[g]])
+			DD <- J[[g]] %*% I.Ainv
+			dF.dBdB <- accumulate(AA %*% Cinv %*% t(AA), t(BB) %*% 
+							Cinv %*% BB, AA %*% Cinv %*% BB, t(BB) %*% Cinv %*% 
+							t(AA), m[g])
+			dF.dPdP <- accumulate(CC %*% Cinv %*% t(CC), t(DD) %*% 
+							Cinv %*% DD, CC %*% Cinv %*% DD, t(DD) %*% Cinv %*% 
+							t(CC), m[g])
+			dF.dBdP <- accumulate(AA %*% Cinv %*% t(CC), t(BB) %*% 
+							Cinv %*% DD, AA %*% Cinv %*% DD, t(BB) %*% Cinv %*% 
+							t(CC), m[g])
+			ram <- rams[[g]]
+			fixed <- ram[, 4] == 0
+			sel.free <- ram[, 4]
+			sel.free[fixed] <- 0
+			one.head <- ram[, 1] == 1
+			one.free <- which((!fixed) & one.head)
+			two.free <- which((!fixed) & (!one.head))
+			two.free.cov <- which((!fixed) & (!one.head) & (ram[, 2] != ram[, 3]))
+			arrows.1 <- ram[one.head, c(2, 3), drop = FALSE]
+			arrows.2 <- ram[!one.head, c(2, 3), drop = FALSE]
+			arrows.2t <- ram[!one.head, c(3, 2), drop = FALSE]
+			arrows.1.free <- ram[one.free, c(2, 3), drop = FALSE]
+			arrows.2.free <- ram[two.free, c(2, 3), drop = FALSE]
+			sel.free.1 <- sel.free[one.free]
+			sel.free.2 <- sel.free[two.free]
+			unique.free.1 <- unique(sel.free.1)
+			unique.free.2 <- unique(sel.free.2)
+			posn.matrix <- matrix(1:(m[g]^2), m[g], m[g])
+			posn.free <- c(posn.matrix[arrows.1.free], (m[g]^2) + posn.matrix[arrows.2.free])
+			DBB <- dF.dBdB[posn.matrix[arrows.1.free], posn.matrix[arrows.1.free], 
+					drop = FALSE]
+			DPP <- dF.dPdP[posn.matrix[arrows.2.free], posn.matrix[arrows.2.free], 
+					drop = FALSE]
+			DBP <- dF.dBdP[posn.matrix[arrows.1.free], posn.matrix[arrows.2.free], 
+					drop = FALSE]
+			hessian <- rbind(cbind(DBB, DBP), cbind(t(DBP), DPP))
+			n1 <- length(one.free)
+			n2 <- length(two.free)
+			nn <- rep(c(sqrt(2), sqrt(2)/2), c(n1, n2))
+			nn[c(one.free, two.free) %in% two.free.cov] <- sqrt(2)
+			hessian <- hessian * outer(nn, nn)
+			pars <- ram[, 4][!fixed]
+			all.pars <- ram[, 4]
+			t <- length(pars)
+			Z <- outer(1:t, pars, function(x, y) as.numeric(x == y))
+			hessian <- Z %*% hessian %*% t(Z)
+			par.names <- c(nms[all.pars[one.free]], nms[all.pars[two.free]])
+			rownames(hessian) <- colnames(hessian) <- par.names
+			Hessian[par.names, par.names] <- Hessian[par.names, par.names] + wts[g]*hessian
+			browser()
+		}
+		Hessian
+	}
+	h <- hessian(object)
+	browser()
+	t <- object$t
+	N <- sum(object$N)
+	raw <- object$raw
+	G <- length(object$groups)
+	param.names <- rownames(h)
+	vcov <- matrix(NA, t, t)
+	qr.hess <- try(qr(h), silent = TRUE)
+	if (class(qr.hess) == "try-error") {
+		warning("Could not compute QR decomposition of Hessian.\nOptimization probably did not converge.\n")
+	}
+	else if (qr.hess$rank < t) {
+		warning(" singular Hessian: model is probably underidentified.\n")
+		which.aliased <- qr.hess$pivot[-(1:qr.hess$rank)]
+		attr(vcov, "aliased") <- param.names[which.aliased]
+	}
+	else {
+		vcov <- (2/(N - G*(!raw))) * solve(h)
+		if (any(diag(vcov) < 0)) {
+			attr(vcov, "aliased") <- param.names[diag(vcov) <  0]
+			warning("Negative parameter variances.\nModel may be underidentified.\n")
+		}
+	}
+	vcov
+}

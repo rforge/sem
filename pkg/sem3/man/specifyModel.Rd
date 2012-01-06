@@ -2,7 +2,9 @@
 \alias{specifyModel}
 \alias{specifyEquations}
 \alias{cfa}
+\alias{multigroupModel}
 \alias{print.semmod}
+\alias{print.semmodList}
 \alias{classifyVariables}
 \alias{removeRedundantPaths}
 \alias{combineModels}
@@ -21,6 +23,8 @@ specifyEquations(file="", ...)
 
 cfa(file="", covs=paste(factors, collapse=","), reference.indicators=FALSE, ...)
 
+multigroupModel(..., groups=names(models), allEqual=FALSE)
+
 classifyVariables(model)
 
 removeRedundantPaths(model, warn=TRUE)
@@ -29,6 +33,7 @@ removeRedundantPaths(model, warn=TRUE)
 \method{edit}{semmod}(name, ...)
 
 \method{print}{semmod}(x, ...)
+\method{print}{semmodList}(x, ...)
 }
 
 \arguments{
@@ -50,13 +55,23 @@ removeRedundantPaths(model, warn=TRUE)
     to estimate from the data, and instead the first factor loading for each factor is set
     to 1 to identify the model.}
   \item{quiet}{if \code{FALSE}, the default, then the number of input lines is reported.}
-  \item{x, model, object, name}{An object of class \code{semmod}, as produced by
-    \code{specifyModel}.}
+  \item{x, model, object, name}{An object of class \code{semmod} or \code{semmodList}, as produced by
+    \code{specifyModel} or \code{multigroupModel}.}
   \item{warn}{print a warning if redundant paths are detected.}
-  \item{...}{for \code{specifyEquations} and \code{cfa}, arguments (such as \code{covs},
+  \item{...}{For \code{multigroupModel}, one or more optionally named arguments each of
+     which is a \code{semmod} object produced, e.g., by \code{specifyModel}, \code{specifyEquations},
+     or \code{cfa}; if only one such model is given, then it will be used for all groups defined by
+     the \code{groups} argument. If parameters have the same name in different groups, then they will
+     be constrained to be equal.
+     For \code{specifyEquations} and \code{cfa}, arguments (such as \code{covs},
   	 in the case of \code{specifyEquations}) to be 
      passed to \code{specifyModel}; for \code{combineModels}, \code{sem} objects; 
      ignored in the \code{update} and \code{print} methods.}
+  \item{groups}{a character vector of names for the groups in a multigroup model; taken by default from
+  	 the names of the \code{...} arguments.
+  \item{allEqual}{if \code{FALSE} (the default), then if only one model object is given for
+  	 a multigroup model, all corresponding parameters in the groups will be distinct; if \code{TRUE},
+  	 all corresponding parameters will be constrained to be equal.
 }
 
 \details{
@@ -168,6 +183,8 @@ removeRedundantPaths(model, warn=TRUE)
 \value{
   \code{specifyModel}, \code{specifyEquations}, \code{cfa}, \code{removeRedundantPaths}, \code{combineModels}, 
   \code{update}, and \code{edit} return an object of class \code{semmod}, suitable as input for \code{\link{sem}}.
+  
+  \code{multigroupModel} returns an object of class \code{semmodList}, also suitable as input for \code{\link{sem}}.
   
   \code{classifyVariables} returns a list with two character vectors: \code{endogenous}, containing the names of endogenous
   variables in the model; and \code{exogenous}, containing the names of exogenous variables.
@@ -358,6 +375,43 @@ F3 <-> F3,                            NA,     1
 
 cfa.thur.p <- sem(mod.cfa.thur.p, R.thur, 213)
 summary(cfa.thur.p)
+
+# a multigroup CFA model fit to the Holzinger-Swineford
+#   mental-tests data (from the MBESS package)
+
+library(MBESS)
+data(HS.data)
+
+modc <- cfa()
+spatial: visual, cubes, paper, flags
+verbal: general, paragrap, sentence, wordc, wordm
+memory: wordr, numberr, figurer, object, numberf, figurew
+math: deduct, numeric, problemr, series, arithmet
+
+mod <- multigroupModel(modc, groups=c("Female", "Male")) 
+
+sem.mg <- sem(mod, data=HS.data, group="Gender",
+              formula = ~ visual + cubes + paper + flags +
+              general + paragrap + sentence + wordc + wordm +
+              wordr + numberr + figurer + object + numberf + figurew +
+              deduct + numeric + problemr + series + arithmet
+              )
+summary(sem.mg)
+
+	# with cross-group equality constraints:
+	
+modeq <- multigroupModel(modc, groups=c("Female", "Male"), allEqual=TRUE)
+
+sem.mg.eq <- sem(modeq, data=HS.data, groups="Gender",
+              formula = ~ visual + cubes + paper + flags +
+                general + paragrap + sentence + wordc + wordm +
+                wordr + numberr + figurer + object + numberf + figurew +
+                deduct + numeric + problemr + series + arithmet
+              )
+  )
+summary(sem.mg.eq)
+
+anova(sem.mg, sem.mq.eq) # test equality constraints
     }
 }
 

@@ -1,4 +1,4 @@
-# last modified 2011-10-28 by J. Fox
+# last modified 2012-01-06 by J. Fox
 
 mod.indices <- function(...){
 	.Deprecated("modIndices", package="sem")
@@ -12,32 +12,35 @@ modIndices <- function(model, ...){
 # incorporates corrections by Michael Culbertson:
 
 modIndices.objectiveML <- function(model, ...){        
+#	accumulate <- function(A, B, C, D, d) {
+#		res <- matrix(0, d^2, d^2)    
+#		for (ii in 1:(d^2)){
+#			for (jj in ii:(d^2)){
+#				g <- 1 + (ii - 1) %% d
+#				h <- 1 + (ii - 1) %/% d
+#				i <- 1 + (jj - 1) %% d
+#				j <- 1 + (jj - 1) %/% d
+#				res[ii, jj] <- res[jj, ii] <- A[g, i] * B[h, j] + C[g, j] * D[h, i]
+#			}
+#		}
+#		res
+#	}
+#	accumulate.asym <- function(A, B, C, D, d) {
+#		res <- matrix(0, d^2, d^2)    
+#		for (ii in 1:(d^2)){
+#			for (jj in 1:(d^2)){
+#				g <- 1 + (ii - 1) %% d
+#				h <- 1 + (ii - 1) %/% d
+#				i <- 1 + (jj - 1) %% d
+#				j <- 1 + (jj - 1) %/% d
+#				res[ii, jj] <- A[g, i] * B[h, j] + C[g, j] * D[h, i]
+#			}
+#		}
+#		res
+#	} 
 	accumulate <- function(A, B, C, D, d) {
-		res <- matrix(0, d^2, d^2)    
-		for (ii in 1:(d^2)){
-			for (jj in ii:(d^2)){
-				g <- 1 + (ii - 1) %% d
-				h <- 1 + (ii - 1) %/% d
-				i <- 1 + (jj - 1) %% d
-				j <- 1 + (jj - 1) %/% d
-				res[ii, jj] <- res[jj, ii] <- A[g, i] * B[h, j] + C[g, j] * D[h, i]
-			}
-		}
-		res
+		B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
 	}
-	accumulate.asym <- function(A, B, C, D, d) {
-		res <- matrix(0, d^2, d^2)    
-		for (ii in 1:(d^2)){
-			for (jj in 1:(d^2)){
-				g <- 1 + (ii - 1) %% d
-				h <- 1 + (ii - 1) %/% d
-				i <- 1 + (jj - 1) %% d
-				j <- 1 + (jj - 1) %/% d
-				res[ii, jj] <- A[g, i] * B[h, j] + C[g, j] * D[h, i]
-			}
-		}
-		res
-	}        
 	A <- model$A
 	P <- model$P
 	S <- model$S
@@ -60,7 +63,7 @@ modIndices.objectiveML <- function(model, ...){
 			AA %*% Cinv %*% BB, t(BB) %*% Cinv %*% t(AA), m)                
 	dF.dPdP <- accumulate(AA %*% Cinv %*% t(AA), AA %*% Cinv %*% t(AA),
 			AA %*% Cinv %*% t(AA), AA %*% Cinv %*% t(AA), m)                
-	dF.dBdP <- accumulate.asym(AA %*% Cinv %*% t(AA), t(BB) %*% Cinv %*% t(AA),
+	dF.dBdP <- accumulate(AA %*% Cinv %*% t(AA), t(BB) %*% Cinv %*% t(AA),
 			AA %*% Cinv %*% t(AA), t(BB) %*% Cinv %*% t(AA), m)    
 	correct.BB <- correct.PP <- correct.BP <- matrix(1, m^2, m^2)
 	d0 <- as.vector(diag(m) ==0 )

@@ -1,4 +1,4 @@
-# last modified 2011-11-14 by J. Fox
+# last modified 2012-01-06 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -90,7 +90,7 @@ sem.semmod <- function(model, S, N, data, raw=FALSE, obs.variables=rownames(S),
 sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names, 
 		var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
 		analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c("ones", "startvalues"), 
-		start.tol=1E-6, optimizer=optimizerNlm, objective=objectiveML, ...){
+		start.tol=1E-6, optimizer=optimizerSem, objective=objectiveML, ...){
 	ord <- function(x) 1 + apply(outer(unique(x), x, "<"), 2, sum)
 	is.triangular <- function(X) {
 		is.matrix(X) && (nrow(X) == ncol(X)) && 
@@ -188,27 +188,26 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 		result$P <- res$P
 	}
 	cls <- gsub("\\.", "", deparse(substitute(objective)))
-	if(cls == "objectiveCompiledGLS") 
-			cls <- c(cls, "objectiveGLS")
-	else if(cls == "objectiveCompiledML") 
-			cls <- c(cls, "objectiveML")
+#	if(cls == "objectiveCompiledGLS") 
+#			cls <- c(cls, "objectiveGLS")
+#	else if(cls == "objectiveCompiledML") 
+#			cls <- c(cls, "objectiveML")
 	class(result) <- c(cls, "sem")
-	if (robust && !is.null(data) && (inherits(result, "objectiveML") || inherits(result, "objectiveCompiledML"))){
+	if (robust && !is.null(data) && inherits(result, "objectiveML")){
 		result$adj.obj <- sbchisq(result, data)
 		result$robust.vcov <- robustVcov(result, adj.obj=result$adj.obj)
 	}
 	result
 }
 
-vcov.sem <- function(object, robust=FALSE, analytic=(inherits(object, "objectiveML")||inherits(object, "objectiveCompiledML")) && object$t <= 100, ...) {
+vcov.sem <- function(object, robust=FALSE, analytic=inherits(object, "objectiveML") && object$t <= 500, ...) {
 	if (robust) return(object$robust.vcov)
 	if (!analytic) return(object$vcov)
-	if (!inherits(object, "objectiveML") && !inherits(object, "objectiveCompiledML")) stop("analytic coefficient covariance matrix unavailable")
+	if (!inherits(object, "objectiveML")) stop("analytic coefficient covariance matrix unavailable")
 	hessian <- function(model){
 		accumulate <- function(A, B, C, D, d) {
-				res <- matrix(0, d^2, d^2)
-				res <- B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
-				res
+#				res <- matrix(0, d^2, d^2)
+			B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
 		}    
 		A <- model$A
 		P <- model$P

@@ -3,13 +3,14 @@ Version: 3.0-0
 Date: 2011/01/05
 Title: Structural Equation Models
 Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
+	person("Zhenghua", "Nie", role = "aut", email="niez@mcmaster.ca"),
     person("Jarrett", "Byrnes", role = "aut", email="byrnes@nceas.ucsb.edu"),
     person("Michael", "Culbertson", role = "ctb"),
     person("Michael", "Friendly", role = "ctb"),
     person("Adam", "Kramer", role = "ctb"),
     person("Georges", "Monette", role = "ctb")
 	)
-Depends: R (>= 2.14.0), stats, MASS, matrixcalc
+Depends: R (>= 2.14.0), stats, MASS, matrixcalc, MBESS
 Suggests: boot, tcltk, polycor
 LazyLoad: yes
 LazyData: yes
