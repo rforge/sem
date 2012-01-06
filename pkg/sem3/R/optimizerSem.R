@@ -50,7 +50,7 @@ optimizerSem <- function(start, objective=objectiveML,
 			colnames(vcov) <- rownames(vcov) <- param.names
 			result$vcov <- vcov
 			result$criterion <- res$minimum # c(result$obj) - n - log(det(S))
-			if(identical(objective, objectiveCompiledML) || identical(objective, objectiveCompiledGLS)){
+			if(identical(objective, objectiveML) || identical(objective, objectiveGLS)){
 					C <- res$C
 					A <- res$A
 					P <- res$P
