@@ -35,7 +35,7 @@
 		var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
 		analytic.gradient=TRUE, warn=FALSE, maxiter=500, 
 		par.size=c("ones", "startvalues"), start.tol=1E-6, 
-		optimizer=optimizerNlm, objective=objectiveML, ...) 
+		optimizer=optimizerSem, objective=objectiveML, ...) 
 		
 \method{sem}{semmodList}(model, S, N, data, raw=FALSE, fixed.x=NULL, 
 		formula, group="Group", debug=FALSE, ...)
@@ -44,15 +44,15 @@
 		param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
 		maxiter=1000, par.size = c("ones", "startvalues"), start.tol = 1e-06, 
 		startvalues=c("initial.fit", "startvalues"),
-		optimizer = msemOptimizerNlm, objective = msemObjectiveML, ...){
+		optimizer = msemOptimizerNlm, objective = msemObjectiveML, ...)
     
 startvalues(S, ram, debug=FALSE, tol=1E-6)
 
 \method{coef}{sem}(object, standardized=FALSE, ...)
 \method{coef}{msem}(object, ...)
 \method{vcov}{sem}(object, robust=FALSE, 
-	analytic=inherits(object, "objectiveML") && object$t <= 100, ...)
-\method{vcov}{msem}(object, ...)
+	analytic=inherits(object, "objectiveML") && object$t <= 500, ...)
+\method{vcov}{msem}(object, analytic = inherits(object, "msemObjectiveML") && object$t <= 100, ...)
 \method{df.residual}{sem}(object, ...)
 \method{df.residual}{msem}(object, ...)
 }

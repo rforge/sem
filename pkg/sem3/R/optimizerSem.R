@@ -1,4 +1,4 @@
-# last modified 2012-01-06 by J. Fox
+# last modified 2012-01-07 by J. Fox
 # Modified for Compiled Objective and nlm in C/C++ by Zhenghua Nie.
 
 optimizerSem <- function(start, objective=objectiveML,  
@@ -13,9 +13,14 @@ optimizerSem <- function(start, objective=objectiveML,
 #			if(identical(objective, objectiveCompiledGLS) || identical(objective, objectiveGLS))
 #					objectiveCompiled <- "objectiveGLS"
 				
-			objectiveCompiled <- deparse(substitute(objective))
-			if (!objectiveCompiled %in% c("objectiveML", "objectiveGLS")) stop("optimizerSem requires the objectiveML or objectiveGLS objective function")
-
+#			objectiveCompiled <- deparse(substitute(objective))
+#			if (!objectiveCompiled %in% c("objectiveML", "objectiveGLS")) stop("optimizerSem requires the objectiveML or objectiveGLS objective function")
+#			objectiveCompiled <- "objectiveML"
+				
+			if(identical(objective, objectiveML)) objectiveCompiled <- "objectiveML"
+			else if (identical(objective, objectiveGLS)) objectiveCompiled <- "objectiveGLS"
+			else stop("optimizerSem requires the objectiveML or objectiveGLS objective function")
+			
 			if (!warn) save.warn <- options(warn=-1)
 
 			res <- CompiledSolve(model.description=model.description, start=start, objective=objectiveCompiled, typsize=typsize, debug=debug, maxiter=maxiter)
@@ -50,16 +55,16 @@ optimizerSem <- function(start, objective=objectiveML,
 			colnames(vcov) <- rownames(vcov) <- param.names
 			result$vcov <- vcov
 			result$criterion <- res$minimum # c(result$obj) - n - log(det(S))
-			if(identical(objective, objectiveML) || identical(objective, objectiveGLS)){
+#			if(identical(objective, objectiveML) || identical(objective, objectiveGLS)){
 					C <- res$C
 					A <- res$A
 					P <- res$P
-			} else {
-					obj <- obj(par, model.description)  
-					C <- attr(obj, "C")
-					A <- attr(obj, "A")
-					P <- attr(obj, "P")
-			}
+#			} else {
+#					obj <- obj(par, model.description)  
+#					C <- attr(obj, "C")
+#					A <- attr(obj, "A")
+#					P <- attr(obj, "P")
+#			}
 
 			rownames(C) <- colnames(C) <- var.names[observed]
 			result$C <- C

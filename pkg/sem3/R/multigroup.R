@@ -492,16 +492,10 @@ residuals.msem <- function(object, ...){
 
 coef.msem <- function(object, ...) object$coeff
 
-vcov.msem <- function(object, ...) object$vcov
-
 df.residual.msem <- function (object, ...){
 	n <- object$n
 	n.fix <- object$n.fix
 	sum(n*(n + 1)/2) - object$t - sum(n.fix*(n.fix + 1)/2)
-}
-
-deviance.msemObjectiveML <- function(object, ...){
-	object$criterion * sum(object$N - !object$raw)
 }
 
 anova.msemObjectiveML <- function(object, model.2, ...) {
@@ -602,14 +596,6 @@ normalizedResiduals.msemObjectiveML <- function (object, ...) {
 		res[[g]] <- res[[g]]/sqrt((outer(c, c) + C[[g]]^2)/N[g])
 	}
 	res
-}
-
-BIC.msemObjectiveML <- function (object, ...) {
-	deviance(object) + object$t * log(sum(object$N))
-}
-
-AICc.msemObjectiveML <- function (object, ...) {
-	deviance(object) + 2 * object$t * (object$t + 1)/(sum(object$N) - object$t - 1)
 }
 
 fscores.msem <- function (model, data = model$data, center = TRUE, scale = FALSE, ...) {

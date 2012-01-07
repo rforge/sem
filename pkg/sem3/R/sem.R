@@ -188,6 +188,7 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 		result$P <- res$P
 	}
 	cls <- gsub("\\.", "", deparse(substitute(objective)))
+	cls <- gsub("2", "", cls)
 #	if(cls == "objectiveCompiledGLS") 
 #			cls <- c(cls, "objectiveGLS")
 #	else if(cls == "objectiveCompiledML") 

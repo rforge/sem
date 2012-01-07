@@ -12,9 +12,9 @@
 }
 
 \usage{
-standardizedCoefficients <- function(object, ...)
-\method{standardizedCoefficients}{sem(object, digits = 5, oneheaded = TRUE, twoheaded = TRUE, ...)
-\method{standardizedCoefficients}{msem}function (object, ...)
+standardizedCoefficients(object, ...)
+\method{standardizedCoefficients}{sem}(object, digits = 5, oneheaded = TRUE, twoheaded = TRUE, ...)
+\method{standardizedCoefficients}{msem}(object, ...)
 
 stdCoef(...)
 }

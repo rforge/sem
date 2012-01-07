@@ -68,10 +68,10 @@ removeRedundantPaths(model, warn=TRUE)
      passed to \code{specifyModel}; for \code{combineModels}, \code{sem} objects; 
      ignored in the \code{update} and \code{print} methods.}
   \item{groups}{a character vector of names for the groups in a multigroup model; taken by default from
-  	 the names of the \code{...} arguments.
+  	 the names of the \code{...} arguments.}
   \item{allEqual}{if \code{FALSE} (the default), then if only one model object is given for
   	 a multigroup model, all corresponding parameters in the groups will be distinct; if \code{TRUE},
-  	 all corresponding parameters will be constrained to be equal.
+  	 all corresponding parameters will be constrained to be equal.}
 }
 
 \details{
