@@ -1,3 +1,9 @@
+Changes to Version 3.0-0
+
+	o Compiled code for optimization.
+	
+	o Added multi-group models.
+
 Changes to Version 2.1-2
 
     o Suppress R^2s when raw moments used (they were not computed correctly).

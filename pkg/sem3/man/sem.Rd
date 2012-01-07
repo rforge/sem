@@ -900,6 +900,42 @@ F3 <-> F3,                            NA,     1
 
 cfa.thur.p <- sem(mod.cfa.thur.p, R.thur, 213)
 summary(cfa.thur.p)
+
+
+# -------  a multigroup CFA model fit to the Holzinger-Swineford mental-tests data  ---------
+
+library(MBESS) # for data
+data(HS.data)
+
+mod.hs <- cfa()
+spatial: visual, cubes, paper, flags
+verbal: general, paragrap, sentence, wordc, wordm
+memory: wordr, numberr, figurer, object, numberf, figurew
+math: deduct, numeric, problemr, series, arithmet
+
+mod.mg <- multigroupModel(mod.hs, groups=c("Female", "Male")) 
+
+sem.mg <- sem(mod.mg, data=HS.data, group="Gender",
+              formula = ~ visual + cubes + paper + flags +
+              general + paragrap + sentence + wordc + wordm +
+              wordr + numberr + figurer + object + numberf + figurew +
+              deduct + numeric + problemr + series + arithmet
+              )
+summary(sem.mg)
+
+	# with cross-group equality constraints:
+	
+mod.mg.eq <- multigroupModel(mod.hs, groups=c("Female", "Male"), allEqual=TRUE)
+
+sem.mg.eq <- sem(mod.mg.eq, data=HS.data, group="Gender",
+              formula = ~ visual + cubes + paper + flags +
+                general + paragrap + sentence + wordc + wordm +
+                wordr + numberr + figurer + object + numberf + figurew +
+                deduct + numeric + problemr + series + arithmet
+              )
+summary(sem.mg.eq)
+
+anova(sem.mg, sem.mg.eq) # test equality constraints
 	}
 
 ## ===============================================================================
@@ -998,6 +1034,38 @@ summary(sem.bollen, analytic.se=FALSE) # uses numeric rather than analytic Hessi
 
 sem.bollen.gls <- sem(model.bollen, data=Bollen, objective=objectiveGLS) # GLS rather than ML estimator
 summary(sem.bollen.gls)
+
+#------------ Holzinger and Swineford muiltigroup CFA example ----------------
+
+if (require(MBESS)){ # for data
+	data(HS.data)
+	
+	mod.hs <- cfa(file=file.path(etc, "model-HS.txt"))
+	
+	mod.mg <- multigroupModel(mod.hs, groups=c("Female", "Male")) 
+	
+	sem.mg <- sem(mod.mg, data=HS.data, group="Gender",
+	              formula = ~ visual + cubes + paper + flags +
+	              general + paragrap + sentence + wordc + wordm +
+	              wordr + numberr + figurer + object + numberf + figurew +
+	              deduct + numeric + problemr + series + arithmet
+	              )
+	summary(sem.mg)
+	
+		# with cross-group equality constraints:
+		
+	mod.mg.eq <- multigroupModel(mod.hs, groups=c("Female", "Male"), allEqual=TRUE)
+	
+	sem.mg.eq <- sem(mod.mg.eq, data=HS.data, group="Gender",
+	              formula = ~ visual + cubes + paper + flags +
+	                general + paragrap + sentence + wordc + wordm +
+	                wordr + numberr + figurer + object + numberf + figurew +
+	                deduct + numeric + problemr + series + arithmet
+	              )
+	summary(sem.mg.eq)
+	
+	anova(sem.mg, sem.mg.eq) # test equality constraints
+	}
 }   
 
 \keyword{models}

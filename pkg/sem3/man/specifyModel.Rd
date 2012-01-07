@@ -382,15 +382,15 @@ summary(cfa.thur.p)
 library(MBESS)
 data(HS.data)
 
-modc <- cfa()
+mod.hs <- cfa()
 spatial: visual, cubes, paper, flags
 verbal: general, paragrap, sentence, wordc, wordm
 memory: wordr, numberr, figurer, object, numberf, figurew
 math: deduct, numeric, problemr, series, arithmet
 
-mod <- multigroupModel(modc, groups=c("Female", "Male")) 
+mod.mg <- multigroupModel(mod.hs, groups=c("Female", "Male")) 
 
-sem.mg <- sem(mod, data=HS.data, group="Gender",
+sem.mg <- sem(mod.mg, data=HS.data, group="Gender",
               formula = ~ visual + cubes + paper + flags +
               general + paragrap + sentence + wordc + wordm +
               wordr + numberr + figurer + object + numberf + figurew +
@@ -400,18 +400,15 @@ summary(sem.mg)
 
 	# with cross-group equality constraints:
 	
-modeq <- multigroupModel(modc, groups=c("Female", "Male"), allEqual=TRUE)
+mod.mg.eq <- multigroupModel(mod.hs, groups=c("Female", "Male"), allEqual=TRUE)
 
-sem.mg.eq <- sem(modeq, data=HS.data, groups="Gender",
+sem.mg.eq <- sem(mod.mg.eq, data=HS.data, group="Gender",
               formula = ~ visual + cubes + paper + flags +
                 general + paragrap + sentence + wordc + wordm +
                 wordr + numberr + figurer + object + numberf + figurew +
                 deduct + numeric + problemr + series + arithmet
               )
-  )
 summary(sem.mg.eq)
-
-anova(sem.mg, sem.mq.eq) # test equality constraints
     }
 }
 
