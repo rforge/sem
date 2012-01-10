@@ -631,7 +631,7 @@ fscores.msem <- function (model, data = model$data, center = TRUE, scale = FALSE
 	else return(scores)
 }
 
-vcov.msem <- function (object, analytic = inherits(object, "msemObjectiveML") && object$t <= 100, ...) { # FIXME!
+vcov.msem <- function (object, analytic = inherits(object, "msemObjectiveML") && object$t <= 500, ...) { 
 	if (!analytic) 
 		return(object$vcov)
 	if (!inherits(object, "msemObjectiveML")) 
