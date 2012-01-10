@@ -52,7 +52,7 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
 \method{coef}{msem}(object, ...)
 \method{vcov}{sem}(object, robust=FALSE, 
 	analytic=inherits(object, "objectiveML") && object$t <= 500, ...)
-\method{vcov}{msem}(object, analytic = inherits(object, "msemObjectiveML") && object$t <= 100, ...)
+\method{vcov}{msem}(object, analytic = inherits(object, "msemObjectiveML") && object$t <= 500, ...)
 \method{df.residual}{sem}(object, ...)
 \method{df.residual}{msem}(object, ...)
 }
