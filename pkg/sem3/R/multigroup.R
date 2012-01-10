@@ -183,7 +183,7 @@ sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FAL
 		diag(correct[[g]]) <- 1
 		observed <- 1:n[g]
 		J[[g]][cbind(observed, observed)] <- 1
-		par.posn[[g]] <-  sapply(1:t, function(i) which(model[[g]][,4] == i)[1]) # FIXME?
+		par.posn[[g]] <-  sapply(1:t, function(i) which(model[[g]][,4] == i)[1])
 		colnames(model[[g]]) <- c("heads", "to", "from", "parameter", "start value")
 		rownames(model[[g]]) <- rep("", nrow(model[[g]]))
 		fixed[[g]] <- model[[g]][, 4] == 0
@@ -705,17 +705,18 @@ vcov.msem <- function (object, analytic = inherits(object, "msemObjectiveML") &&
 			pars <- ram[, 4][!fixed]
 			all.pars <- ram[, 4]
 			t <- length(pars)
-			Z <- outer(1:t, pars, function(x, y) as.numeric(x == y))
+#			Z <- outer(1:t, pars, function(x, y) as.numeric(x == y))
+			Z <- outer(sort(unique(pars)), pars, function(x, y) as.numeric(x == y))
 			hessian <- Z %*% hessian %*% t(Z)
 			par.names <- c(nms[all.pars[one.free]], nms[all.pars[two.free]])
 			rownames(hessian) <- colnames(hessian) <- par.names
 			Hessian[par.names, par.names] <- Hessian[par.names, par.names] + wts[g]*hessian
-			browser()
+#			browser()
 		}
 		Hessian
 	}
 	h <- hessian(object)
-	browser()
+#	browser()
 	t <- object$t
 	N <- sum(object$N)
 	raw <- object$raw
