@@ -1,7 +1,7 @@
-# last modified 2011-12-01 by J. Fox
+# last modified 2011-12-10 by J. Fox
 
 
-summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 100, ...) {
+summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...) {
 	vcov <- vcov(object, robust=robust, analytic=analytic.se)
 	if (any(is.na(vcov))) stop("coefficient covariances cannot be computed")
 	norm.res <- normalizedResiduals(object)
