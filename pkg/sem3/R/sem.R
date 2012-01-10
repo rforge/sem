@@ -1,4 +1,4 @@
-# last modified 2012-01-06 by J. Fox
+# last modified 2012-01-10 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -206,10 +206,10 @@ vcov.sem <- function(object, robust=FALSE, analytic=inherits(object, "objectiveM
 	if (!analytic) return(object$vcov)
 	if (!inherits(object, "objectiveML")) stop("analytic coefficient covariance matrix unavailable")
 	hessian <- function(model){
-		accumulate <- function(A, B, C, D, d) {
+#		accumulate <- function(A, B, C, D, d) {
 #				res <- matrix(0, d^2, d^2)
-			B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
-		}    
+#			B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
+#		}    
 		A <- model$A
 		P <- model$P
 		S <- model$S
@@ -307,3 +307,9 @@ coef.sem <- function(object, standardized=FALSE, ...){
 	names(coef) <- names[which]
 	coef
 }
+
+# the following auxiliary function is for computing Hessians
+
+accumulate <- function(A, B, C, D, d) {
+	B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
+}    

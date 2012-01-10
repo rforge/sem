@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-01-06
+# last modified J. Fox 2012-01-10
 
 ## model definition
 
@@ -637,9 +637,9 @@ vcov.msem <- function (object, analytic = inherits(object, "msemObjectiveML") &&
 	if (!inherits(object, "msemObjectiveML")) 
 		stop("analytic coefficient covariance matrix unavailable")
 	hessian <- function(model) {
-		accumulate <- function(A, B, C, D, d) {
-			B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
-		}
+#		accumulate <- function(A, B, C, D, d) {
+#			B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
+#		}
 		A <- model$A
 		P <- model$P
 		S <- model$S

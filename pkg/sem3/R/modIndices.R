@@ -1,4 +1,4 @@
-# last modified 2012-01-06 by J. Fox
+# last modified 2012-01-10 by J. Fox
 
 mod.indices <- function(...){
 	.Deprecated("modIndices", package="sem")
@@ -38,9 +38,9 @@ modIndices.objectiveML <- function(model, ...){
 #		}
 #		res
 #	} 
-	accumulate <- function(A, B, C, D, d) {
-		B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
-	}
+#	accumulate <- function(A, B, C, D, d) {
+#		B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
+#	}
 	A <- model$A
 	P <- model$P
 	S <- model$S
