@@ -129,7 +129,7 @@ msemCompiledSolve <- function(model.description, start, objective=c("objectiveML
 		ret$minimum <- res$minimum
 		ret$estimate <- res$estimate
 		ret$gradient <- res$gradient
-		if(hessian) ret$hessian <- res$hessian
+		ret$hessian <- res$hessian
 		ret$code <- res$code
 		ret$iterations <- res$iterations
 		ret$C <- CC
@@ -384,7 +384,7 @@ cmsem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), o
 								"arrows.2.seq" = arrows.2.seq, 
 								"typsize" = typsize, 
 								"csem.environment"=csem.environment)
-		attr(ret, "class") <- "csem"
+		attr(ret, "class") <- "cmsem"
 
 		# add the current call to the list
 		# ret$call <- match.call()

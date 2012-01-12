@@ -58,9 +58,8 @@
 #include <R_ext/RS.h>	       	/* for Memcpy */
 #include <R_ext/Parse.h>
 #include <R_ext/Lapack.h>
-#include <R_ext/Blas.h>
+#include <R_ext/BLAS.h>
 
 #include "csemnlm.h"
 
-void F77_SUB(sempdot)(const int *n,  const double *dx,  const int *incx, const double *dy,  const int *incy, double *dz);
 #endif

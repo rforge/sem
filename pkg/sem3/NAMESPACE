@@ -16,7 +16,7 @@ export(ram, standardizedResiduals, normalizedResiduals, readMoments,
 	#it may not be necessay to export csem. We have two wrappers of csem to CompiledSolve and CompiledObjective. 
 	csem, cmsem,  
 	#CompiledSolve, 
-	msemCompiledObjective, 
+	msemCompiledObjective,msemCompiledSolve,  
 	optimizerSem,  
 	objectiveML, objectiveGLS,   
 	multigroupModel, msemObjectiveML, msemOptimizerNlm,

@@ -51,7 +51,6 @@ void printSEXP(SEXP sexp, const string msg);
 SEXP getListElement(SEXP list,   int ind)
 {
 		SEXP elmt = R_NilValue;
-		int i;
 
 		if(ind >= 0 && ind < length(list))
 		{
@@ -77,9 +76,9 @@ SEXP getListElement(SEXP list, std::string str)
 
 double  getVectorElement(SEXP vect,  int ind )
 {
-		double elmt;
+		double elmt = csem_NaN;
 		if(ind >= 0 && ind < length(vect))
-		elmt = REAL(AS_NUMERIC(vect))[ind];
+				elmt = REAL(AS_NUMERIC(vect))[ind];
 		else
 				error(("The index is not in the range of the vector."));
 
@@ -737,7 +736,6 @@ extern "C" {
 				R_CheckUserInterrupt();
 
 				msem_model_info *m_model = m_state->model;
-				model_info *model = (model_info *)R_alloc(1, sizeof(model_info));   //for each group, we construct them,  and then call bojectiveML to do the calculation.
 				function_info *state = (function_info *)R_alloc(1, sizeof(function_info));
 				state->have_gradient = m_state->have_gradient;
 				state->have_hessian = m_state->have_hessian;
@@ -758,51 +756,25 @@ extern "C" {
 				}
 				for(i = 0; i < G; ++i)
 				{
-						model->S=getListElement(m_model->S, i);
-						model->logdetS = REAL(AS_NUMERIC(m_model->logdetS))[i];
-						model->N = INTEGER(AS_INTEGER(m_model->N))[i];
-						model->m = INTEGER(AS_INTEGER(m_model->m))[i];
-						model->n = INTEGER(AS_INTEGER(m_model->n))[i];
-						PROTECT(model->fixed = getListElement(m_model->fixed, i));
-						PROTECT(model->ram = getListElement(m_model->ram, i));
-						PROTECT(model->sel_free = getListElement(m_model->sel_free, i));
-						model->t = length(model->sel_free);
-						PROTECT(model->arrows_1 = getListElement(m_model->arrows_1, i));
-						PROTECT(model->arrows_1_free = getListElement(m_model->arrows_1_free, i));
-						PROTECT(model->one_head = getListElement(m_model->one_head, i));
-						PROTECT(model->arrows_2t = getListElement(m_model->arrows_2t, i));
-						PROTECT(model->arrows_2 = getListElement(m_model->arrows_2, i));
-						PROTECT(model->arrows_2_free = getListElement(m_model->arrows_2_free, i));
-						PROTECT(model->unique_free_1 = getListElement(m_model->unique_free_1, i));
-						PROTECT(model->unique_free_2 = getListElement(m_model->unique_free_2, i));
-						PROTECT(model->J = getListElement(m_model->J, i));
-						PROTECT(model->correct = getListElement(m_model->correct, i));
-						SEXP st = getListElement(m_model->arrows_1_seq, i);
-						model->arrows_1_seq = (int *)R_alloc(length(st), sizeof(int)); 
-						Memcpy(model->arrows_1_seq, INTEGER(AS_INTEGER(st)), length(st));
-						st = getListElement(m_model->arrows_2_seq, i);
-						model->arrows_2_seq = (int *)R_alloc(length(st), sizeof(int)); 
-						Memcpy(model->arrows_2_seq, INTEGER(AS_INTEGER(st)), length(st));
-						model->raw = m_model->raw;
 
-						state->model = model;
+						state->model = &m_model->gmodel[i];
 
 						memset(grad, 0, n*sizeof(double));
 						objectiveML(n,  x, &ff[i], grad, h,  &A[indAP],  &P[indAP], &C[indC], state);
-						indAP += model->m*model->m;   //update the index for A, P, C
-						indC += model->n*model->n;
+						indAP += state->model->m*state->model->m;   //update the index for A, P, C
+						indC += state->model->n*state->model->n;
 
-						*f += (model->N-(1-model->raw))*ff[i];
+						*f += (state->model->N-(1-state->model->raw))*ff[i];
+
 						if(state->have_gradient)
 						{
-								double alpha = (model->N-(1-model->raw))/(sumN-(1.0-model->raw)*G);
+								double alpha = (state->model->N-(1-state->model->raw))/(sumN-(1.0-state->model->raw)*G);
 								int incx = 1;
 //F77_NAME(daxpy)(const int *n,  const double *alpha, 
 //								const double *dx,  const int *incx, 
 //								double *dy,  const int *incy); y = ax+y
 								F77_CALL(daxpy)(&n,&alpha, grad,&incx, g, &incx); //grad.all = grad.all+((N[g]-!raw)/(sum(N)-(!raw)*G))*grad
 						}
-						UNPROTECT(13);
 
 				}
 
@@ -906,7 +878,7 @@ extern "C" {
 		{
 				R_CheckUserInterrupt();
 
-				msem_model_info *model = state->model;
+		//		msem_model_info *model = state->model;
 
 				return;
 		}
@@ -1133,7 +1105,7 @@ extern "C" {
 
 				PROTECT(solution=args);
 
-//				showArgs1(args);
+			//	showArgs1(args);
 
 				// Define objective functions and their properties.
 				const int num_objs = 3;
@@ -1212,6 +1184,42 @@ extern "C" {
 				PROTECT(model->arrows_2_seq = getListElement(args, "arrows.2.seq"));
 				num_prot += 2;
 
+				//produce pointer for each group's model.
+				model->gmodel = new model_info[model->G];
+				for(int i = 0; i < model->G; ++i)
+				{
+						model_info *gmodel = &model->gmodel[i];
+
+						gmodel->S=getListElement(model->S, i);
+						gmodel->logdetS = REAL(AS_NUMERIC(model->logdetS))[i];
+						gmodel->N = INTEGER(AS_INTEGER(model->N))[i];
+						gmodel->m = INTEGER(AS_INTEGER(model->m))[i];
+						gmodel->n = INTEGER(AS_INTEGER(model->n))[i];
+						PROTECT(gmodel->fixed = getListElement(model->fixed, i));
+						PROTECT(gmodel->ram = getListElement(model->ram, i));
+						PROTECT(gmodel->sel_free = getListElement(model->sel_free, i));
+						gmodel->t = length(model->sel_free);
+						PROTECT(gmodel->arrows_1 = getListElement(model->arrows_1, i));
+						PROTECT(gmodel->arrows_1_free = getListElement(model->arrows_1_free, i));
+						PROTECT(gmodel->one_head = getListElement(model->one_head, i));
+						PROTECT(gmodel->arrows_2t = getListElement(model->arrows_2t, i));
+						PROTECT(gmodel->arrows_2 = getListElement(model->arrows_2, i));
+						PROTECT(gmodel->arrows_2_free = getListElement(model->arrows_2_free, i));
+						PROTECT(gmodel->unique_free_1 = getListElement(model->unique_free_1, i));
+						PROTECT(gmodel->unique_free_2 = getListElement(model->unique_free_2, i));
+						PROTECT(gmodel->J = getListElement(model->J, i));
+						PROTECT(gmodel->correct = getListElement(model->correct, i));
+						st = getListElement(model->arrows_1_seq, i);
+						gmodel->arrows_1_seq = (int *)R_alloc(length(st), sizeof(int)); 
+						Memcpy(gmodel->arrows_1_seq, INTEGER(AS_INTEGER(st)), length(st));
+						st = getListElement(model->arrows_2_seq, i);
+						gmodel->arrows_2_seq = (int *)R_alloc(length(st), sizeof(int)); 
+						Memcpy(gmodel->arrows_2_seq, INTEGER(AS_INTEGER(st)), length(st));
+						gmodel->raw = model->raw;
+
+						num_prot += 13;
+				}
+
 				//Print if debug
 				if(SEM_DEBUG){
 						printSEXP(model->S, "\nMatrix S");
@@ -1279,11 +1287,11 @@ extern "C" {
 				msg = 1+msg_print[print_level];
 				if (check_analyticals==0) msg += 2 + 4;
 
-
 				solution = cmsemnlm(x0, model->t, iagflg[obj_ind], iahflg[obj_ind], hessian, typsiz, fscale, msg, ndigit, gradtol, 
 								stepmax, steptol,  iterlim, model, (msem_fcn_p) objectiveFun[obj_ind], optimize);
 
 				UNPROTECT(num_prot);
+				delete model->gmodel;
 				delete model;
 				delete x0;
 				delete typsiz;

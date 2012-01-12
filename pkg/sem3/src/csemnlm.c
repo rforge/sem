@@ -880,13 +880,13 @@ SEXP cmsemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian,
 				if(iagflg) {
 						++num_objs;
 						if(!iahflg && want_hessian) {//we need to compute Hessian if it is not provided.)
-								fdhess(n, x0, fpls, (fcn_p)fcn, state, a,  n,  &wrk[0], &wrk[n], ndigit, typsiz );
+								fdhess(n, x0, fpls, (fcn_p)msem_fcn, state, a,  n,  &wrk[0], &wrk[n], ndigit, typsiz );
 						for (i = 0; i < n; i++)
 								for (j = 0; j < i; j++)
 										a[i + j * n] = a[j + i * n];
 						}
 				} else if(want_hessian) {
-						fdhess(n, x0, fpls, (fcn_p)fcn, state, a,  n,  &wrk[0], &wrk[n], ndigit, typsiz );
+						fdhess(n, x0, fpls, (fcn_p)msem_fcn, state, a,  n,  &wrk[0], &wrk[n], ndigit, typsiz );
 						for (i = 0; i < n; i++)
 								for (j = 0; j < i; j++)
 										a[i + j * n] = a[j + i * n];
@@ -1010,7 +1010,7 @@ SEXP cmsemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian,
 
 				if (want_hessian) {
 						++num_objs;
-						fdhess(n, xpls, fpls, (fcn_p) fcn, state, a, n, &wrk[0], &wrk[n],
+						fdhess(n, xpls, fpls, (fcn_p) msem_fcn, state, a, n, &wrk[0], &wrk[n],
 										ndigit, typsiz);
 						for (i = 0; i < n; i++)
 								for (j = 0; j < i; j++)

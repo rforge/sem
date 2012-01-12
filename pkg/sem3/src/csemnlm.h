@@ -141,6 +141,7 @@ typedef struct msem_model_Info {
 	int raw;
 	SEXP arrows_1_seq;
 	SEXP arrows_2_seq;
+	model_info *gmodel;  //a pointer for each group's model. 
 } msem_model_info;
 
 //this will define the protocol of our objective function
