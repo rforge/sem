@@ -112,11 +112,45 @@ typedef struct model_Info {
 	int *arrows_2_seq;
 } model_info;
 
+typedef struct msem_model_Info {
+	int G;  //number of groups
+  SEXP S; //n-by-n
+	SEXP logdetS;
+	SEXP invS; //n-by-n
+	SEXP N;
+	SEXP m;
+	SEXP n;
+	int t;
+	SEXP fixed;  //vector, t+m-n
+	SEXP ram;
+	SEXP sel_free;
+	SEXP arrows_1;
+	SEXP arrows_1_free;
+	SEXP one_head;
+	SEXP arrows_2t;
+	SEXP arrows_2;
+	SEXP arrows_2_free;
+	SEXP unique_free_1;
+	SEXP unique_free_2;
+	SEXP J;   //n-by-m
+	SEXP correct; ///m-by-m
+	SEXP param_names;
+	SEXP var_names;
+	SEXP one_free;
+	SEXP two_free;
+	int raw;
+	SEXP arrows_1_seq;
+	SEXP arrows_2_seq;
+} msem_model_info;
+
 //this will define the protocol of our objective function
 typedef void (*myfcn_p)(int, const double *,  double *, double *, double *,  double *, double *, double *, void *);
 //typedef void (*myfcn_p)(int n,  double *x,  double *f, double *g, double *h,  double *A,  double *P, double *C, void *state);
 
-#define FT_SIZE 10		/* default size of table to store computed
+typedef void (*msem_fcn_p)(int, const double *,  double *, double *, double *,  double *, double *, double *, double *, void *);
+//typedef void (*msem_fcn_p)(int n,  double *x,  double *f, double *g, double *h,  double *A,  double *P, double *C, double *ff, void *state);
+
+#define FT_SIZE 5		/* default size of table to store computed
 				   function values */
 
 typedef struct {
@@ -128,6 +162,17 @@ typedef struct {
 	double *A;
 	double *P;
 } ftable;
+
+typedef struct {
+  double fval;
+  double *x;
+  double *grad;
+  double *hess;
+	double *C;
+	double *A;
+	double *P;
+	double *ff;
+} msem_ftable;
 
 typedef struct {
   int  n_eval;	      /* the number of evaluations of the objective function. */
@@ -142,6 +187,20 @@ typedef struct {
 	model_info *model;
 } function_info;
 
+typedef struct {
+  int  n_eval;	      /* the number of evaluations of the objective function. */
+  msem_fcn_p *myobjfun; 
+  int have_gradient;
+  int have_hessian;
+/*  int n;	      -* length of the parameter (x) vector */
+  int FT_size;	      /* size of table to store computed
+			 function values */
+  int FT_last;	      /* Newest entry in the table */
+  msem_ftable *Ftable;
+	msem_model_info *model;
+	int sizeAP;
+	int sizeC;
+} msem_function_info;
 
 #ifdef __cplusplus
  extern "C" {
@@ -161,6 +220,11 @@ optif9(int nr, int n, double *x, fcn_p fcn, fcn_p d1fcn, d2fcn_p d2fcn,
 SEXP csemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian, 
 				double *typsize, double fscale, int msg, int ndigit, double gradtl, 
 				double stepmx, double steptol, int itnlim, model_info *model, myfcn_p myobjfun,
+				int optimize);
+
+SEXP cmsemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian, 
+				double *typsize, double fscale, int msg, int ndigit, double gradtl, 
+				double stepmx, double steptol, int itnlim, msem_model_info *model, msem_fcn_p myobjfun,
 				int optimize);
 
  #ifdef __cplusplus

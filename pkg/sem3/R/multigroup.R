@@ -218,9 +218,10 @@ sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FAL
 }
 
 
+
 ## ML objective function for multigroup SEMs
 
-msemObjectiveML <- function(gradient=TRUE){
+msemObjectiveML2 <- function(gradient=TRUE){
 	result <- list(
 			objective = function(par, model.description){
 				with(model.description, {
@@ -256,7 +257,7 @@ msemObjectiveML <- function(gradient=TRUE){
 								}
 							}
 							ff <- f
-							f <- sum((N - !raw)*f)/(sum(N) - !raw*G)
+							f <- sum((N - (!raw))*f)/(sum(N) - (!raw)*G)
 							attributes(f) <- list(gradient=grad.all, A=AA, P=PP, C=CC, f=ff)
 							f
 						})
@@ -288,12 +289,111 @@ msemObjectiveML <- function(gradient=TRUE){
 	result
 }
 
+msemObjectiveML <- function(gradient=TRUE){
+	result <- list(
+			objective = function(par, model.description){
+				with(model.description, {
+
+						 res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveML")
+						 AA <- PP <- CC <- vector(G,  mode="list")
+						 for(g in 1:model.description$G)
+						 {
+								 AA[[g]] <- res$A[[g]]
+								 PP[[g]] <- res$P[[g]]
+								 CC[[g]] <- res$C[[g]]
+						 }
+
+							f <- res$f
+							attributes(f) <- list(gradient=res$gradient, A=AA, P=PP, C=CC, f=res$ff)
+							f
+						})
+			}
+	)
+	if (gradient)
+		result$gradient <- function(par, model.description){
+			with(model.description, {
+
+						 res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveML")
+
+					})
+	    res$gradient
+		}
+	class(result) <- "msemObjective"
+	result
+}
+
 
 ##  nlm()-based optimizer for multigroup SEMs
 
 msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
 		maxiter, debug, par.size, model.description, warn=FALSE, ...){
 	with(model.description, {
+			 #save(start, par.size, model.description, file="multigroup.model.description")
+				obj <- objective(gradient=gradient)$objective
+				typsize <- if (par.size == 'startvalues') abs(start) else rep(1, t)
+
+			if(identical(objective, msemObjectiveML)) objectiveCompiled <- "objectiveML"
+			else if (identical(objective, msemObjectiveGLS)) objectiveCompiled <- "objectiveGLS"
+			else stop("optimizerSem requires the objectiveML or objectiveGLS objective function")
+
+				if (!warn) save.warn <- options(warn=-1)
+
+			res <- msemCompiledSolve(model.description=model.description, start=start, objective=objectiveCompiled, typsize=typsize, debug=debug, maxiter=maxiter)
+
+				if (!warn) options(save.warn)
+				result <- list(covergence=NULL, iterations=NULL, coeff=NULL, vcov=NULL, criterion=NULL, C=NULL, A=NULL, P=NULL)
+				result$convergence <- res$code <= 2
+				result$iterations <- res$iterations
+				par <- res$estimate
+				names(par) <- param.names
+				result$coeff <- par
+				if (!result$convergence)
+					warning(paste('Optimization may not have converged; nlm return code = ',
+									res$code, '. Consult ?nlm.\n', sep=""))
+				vcov <- matrix(NA, t, t)
+				qr.hess <- try(qr(res$hessian), silent=TRUE)
+				if (class(qr.hess) == "try-error"){
+					warning("Could not compute QR decomposition of Hessian.\nOptimization probably did not converge.\n")
+				}
+				else if (qr.hess$rank < t){
+					warning(' singular Hessian: model is probably underidentified.\n')
+					which.aliased <- qr.hess$pivot[-(1:qr.hess$rank)]
+					result$aliased <- param.names[which.aliased]
+				}
+				else {
+					df <- sum(N) - (!raw)*G
+					vcov <-  (2/df) * solve(res$hessian)
+					if (any(diag(vcov) < 0)) {
+						result$aliased <- param.names[diag(vcov) < 0]
+						warning("Negative parameter variances.\nModel may be underidentified.\n")
+					}
+				}
+				colnames(vcov) <- rownames(vcov) <- param.names
+				result$vcov <- vcov
+				result$criterion <- res$minimum
+				#    result$df <- df
+				obj <- obj(par, model.description)
+				C <- attr(obj, "C")
+				A <- attr(obj, "A")
+				P <- attr(obj, "P")
+				for (g in 1:G){
+					rownames(C[[g]]) <- colnames(C[[g]]) <-rownames(S[[g]])
+					rownames(A[[g]]) <- colnames(A[[g]]) <- var.names[[g]]
+					rownames(P[[g]]) <- colnames(P[[g]]) <- var.names[[g]]
+				}
+				result$C <- C
+				result$A <- A
+				result$P <- P
+				result$group.criteria <- attr(obj, "f")
+				class(result) <- "msemResult"
+				result
+			})
+}
+
+msemOptimizerNlm2 <- function(start, objective=msemObjectiveML, gradient=TRUE,
+		maxiter, debug, par.size, model.description, warn=FALSE, ...){
+	with(model.description, {
+			 #save(start, par.size, model.description, file="multigroup.model.description")
 				obj <- objective(gradient=gradient)$objective
 				typsize <- if (par.size == 'startvalues') abs(start) else rep(1, t)
 				if (!warn) save.warn <- options(warn=-1)
@@ -348,7 +448,6 @@ msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
 				result
 			})
 }
-
 
 # methods for msem and msemObjectiveML objects
 

@@ -70,6 +70,56 @@ static void FT_init(int n, int FT_size, function_info *state)
 		state->FT_last = -1;
 }
 
+static void msem_FT_init(int n, int FT_size, msem_function_info *state)
+{
+    int i, j;
+    int have_gradient, have_hessian;
+    msem_ftable *Ftable;
+		int G = state->model->G;   //number of groups
+
+		int *modeln = (int *)R_alloc(G, sizeof(int));
+		int *m = (int *)R_alloc(G, sizeof(int));
+
+		Memcpy(modeln, INTEGER(AS_INTEGER(state->model->n)), G);
+		Memcpy(m, INTEGER(AS_INTEGER(state->model->m)), G);
+
+		int totalm=0, totaln=0;
+		for(i = 0 ; i < G; ++i) {
+				totalm += m[i]*m[i];
+				totaln += modeln[i]*modeln[i];
+		}
+		state->sizeC = totaln;
+		state->sizeAP = totalm;
+
+    have_gradient = state->have_gradient;
+    have_hessian = state->have_hessian;
+
+    Ftable = (msem_ftable *)R_alloc(FT_size, sizeof(msem_ftable));
+
+		for (i = 0; i < FT_size; i++) {
+				Ftable[i].x = (double *)R_alloc(n, sizeof(double));
+				Ftable[i].A = (double *)R_alloc(totalm, sizeof(double)); //A: m-by-m 
+				Ftable[i].P = (double *)R_alloc(totalm, sizeof(double)); //P: m-by-m
+				Ftable[i].C = (double *)R_alloc(totaln, sizeof(double)); //After the compuation,  C is modeln-by-modeln.
+				Ftable[i].ff = (double *)R_alloc(G, sizeof(double));
+
+				/* initialize to unlikely parameter values */
+				for (j = 0; j < n; j++) {
+						Ftable[i].x[j] = DBL_MAX;
+				}
+				if (have_gradient) {
+						Ftable[i].grad = (double *)R_alloc(n, sizeof(double));
+						if (have_hessian) {
+								Ftable[i].hess = (double *)R_alloc(n * n, sizeof(double));
+						}
+				}
+		}
+		state->Ftable = Ftable;
+		state->FT_size = FT_size;
+		state->FT_last = -1;
+
+		return;
+}
 /* Store an entry in the table of computed function values */
 
 static void FT_store(int n, const double f, const double *x, const double *grad,
@@ -91,6 +141,26 @@ static void FT_store(int n, const double f, const double *x, const double *grad,
 		}
 }
 
+static void msem_FT_store(int n, const double f, const double *x, const double *grad,
+		     const double *hess, const double *A, const double *P, const double *C, const double *ff, msem_function_info *state)
+{
+    int ind;
+
+		ind = (++(state->FT_last)) % (state->FT_size);
+		state->Ftable[ind].fval = f;
+		Memcpy(state->Ftable[ind].x, x, n);
+		Memcpy(state->Ftable[ind].C, C, state->sizeC);
+		Memcpy(state->Ftable[ind].A, A, state->sizeAP);
+		Memcpy(state->Ftable[ind].P, P, state->sizeAP);
+		Memcpy(state->Ftable[ind].ff, ff, state->model->G);
+		if (grad) {
+				Memcpy(state->Ftable[ind].grad, grad, n);
+				if (hess) {
+						Memcpy(state->Ftable[ind].hess, hess, n * n);
+				}
+		}
+}
+
 /* Check for stored values in the table of computed function values.
    Returns the index in the table or -1 for failure */
 
@@ -100,6 +170,36 @@ static int FT_lookup(int n, const double *x, function_info *state)
     int i, j, ind, matched;
     int FT_size, FT_last;
     ftable *Ftable;
+
+    FT_last = state->FT_last;
+    FT_size = state->FT_size;
+    Ftable = state->Ftable;
+
+		for (i = 0; i < FT_size; i++) {
+				ind = (FT_last - i) % FT_size;
+				/* why can't they define modulus correctly */
+				if (ind < 0) ind += FT_size;
+				ftx = Ftable[ind].x;
+				if (ftx) {
+						matched = 1;
+						for (j = 0; j < n; j++) {
+								if (x[j] != ftx[j]) {
+										matched = 0;
+										break;
+								}
+						}
+						if (matched) return ind;
+				}
+		}
+		return -1;
+}
+
+static int msem_FT_lookup(int n, const double *x, msem_function_info *state)
+{
+    double *ftx;
+    int i, j, ind, matched;
+    int FT_size, FT_last;
+    msem_ftable *Ftable;
 
     FT_last = state->FT_last;
     FT_size = state->FT_size;
@@ -177,6 +277,57 @@ static void fcn(int n, const double x[], double *f, function_info *state)
 		return;
 }
 
+static void msem_fcn(int n, const double x[], double *f, msem_function_info *state)
+{
+
+		msem_ftable *Ftable;
+		double *g=NULL;
+		double *h=NULL;
+		double *C=NULL;
+		double *A=NULL;
+		double *P=NULL;
+		double *ff=NULL;
+		int i;
+
+		Ftable = state->Ftable;
+		if ((i = msem_FT_lookup(n, x, state)) >= 0) {
+				*f = Ftable[i].fval;
+				return;
+		}
+
+		for (i = 0; i < n; i++) {
+				if (!R_FINITE(x[i])) error(("non-finite value supplied by 'nlm'"));
+		}
+
+
+		if(state->have_gradient) {
+				g = (double *)R_alloc(n, sizeof(double));
+				memset(g, 0, n*sizeof(double));
+				if(state->have_hessian) {
+						h = (double *)R_alloc(n*n, sizeof(double));
+						memset(h, 0, n*n*sizeof(double));
+				}
+		}
+		int maxmn = (state->sizeAP > state->sizeC ? state->sizeAP: state->sizeC);
+		C = (double *)R_alloc(maxmn*maxmn, sizeof(double)); //After the compuation,  C is n-by-n. I need to check the size.
+		A = (double *)R_alloc(state->sizeAP, sizeof(double));
+		P = (double *)R_alloc(state->sizeAP, sizeof(double));
+		ff = (double *)R_alloc(state->model->G, sizeof(double));
+
+		msem_fcn_p myobjfun = (msem_fcn_p)state->myobjfun;
+
+		(myobjfun)(n, x, f, g, h,  A, P, C,ff,  state);
+		++state->n_eval;  //number of the evaluations.
+
+		if((*f != *f) || !R_FINITE(*f)) {
+				warning(("NA/Inf replaced by maximum positive value"));
+				*f = DBL_MAX;
+		}
+
+    msem_FT_store(n, *f, x, g, h, A, P, C, ff,  state);
+		return;
+}
+
 /* gradient */
 static void Cd1fcn(int n, const double x[], double *g, function_info *state)
 {
@@ -194,8 +345,40 @@ static void Cd1fcn(int n, const double x[], double *g, function_info *state)
 		return;
 }
 
+static void msem_Cd1fcn(int n, const double x[], double *g, msem_function_info *state)
+{
+    int ind;
+
+		if ((ind = msem_FT_lookup(n, x, state)) < 0) {	/* shouldn't happen */
+				msem_fcn(n, x, g, state);
+				if ((ind = msem_FT_lookup(n, x, state)) < 0) {
+						error(("function value caching for optimization is seriously confused"));
+				}
+		}
+
+		Memcpy(g, state->Ftable[ind].grad, n);
+
+		return;
+}
+
 /* hessian */
 static void Cd2fcn(int nr, int n, const double x[], double *h, function_info *state)
+{
+		int j, ind;
+
+		if ((ind = FT_lookup(n, x, state)) < 0) {	/* shouldn't happen */
+				fcn(n, x, h, state);
+				if ((ind = FT_lookup(n, x, state)) < 0) {
+						error(("function value caching for optimization is seriously confused"));
+				}
+		}
+		for (j = 0; j < n; j++) {  /* fill in lower triangle only */
+				Memcpy( h + j*(n + 1), state->Ftable[ind].hess + j*(n + 1), n - j);
+		}
+		return;
+}
+
+static void msem_Cd2fcn(int nr, int n, const double x[], double *h, function_info *state)
 {
 		int j, ind;
 
@@ -228,6 +411,25 @@ static void returnAPCfcn(int n, const double x[], double *A, double *P, double *
 		Memcpy(A, state->Ftable[ind].A, m*m);
 		Memcpy(P, state->Ftable[ind].P, m*m);
 		Memcpy(C, state->Ftable[ind].C, modeln*modeln);
+
+		return;
+}
+
+static void msem_returnAPCfcn(int n, const double x[], double *A, double *P, double *C, double *ff, msem_function_info *state)
+{
+		int  ind;
+
+		if ((ind = msem_FT_lookup(n, x, state)) < 0) {	/* shouldn't happen */
+				msem_fcn(n, x, C, state);
+				if ((ind = msem_FT_lookup(n, x, state)) < 0) {
+						error(("function value caching for optimization is seriously confused"));
+				}
+		}
+
+		Memcpy(A, state->Ftable[ind].A, state->sizeAP);
+		Memcpy(P, state->Ftable[ind].P, state->sizeAP);
+		Memcpy(C, state->Ftable[ind].C, state->sizeC);
+		Memcpy(ff, state->Ftable[ind].ff, state->model->G);
 
 		return;
 }
@@ -589,6 +791,316 @@ SEXP csemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian,
 						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, modeln, modeln));
 						for (i = 0; i < modeln * modeln; i++)
 								REAL(VECTOR_ELT(value, k))[i] = C[i];
+						k++;
+				}
+
+				setAttrib(value, R_NamesSymbol, names);
+				UNPROTECT(3);
+		}
+
+    return value;
+}
+
+SEXP cmsemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian, 
+				double *typsiz, double fscale, int msg, int ndigit, double gradtl, 
+				double stepmx, double steptol, int itnlim, msem_model_info *model, msem_fcn_p myobjfun, 
+				int optimize)
+{
+    SEXP value, names;
+
+		if(SEM_DEBUG) Rprintf("Optimize: [%d]\n", optimize);
+
+    double *x,*xpls, *gpls, fpls, *a, *wrk, dlt;
+
+    int code, i, j, k, method, iexp, omsg,  itncnt;
+
+		x = (double *)R_alloc(n, sizeof(double));
+		Memcpy(x, x0, n);
+
+		//initial function_info,  this will be transfered into nlm.
+    msem_function_info *state;
+
+    state = (msem_function_info *) R_alloc(1, sizeof(msem_function_info));
+		state->model = model;
+		state->have_gradient = iagflg;
+		state->have_hessian = iahflg;
+		state->n_eval = 0;
+		state->myobjfun = (msem_fcn_p *) myobjfun;
+
+/* .Internal(
+ *	nlm(function(x) f(x, ...), p, hessian, typsize, fscale,
+ *	    msg, ndigit, gradtol, stepmax, steptol, iterlim)
+ */
+
+    omsg = msg ;
+
+    if (((msg/4) % 2) && !iahflg) { /* skip check of analytic Hessian */
+      msg -= 4;
+    }
+    if (((msg/2) % 2) && !iagflg) { /* skip check of analytic gradient */
+      msg -= 2;
+    }
+
+		msem_FT_init(n, FT_SIZE, state);
+
+
+    method = 1;	/* Line Search */
+    iexp = iahflg ? 0 : 1; /* Function calls are expensive */
+    dlt = 1.0;
+
+    xpls = (double*)R_alloc(n, sizeof(double));
+    gpls = (double*)R_alloc(n, sizeof(double));
+    a = (double*)R_alloc(n*n, sizeof(double));
+    wrk = (double*)R_alloc(8*n, sizeof(double));
+
+
+		//we will not optimize,  only return the objective value,  gradients and Hessian.
+		if(optimize !=1 ) {
+
+				int sizeAP = state->sizeAP;
+				int sizeC = state->sizeC;
+				int maxmn = (sizeAP > sizeC ? sizeAP: sizeC);
+				double *matrixA = (double *)R_alloc(sizeAP, sizeof(double)); //After the compuation,  C is n-by-n.
+				double *P = (double *)R_alloc(sizeAP, sizeof(double)); //After the compuation,  C is n-by-n.
+				double *C = (double *)R_alloc(maxmn, sizeof(double)); //After the compuation,  C is n-by-n.
+				double *ff = (double *)R_alloc(state->model->G, sizeof(double));
+
+				memset(gpls, 0, n*sizeof(double));
+				memset(a, 0, n*n*sizeof(double));
+
+				(*myobjfun)(n, x0, &fpls, gpls, a , matrixA, P,  C, ff,  state);
+
+				int num_objs=2;  //x0, objective,
+				//A, P, C
+				if(!csem_isnan(*matrixA)) ++num_objs;
+				if(!csem_isnan(*P)) ++num_objs;
+				if(!csem_isnan(*C)) ++num_objs;
+				if(!csem_isnan(*ff)) ++num_objs;
+
+				if(iagflg) {
+						++num_objs;
+						if(!iahflg && want_hessian) {//we need to compute Hessian if it is not provided.)
+								fdhess(n, x0, fpls, (fcn_p)fcn, state, a,  n,  &wrk[0], &wrk[n], ndigit, typsiz );
+						for (i = 0; i < n; i++)
+								for (j = 0; j < i; j++)
+										a[i + j * n] = a[j + i * n];
+						}
+				} else if(want_hessian) {
+						fdhess(n, x0, fpls, (fcn_p)fcn, state, a,  n,  &wrk[0], &wrk[n], ndigit, typsiz );
+						for (i = 0; i < n; i++)
+								for (j = 0; j < i; j++)
+										a[i + j * n] = a[j + i * n];
+				}
+
+				if(want_hessian) ++num_objs;
+
+				PROTECT(value = allocVector(VECSXP, num_objs));
+				PROTECT(names = allocVector(STRSXP, num_objs));
+				k = 0;
+
+				SET_STRING_ELT(names, k, mkChar("minimum"));
+				SET_VECTOR_ELT(value, k, ScalarReal(fpls));
+				k++;
+
+				SET_STRING_ELT(names, k, mkChar("estimate"));
+				SET_VECTOR_ELT(value, k, allocVector(REALSXP, n));
+				for (i = 0; i < n; i++)
+						REAL(VECTOR_ELT(value, k))[i] = x0[i];
+				k++;
+
+				if(iagflg) {
+						SET_STRING_ELT(names, k, mkChar("gradient"));
+						SET_VECTOR_ELT(value, k, allocVector(REALSXP, n));
+						for (i = 0; i < n; i++)
+								REAL(VECTOR_ELT(value, k))[i] = gpls[i];
+						k++;
+				}
+
+				if(want_hessian){
+						SET_STRING_ELT(names, k, mkChar("hessian"));
+						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, n, n));
+						for (i = 0; i < n * n; i++)
+								REAL(VECTOR_ELT(value, k))[i] = a[i];
+						k++;
+				}
+
+				/* A */
+				if(!csem_isnan(*matrixA)) {
+						SET_STRING_ELT(names, k, mkChar("A"));
+						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, sizeAP, 1));
+						for (i = 0; i < sizeAP; i++)
+								REAL(VECTOR_ELT(value, k))[i] = matrixA[i];
+						k++;
+				}
+
+				/* P */
+				if(!csem_isnan(*P)) {
+						SET_STRING_ELT(names, k, mkChar("P"));
+						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, sizeAP, 1));
+						for (i = 0; i < sizeAP; i++)
+								REAL(VECTOR_ELT(value, k))[i] = P[i];
+						k++;
+				}
+
+				/* C */
+				if(!csem_isnan(*C)) { 
+						SET_STRING_ELT(names, k, mkChar("C"));
+						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, sizeC, 1));
+						for (i = 0; i < sizeC; i++)
+								REAL(VECTOR_ELT(value, k))[i] = C[i];
+						k++;
+				}
+
+				if(!csem_isnan(*ff)) { 
+						SET_STRING_ELT(names, k, mkChar("f"));
+						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, 1, state->model->G));
+						for (i = 0; i < state->model->G; i++)
+								REAL(VECTOR_ELT(value, k))[i] = ff[i];
+						k++;
+				}
+
+				setAttrib(value, R_NamesSymbol, names);
+				UNPROTECT(3);
+		}
+		else {
+
+
+				/*
+				 *	 Dennis + Schnabel Minimizer
+				 *
+				 *	  SUBROUTINE OPTIF9(NR,N,X,FCN,D1FCN,D2FCN,TYPSIZ,FSCALE,
+				 *	 +	   METHOD,IEXP,MSG,NDIGIT,ITNLIM,IAGFLG,IAHFLG,IPR,
+				 *	 +	   DLT,GRADTL,STEPMX,STEPTOL,
+				 *	 +	   XPLS,FPLS,GPLS,ITRMCD,A,WRK)
+				 *
+				 *
+				 *	 Note: I have figured out what msg does.
+				 *	 It is actually a sum of bit flags as follows
+				 *	   1 = don't check/warn for 1-d problems
+				 *	   2 = don't check analytic gradients
+				 *	   4 = don't check analytic hessians
+				 *	   8 = don't print start and end info
+				 *	  16 = print at every iteration
+				 *	 Using msg=9 is absolutely minimal
+				 *	 I think we always check gradients and hessians
+				 */
+
+
+				optif9(n, n, x, (fcn_p) msem_fcn, (fcn_p) msem_Cd1fcn, (d2fcn_p) msem_Cd2fcn,
+								state, typsiz, fscale, method, iexp, &msg, ndigit, itnlim,
+								iagflg, iahflg, dlt, gradtl, stepmx, steptol, xpls, &fpls,
+								gpls, &code, a, wrk, &itncnt);
+
+				if(SEM_DEBUG) {
+						if(state->have_hessian) 
+								Rprintf("Hessian is provided.\n");
+						else 
+								Rprintf("Hessian is not provided.\n");
+
+						Rprintf("The number of function evaluations: [%d]\n", state->n_eval);
+
+				}
+
+				if (msg < 0)
+						opterror(msg);
+				if (code != 0 && (omsg&8) == 0)
+						optcode(code);
+
+				int num_objs = 5;
+
+				if (want_hessian) {
+						++num_objs;
+						fdhess(n, xpls, fpls, (fcn_p) fcn, state, a, n, &wrk[0], &wrk[n],
+										ndigit, typsiz);
+						for (i = 0; i < n; i++)
+								for (j = 0; j < i; j++)
+										a[i + j * n] = a[j + i * n];
+				}
+
+				//A, P, C
+				int sizeAP = state->sizeAP;
+				int sizeC = state->sizeC;
+				double *matrixA = (double *)R_alloc(sizeAP, sizeof(double)); //After the compuation,  C is n-by-n.
+				double *P = (double *)R_alloc(sizeAP, sizeof(double)); //After the compuation,  C is n-by-n.
+				double *C = (double *)R_alloc(sizeC, sizeof(double)); //After the compuation,  C is n-by-n.
+				double *ff = (double *)R_alloc(state->model->G, sizeof(double));
+				msem_returnAPCfcn(n, xpls, matrixA, P, C,ff,  state);
+				if(!csem_isnan(*matrixA)) ++num_objs;
+				if(!csem_isnan(*P)) ++num_objs;
+				if(!csem_isnan(*C)) ++num_objs;
+				if(!csem_isnan(*ff)) ++num_objs;
+
+				PROTECT(value = allocVector(VECSXP, num_objs));
+				PROTECT(names = allocVector(STRSXP, num_objs));
+				k = 0;
+
+				SET_STRING_ELT(names, k, mkChar("minimum"));
+				SET_VECTOR_ELT(value, k, ScalarReal(fpls));
+				k++;
+
+				SET_STRING_ELT(names, k, mkChar("estimate"));
+				SET_VECTOR_ELT(value, k, allocVector(REALSXP, n));
+				for (i = 0; i < n; i++)
+						REAL(VECTOR_ELT(value, k))[i] = xpls[i];
+				k++;
+
+				SET_STRING_ELT(names, k, mkChar("gradient"));
+				SET_VECTOR_ELT(value, k, allocVector(REALSXP, n));
+				for (i = 0; i < n; i++)
+						REAL(VECTOR_ELT(value, k))[i] = gpls[i];
+				k++;
+
+				if (want_hessian) {
+						SET_STRING_ELT(names, k, mkChar("hessian"));
+						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, n, n));
+						for (i = 0; i < n * n; i++)
+								REAL(VECTOR_ELT(value, k))[i] = a[i];
+						k++;
+				}
+
+				SET_STRING_ELT(names, k, mkChar("code"));
+				SET_VECTOR_ELT(value, k, allocVector(INTSXP, 1));
+				INTEGER(VECTOR_ELT(value, k))[0] = code;
+				k++;
+
+				SET_STRING_ELT(names, k, mkChar("iterations"));
+				SET_VECTOR_ELT(value, k, allocVector(INTSXP, 1));
+				INTEGER(VECTOR_ELT(value, k))[0] = itncnt;
+				k++;
+
+				/* A */
+				if(!csem_isnan(*matrixA)) {
+						SET_STRING_ELT(names, k, mkChar("A"));
+						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, sizeAP, 1));
+						for (i = 0; i < sizeAP; i++)
+								REAL(VECTOR_ELT(value, k))[i] = matrixA[i];
+						k++;
+				}
+
+				/* P */
+				if(!csem_isnan(*P)) {
+						SET_STRING_ELT(names, k, mkChar("P"));
+						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, sizeAP, 1));
+						for (i = 0; i < sizeAP; i++)
+								REAL(VECTOR_ELT(value, k))[i] = P[i];
+						k++;
+				}
+
+				/* C */
+				if(!csem_isnan(*C)) {
+						SET_STRING_ELT(names, k, mkChar("C"));
+						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, sizeC, 1));
+						for (i = 0; i < sizeC; i++)
+								REAL(VECTOR_ELT(value, k))[i] = C[i];
+						k++;
+				}
+
+				/* C */
+				if(!csem_isnan(*ff)) {
+						SET_STRING_ELT(names, k, mkChar("f"));
+						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, 1, state->model->G));
+						for (i = 0; i < state->model->G; i++)
+								REAL(VECTOR_ELT(value, k))[i] = ff[i];
 						k++;
 				}
 

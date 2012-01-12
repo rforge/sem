@@ -43,10 +43,26 @@ using namespace std;
 static SEXP theenv;
 static double csem_NaN;
 
+void printSEXP(SEXP sexp, const string msg);
 //
 // Extracts element with name 'str' from R object 'list'
 // and returns that element.
 //
+SEXP getListElement(SEXP list,   int ind)
+{
+		SEXP elmt = R_NilValue;
+		int i;
+
+		if(ind >= 0 && ind < length(list))
+		{
+				elmt = VECTOR_ELT(list, ind);
+		}
+		else
+				error(("The index is not in the range of the list."));
+
+		return elmt;
+}
+
 SEXP getListElement(SEXP list, std::string str)
 {
 		SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
@@ -58,6 +74,31 @@ SEXP getListElement(SEXP list, std::string str)
 				}
 		return elmt;
 }
+
+double  getVectorElement(SEXP vect,  int ind )
+{
+		double elmt;
+		if(ind >= 0 && ind < length(vect))
+		elmt = REAL(AS_NUMERIC(vect))[ind];
+		else
+				error(("The index is not in the range of the vector."));
+
+		return elmt;
+}
+// if ind==-1,  we will search the names,  and then return the object.
+double  getVectorElement(SEXP vect,  std::string str )
+{
+		SEXP names = getAttrib(vect, R_NamesSymbol);
+		double elmt;
+		int i;
+		for (i = 0; i < length(vect); i++)
+				if(str.compare(CHAR(STRING_ELT(names, i))) == 0) {
+						elmt = REAL(AS_NUMERIC(vect))[i];
+						break;
+				}
+		return elmt;
+}
+
 
 SEXP showArgs1(SEXP largs)
 {
@@ -225,6 +266,33 @@ extern "C" {
 				*A = csem_NaN; 
 				*P = csem_NaN;
 				*C = csem_NaN;
+
+				*f = 0.0;
+				for(ind=0;ind<n;++ind) *f += (x[ind]-ind-1)*(x[ind]-ind-1); 
+
+				if(state->have_gradient) {
+						for(ind = 0; ind < n; ++ind){
+								g[ind] = 2.0*(x[ind]-ind-1);
+						}
+//The interested thing is that we need more function evaluations when Hessian is provided (n_eval:33).
+//If not provided,  n_eval is 18. IS there anything wrong?
+						if(state->have_hessian){
+								for(ind = 0; ind < n; ++ind){
+										h[ind*n+ind] = 2.0;
+								}
+						}
+				}
+
+				return;
+		}
+
+		void msem_test_objective(int n, const double x[],  double *f,  double *g, double *h,double *A,  double *P,  double *C, double *ff, msem_function_info *state)
+		{
+				int ind;
+				*A = csem_NaN; 
+				*P = csem_NaN;
+				*C = csem_NaN;
+				*ff = csem_NaN;
 
 				*f = 0.0;
 				for(ind=0;ind<n;++ind) *f += (x[ind]-ind-1)*(x[ind]-ind-1); 
@@ -604,13 +672,12 @@ extern "C" {
 				//The following code will produce gradients based on grad_A and grad_P.
 				//This is the implentation of "tapply" in R.
 				double *A_grad, *P_grad;
-				int nA=length(model->unique_free_1);
-				int nP=length(model->unique_free_2);
-				A_grad = new double[nA+nP];
-				P_grad = new double[nA+nP];
-				memset(A_grad, 0, (nA+nP)*sizeof(double));
-				memset(P_grad, 0, (nA+nP)*sizeof(double));
-
+				int nA;
+				int nP;
+				A_grad = new double[n];
+				P_grad = new double[n];
+				memset(A_grad, 0, n*sizeof(double));
+				memset(P_grad, 0, n*sizeof(double));
 
 				double *grad_Au,  *grad_Pu;
 				nA = length(model->arrows_1_free)/2;
@@ -639,7 +706,6 @@ extern "C" {
 						P_grad[model->arrows_2_seq[i]-1] += grad_Pu[i];
 				}
 
-
 				nA=length(model->unique_free_1);
 				Memcpy(tA, INTEGER(AS_INTEGER(model->unique_free_1)), nA);
 
@@ -661,9 +727,90 @@ extern "C" {
 				delete(invC);
 				delete(ImA);
 
+				if(SEM_DEBUG) Rprintf("Exit from objectiveML.\n");
+
 				return;
 		}
 
+		void msem_objectiveML(int n, const double x[], double *f, double *g, double *h,  double *A,  double *P, double *C, double *ff, msem_function_info *m_state)
+		{
+				R_CheckUserInterrupt();
+
+				msem_model_info *m_model = m_state->model;
+				model_info *model = (model_info *)R_alloc(1, sizeof(model_info));   //for each group, we construct them,  and then call bojectiveML to do the calculation.
+				function_info *state = (function_info *)R_alloc(1, sizeof(function_info));
+				state->have_gradient = m_state->have_gradient;
+				state->have_hessian = m_state->have_hessian;
+
+				int G = m_model->G;
+				int i;
+
+				int indAP=0,  indC=0;
+
+				*f = 0.0;
+				if(state->have_gradient) memset(g, 0, n*sizeof(double));
+
+				int sumN=0;
+				double *grad = new double[n];
+				for(i = 0;i < G; ++i)
+				{
+						sumN += INTEGER(AS_INTEGER(m_model->N))[i];
+				}
+				for(i = 0; i < G; ++i)
+				{
+						model->S=getListElement(m_model->S, i);
+						model->logdetS = REAL(AS_NUMERIC(m_model->logdetS))[i];
+						model->N = INTEGER(AS_INTEGER(m_model->N))[i];
+						model->m = INTEGER(AS_INTEGER(m_model->m))[i];
+						model->n = INTEGER(AS_INTEGER(m_model->n))[i];
+						PROTECT(model->fixed = getListElement(m_model->fixed, i));
+						PROTECT(model->ram = getListElement(m_model->ram, i));
+						PROTECT(model->sel_free = getListElement(m_model->sel_free, i));
+						model->t = length(model->sel_free);
+						PROTECT(model->arrows_1 = getListElement(m_model->arrows_1, i));
+						PROTECT(model->arrows_1_free = getListElement(m_model->arrows_1_free, i));
+						PROTECT(model->one_head = getListElement(m_model->one_head, i));
+						PROTECT(model->arrows_2t = getListElement(m_model->arrows_2t, i));
+						PROTECT(model->arrows_2 = getListElement(m_model->arrows_2, i));
+						PROTECT(model->arrows_2_free = getListElement(m_model->arrows_2_free, i));
+						PROTECT(model->unique_free_1 = getListElement(m_model->unique_free_1, i));
+						PROTECT(model->unique_free_2 = getListElement(m_model->unique_free_2, i));
+						PROTECT(model->J = getListElement(m_model->J, i));
+						PROTECT(model->correct = getListElement(m_model->correct, i));
+						SEXP st = getListElement(m_model->arrows_1_seq, i);
+						model->arrows_1_seq = (int *)R_alloc(length(st), sizeof(int)); 
+						Memcpy(model->arrows_1_seq, INTEGER(AS_INTEGER(st)), length(st));
+						st = getListElement(m_model->arrows_2_seq, i);
+						model->arrows_2_seq = (int *)R_alloc(length(st), sizeof(int)); 
+						Memcpy(model->arrows_2_seq, INTEGER(AS_INTEGER(st)), length(st));
+						model->raw = m_model->raw;
+
+						state->model = model;
+
+						memset(grad, 0, n*sizeof(double));
+						objectiveML(n,  x, &ff[i], grad, h,  &A[indAP],  &P[indAP], &C[indC], state);
+						indAP += model->m*model->m;   //update the index for A, P, C
+						indC += model->n*model->n;
+
+						*f += (model->N-(1-model->raw))*ff[i];
+						if(state->have_gradient)
+						{
+								double alpha = (model->N-(1-model->raw))/(sumN-(1.0-model->raw)*G);
+								int incx = 1;
+//F77_NAME(daxpy)(const int *n,  const double *alpha, 
+//								const double *dx,  const int *incx, 
+//								double *dy,  const int *incy); y = ax+y
+								F77_CALL(daxpy)(&n,&alpha, grad,&incx, g, &incx); //grad.all = grad.all+((N[g]-!raw)/(sum(N)-(!raw)*G))*grad
+						}
+						UNPROTECT(13);
+
+				}
+
+				*f = *f/(sumN-(1-m_model->raw)*G);
+
+				delete grad;
+				return;
+		}
 		// this function will compute  GLS.
 		void objectiveGLS(int n, const double x[], double *f, double *g, double *h,  double *A,  double *P, double *C, function_info *state)
 		{
@@ -750,6 +897,16 @@ extern "C" {
 				delete(C0);
 				delete(invC);
 				delete(ImA);
+
+				return;
+		}
+		//
+		// this function will compute  GLS.
+		void msem_objectiveGLS(int n, const double x[], double *f, double *g, double *h,  double *A,  double *P, double *C, msem_function_info *state)
+		{
+				R_CheckUserInterrupt();
+
+				msem_model_info *model = state->model;
 
 				return;
 		}
@@ -953,6 +1110,178 @@ extern "C" {
 
 				solution = csemnlm(x0, model->t, iagflg[obj_ind], iahflg[obj_ind], hessian, typsiz, fscale, msg, ndigit, gradtol, 
 								stepmax, steptol,  iterlim, model, (myfcn_p) objectiveFun[obj_ind], optimize);
+
+				UNPROTECT(num_prot);
+				delete model;
+				delete x0;
+				delete typsiz;
+
+				return(solution);
+
+		}
+
+		SEXP cmsemSolve( SEXP args )
+		{
+				R_CheckUserInterrupt();
+
+				theenv = getListElement(args, "csem.environment");
+
+				csem_NaN = std::numeric_limits<double>::quiet_NaN();
+
+				SEXP solution;
+				int num_prot = 0;
+
+				PROTECT(solution=args);
+
+//				showArgs1(args);
+
+				// Define objective functions and their properties.
+				const int num_objs = 3;
+				const string name_objs[num_objs] =
+				{
+						"objectiveML", 
+						"objectiveGLS", 
+						"test_objective"
+				};
+				const msem_fcn_p objectiveFun[num_objs]=
+				{
+						(msem_fcn_p) msem_objectiveML,   //objective, gradient (iagflg[0]=1),  no hessian (iahflg[0]=0)
+						(msem_fcn_p) msem_objectiveGLS,  //objective, no gradient (iagflg[1]=0), no hessian (iahflg[1]=0) 
+						(msem_fcn_p) msem_test_objective  //objective, gradient, hessian
+				};
+				const int iagflg[num_objs]={1, 0, 1};  //gradients
+				const int iahflg[num_objs]={0, 0, 1};  //hessian
+				
+				int obj_ind = 0;  //default objective function.
+
+				SEXP st;
+				st= getListElement(args, "objective");
+				for (int i = 0; i < num_objs; ++i) {
+						if(name_objs[i].compare(CHAR(STRING_ELT(st, 0))) == 0) {
+								obj_ind = i;
+								break;
+						}
+				}
+				if(SEM_DEBUG) printSEXP(st, "Objective Function");
+
+				int optimize;   //0: only compute the objective function,  gradients and  Hessian if it is provided.
+				st = getListElement(args, "opt.flg");
+				optimize = INTEGER(st)[0];
+
+				// model 
+				msem_model_info *model;
+
+				model = new msem_model_info;
+
+
+				st = getListElement(args, "G");
+				model->G = INTEGER(AS_INTEGER(st))[0];
+
+				PROTECT(model->logdetS = getListElement(args, "logdetS"));
+				PROTECT(model->N = getListElement(args, "N"));
+				st = getListElement(args, "t");
+				model->t = INTEGER(st)[0];
+				PROTECT(model->n = getListElement(args, "n"));
+				PROTECT(model->m = getListElement(args, "m"));
+				PROTECT(model->ram = getListElement(args, "ram"));
+				PROTECT(model->sel_free = getListElement(args, "sel.free"));
+				PROTECT(model->arrows_1 = getListElement(args, "arrows.1"));
+				PROTECT(model->arrows_1_free = getListElement(args, "arrows.1.free"));
+				PROTECT(model->one_head = getListElement(args, "one.head"));
+				PROTECT(model->arrows_2t = getListElement(args, "arrows.2t"));
+				PROTECT(model->arrows_2 = getListElement(args, "arrows.2"));
+				PROTECT(model->arrows_2_free = getListElement(args, "arrows.2.free"));
+				PROTECT(model->unique_free_1 = getListElement(args, "unique.free.1"));
+				PROTECT(model->unique_free_2 = getListElement(args, "unique.free.2"));
+				PROTECT(model->param_names = getListElement(args, "param.names"));
+				PROTECT(model->var_names = getListElement(args, "var.names"));
+				PROTECT(model->one_free = getListElement(args, "one.free"));
+				PROTECT(model->two_free = getListElement(args, "two.free"));
+
+				PROTECT(model->S = getListElement(args, "S"));
+				PROTECT(model->invS = getListElement(args, "invS"));
+				PROTECT(model->fixed = getListElement(args, "fixed"));
+				PROTECT(model->J = getListElement(args, "J"));
+				PROTECT(model->correct = getListElement(args, "correct"));
+				num_prot += 23;
+				
+				st = getListElement(args, "raw");
+				model->raw = INTEGER(st)[0];
+
+				PROTECT(model->arrows_1_seq = getListElement(args, "arrows.1.seq"));
+				PROTECT(model->arrows_2_seq = getListElement(args, "arrows.2.seq"));
+				num_prot += 2;
+
+				//Print if debug
+				if(SEM_DEBUG){
+						printSEXP(model->S, "\nMatrix S");
+						printSEXP(model->invS, "\nMatrix invS");
+						printSEXP(model->J, "\nMatrix J");
+						printSEXP(model->fixed, "\nVector fixed");
+						printSEXP(model->correct, "\nMatrix correct");
+				}
+
+				//initial values x0 and typsize
+				double *x0 = new double[model->t];
+				double *typsiz = new double[model->t];
+				//typsiz = (double *)R_alloc(model->t, sizeof(double));
+				int ind;
+				double sum = 0.0;
+
+				SEXP sx0 = getListElement(args, "start");
+				if(LENGTH(sx0) != model->t) error(("The number of variables are not consistent!\n"));
+	
+				SEXP stypsiz = getListElement(args, "typsize");
+				Memcpy(typsiz, REAL(AS_NUMERIC(stypsiz)), model->t);
+
+				//x0 = (double *)R_alloc(model->t, sizeof(double));
+
+				for(ind=0;ind <model->t;++ind){
+						R_CheckUserInterrupt();
+						x0[ind]=REAL(sx0)[ind];
+						sum += (x0[ind]/typsiz[ind])*(x0[ind]/typsiz[ind]);
+				}
+
+
+				//options for optimization
+
+				double stepmax=1000*sqrt(sum);
+				stepmax = stepmax > 1000.0? stepmax: 1000.0;
+				int hessian; 
+				double fscale;
+				double steptol;
+				double gradtol;
+				int iterlim;
+				int ndigit;
+				int print_level;
+				int check_analyticals;
+				int msg=0;
+				int msg_print[]={8, 0, 16};
+
+				SEXP opts;
+
+				PROTECT(opts = getListElement(args, "options"));
+				setApplicationOptions(hessian, fscale, steptol, stepmax, iterlim, ndigit, print_level, check_analyticals,gradtol, opts );
+				UNPROTECT(1);
+
+				if(SEM_DEBUG) {
+						Rprintf("hessian: [%d]\n", hessian);
+						Rprintf("iterlim: [%d]\n", iterlim);
+						Rprintf("ndigit: [%d]\n", ndigit);
+						Rprintf("print.level: [%d]\n", print_level);
+						Rprintf("check.analyticals: [%d]\n", check_analyticals);
+						Rprintf("fscale: [%f]\n", fscale);
+						Rprintf("steptol: [%f]\n", steptol);
+						Rprintf("stepmax: [%f]\n", stepmax);
+						Rprintf("gradtol: [%f]\n", gradtol);
+				}
+
+				msg = 1+msg_print[print_level];
+				if (check_analyticals==0) msg += 2 + 4;
+
+
+				solution = cmsemnlm(x0, model->t, iagflg[obj_ind], iahflg[obj_ind], hessian, typsiz, fscale, msg, ndigit, gradtol, 
+								stepmax, steptol,  iterlim, model, (msem_fcn_p) objectiveFun[obj_ind], optimize);
 
 				UNPROTECT(num_prot);
 				delete model;
