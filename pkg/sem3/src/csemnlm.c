@@ -308,8 +308,8 @@ static void msem_fcn(int n, const double x[], double *f, msem_function_info *sta
 						memset(h, 0, n*n*sizeof(double));
 				}
 		}
-		int maxmn = (state->sizeAP > state->sizeC ? state->sizeAP: state->sizeC);
-		C = (double *)R_alloc(maxmn*maxmn, sizeof(double)); //After the compuation,  C is n-by-n. I need to check the size.
+
+		C = (double *)R_alloc(state->sizeC, sizeof(double)); //After the compuation,  C is n-by-n. I need to check the size.
 		A = (double *)R_alloc(state->sizeAP, sizeof(double));
 		P = (double *)R_alloc(state->sizeAP, sizeof(double));
 		ff = (double *)R_alloc(state->model->G, sizeof(double));
@@ -326,6 +326,7 @@ static void msem_fcn(int n, const double x[], double *f, msem_function_info *sta
 
     msem_FT_store(n, *f, x, g, h, A, P, C, ff,  state);
 		return;
+
 }
 
 /* gradient */
@@ -841,7 +842,7 @@ SEXP cmsemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian,
       msg -= 2;
     }
 
-		msem_FT_init(n, FT_SIZE, state);
+		msem_FT_init(n, 2, state);  //FT_SIZE
 
 
     method = 1;	/* Line Search */

@@ -88,7 +88,7 @@ double  getVectorElement(SEXP vect,  int ind )
 double  getVectorElement(SEXP vect,  std::string str )
 {
 		SEXP names = getAttrib(vect, R_NamesSymbol);
-		double elmt;
+		double elmt = csem_NaN;
 		int i;
 		for (i = 0; i < length(vect); i++)
 				if(str.compare(CHAR(STRING_ELT(names, i))) == 0) {
@@ -98,6 +98,14 @@ double  getVectorElement(SEXP vect,  std::string str )
 		return elmt;
 }
 
+SEXP generateMatrix(double *A, int nrow,  int ncol)
+{
+		SEXP elmt;
+		elmt = allocMatrix(REALSXP, nrow, ncol);
+		for(int i=0; i < nrow*ncol; ++i) 
+				REAL(elmt)[i] = A[i];
+		return(elmt);
+}
 
 SEXP showArgs1(SEXP largs)
 {
@@ -736,7 +744,7 @@ extern "C" {
 				R_CheckUserInterrupt();
 
 				msem_model_info *m_model = m_state->model;
-				function_info *state = (function_info *)R_alloc(1, sizeof(function_info));
+				function_info *state = new function_info; //(function_info *)R_alloc(1, sizeof(function_info));
 				state->have_gradient = m_state->have_gradient;
 				state->have_hessian = m_state->have_hessian;
 
@@ -750,17 +758,24 @@ extern "C" {
 
 				int sumN=0;
 				double *grad = new double[n];
+				int maxmn = 0;
 				for(i = 0;i < G; ++i)
 				{
 						sumN += INTEGER(AS_INTEGER(m_model->N))[i];
+						maxmn = (m_model->gmodel[i].n > m_model->gmodel[i].m ? m_model->gmodel[i].n:m_model->gmodel[i].m);
 				}
+				
+				double *C0 = new double[maxmn*maxmn];
+
 				for(i = 0; i < G; ++i)
 				{
 
 						state->model = &m_model->gmodel[i];
 
 						memset(grad, 0, n*sizeof(double));
-						objectiveML(n,  x, &ff[i], grad, h,  &A[indAP],  &P[indAP], &C[indC], state);
+						memset(C0, 0, maxmn*maxmn);
+						objectiveML(n,  x, &ff[i], grad, h,  &A[indAP],  &P[indAP], C0, state);
+						Memcpy(&C[indC], C0, state->model->n*state->model->n);
 						indAP += state->model->m*state->model->m;   //update the index for A, P, C
 						indC += state->model->n*state->model->n;
 
@@ -780,7 +795,9 @@ extern "C" {
 
 				*f = *f/(sumN-(1-m_model->raw)*G);
 
+				delete C0;
 				delete grad;
+				delete state;
 				return;
 		}
 		// this function will compute  GLS.
@@ -874,11 +891,67 @@ extern "C" {
 		}
 		//
 		// this function will compute  GLS.
-		void msem_objectiveGLS(int n, const double x[], double *f, double *g, double *h,  double *A,  double *P, double *C, msem_function_info *state)
+		void msem_objectiveGLS(int n, const double x[], double *f, double *g, double *h,  double *A,  double *P, double *C, double *ff, msem_function_info *m_state)
 		{
 				R_CheckUserInterrupt();
 
-		//		msem_model_info *model = state->model;
+				msem_model_info *m_model = m_state->model;
+				function_info *state = new function_info; //(function_info *)R_alloc(1, sizeof(function_info));
+				state->have_gradient = m_state->have_gradient;
+				state->have_hessian = m_state->have_hessian;
+
+				int G = m_model->G;
+				int i;
+
+				int indAP=0,  indC=0;
+
+				*f = 0.0;
+				if(state->have_gradient) memset(g, 0, n*sizeof(double));
+
+				int sumN=0;
+				double *grad = new double[n];
+				int maxmn = 0;
+				for(i = 0;i < G; ++i)
+				{
+						sumN += INTEGER(AS_INTEGER(m_model->N))[i];
+						maxmn = (m_model->gmodel[i].n > m_model->gmodel[i].m ? m_model->gmodel[i].n:m_model->gmodel[i].m);
+				}
+				double *C0 = new double[maxmn*maxmn];
+
+				for(i = 0; i < G; ++i)
+				{
+
+						state->model = &m_model->gmodel[i];
+
+						memset(grad, 0, n*sizeof(double));
+						memset(C0, 0, maxmn*maxmn*sizeof(double));
+						objectiveGLS(n,  x, &ff[i], grad, h,  &A[indAP],  &P[indAP], C0, state);
+						Memcpy(&C[indC], C0, state->model->n*state->model->n);
+						indAP += state->model->m*state->model->m;   //update the index for A, P, C
+						indC += state->model->n*state->model->n;
+
+						*f += (state->model->N-(1-state->model->raw))*ff[i];
+
+						if(state->have_gradient)
+						{
+								double alpha = (state->model->N-(1-state->model->raw))/(sumN-(1.0-state->model->raw)*G);
+								int incx = 1;
+//F77_NAME(daxpy)(const int *n,  const double *alpha, 
+//								const double *dx,  const int *incx, 
+//								double *dy,  const int *incy); y = ax+y
+								F77_CALL(daxpy)(&n,&alpha, grad,&incx, g, &incx); //grad.all = grad.all+((N[g]-!raw)/(sum(N)-(!raw)*G))*grad
+						}
+
+				}
+
+				*f = *f/(sumN-(1-m_model->raw)*G);
+
+//				Rprintf("Number of Evaluations: %d [%f]\n", m_state->n_eval, *f);
+
+				delete C0;
+				delete grad;
+				delete state;
+				return;
 
 				return;
 		}
@@ -1190,7 +1263,7 @@ extern "C" {
 				{
 						model_info *gmodel = &model->gmodel[i];
 
-						gmodel->S=getListElement(model->S, i);
+						PROTECT(gmodel->S=getListElement(model->S, i));
 						gmodel->logdetS = REAL(AS_NUMERIC(model->logdetS))[i];
 						gmodel->N = INTEGER(AS_INTEGER(model->N))[i];
 						gmodel->m = INTEGER(AS_INTEGER(model->m))[i];
@@ -1217,7 +1290,18 @@ extern "C" {
 						Memcpy(gmodel->arrows_2_seq, INTEGER(AS_INTEGER(st)), length(st));
 						gmodel->raw = model->raw;
 
-						num_prot += 13;
+						//inverse of S for GLS
+						if(obj_ind == 1)   //objectiveGLS
+						{
+								int nrow = nrows(gmodel->S);
+								int ncol = ncols(gmodel->S);
+								double *invS = new double[nrow*ncol];
+								Memcpy(invS, REAL(AS_NUMERIC(gmodel->S)), nrow*ncol);
+								MatrixInverse(invS, nrow);
+								PROTECT(gmodel->invS=generateMatrix(invS, nrow, ncol));
+								num_prot++;
+						}
+						num_prot += 14;
 				}
 
 				//Print if debug

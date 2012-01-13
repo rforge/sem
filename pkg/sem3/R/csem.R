@@ -97,7 +97,8 @@ CompiledSolve <- function(model.description, start, objective=c("objectiveML", "
 }
 
 # The wrapper function for solving optimization problems. Please note that the objective function is written in C/C++,  we need to know the name.
-msemCompiledSolve <- function(model.description, start, objective=c("objectiveML", "objectiveGLS"),  typsize=rep(1.0, length(start)), debug=FALSE, maxiter=100,...)
+msemCompiledSolve <- function(model.description, start, objective=c("objectiveML", "objectiveGLS"),  
+															typsize=rep(1.0, length(start)), debug=FALSE, maxiter=100,gradtol=1e-6, ...)
 {
 		if(missing(objective)) objective <- "objectiveML"
 		objective <- match.arg(objective)
@@ -105,7 +106,7 @@ msemCompiledSolve <- function(model.description, start, objective=c("objectiveML
 		stepmax=max(1000.0 * sqrt(sum((start/typsize)^2)),  1000.0)
 
 		res <- cmsem(model=model.description, start, opt.flag=1, typsize=typsize,objective=objective,  
-								opts=list("iterlim"=maxiter, "print.level"=if(debug) 2 else 0,
+								opts=list("iterlim"=maxiter, "print.level"=if(debug) 2 else 0,"gradtol"=gradtol, 
 													"hessian"=TRUE, "check.analyticals"=FALSE, "stepmax"=stepmax), ...)
 
 #reoraginize the matrix A,  P,  C 
@@ -135,7 +136,7 @@ msemCompiledSolve <- function(model.description, start, objective=c("objectiveML
 		ret$C <- CC
 		ret$A <- AA
 		ret$P <- PP
-		ret$ff <- res$f
+		ret$ff <- ff
 
 		return(ret)
 }

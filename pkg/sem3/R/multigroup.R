@@ -322,6 +322,31 @@ msemObjectiveML <- function(gradient=TRUE){
 	result
 }
 
+msemObjectiveGLS <- function(gradient=FALSE){
+	result <- list(
+			objective = function(par, model.description){
+				with(model.description, {
+
+						 res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveGLS")
+						 AA <- PP <- CC <- vector(G,  mode="list")
+						 for(g in 1:model.description$G)
+						 {
+								 AA[[g]] <- res$A[[g]]
+								 PP[[g]] <- res$P[[g]]
+								 CC[[g]] <- res$C[[g]]
+						 }
+
+							f <- res$f
+							attributes(f) <- list(A=AA, P=PP, C=CC, f=res$ff)
+							f
+						})
+			}
+	)
+
+	class(result) <- "msemObjective"
+	result
+}
+
 
 ##  nlm()-based optimizer for multigroup SEMs
 
@@ -333,12 +358,16 @@ msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
 				typsize <- if (par.size == 'startvalues') abs(start) else rep(1, t)
 
 			if(identical(objective, msemObjectiveML)) objectiveCompiled <- "objectiveML"
-			else if (identical(objective, msemObjectiveGLS)) objectiveCompiled <- "objectiveGLS"
+			else if (identical(objective, msemObjectiveGLS)) {
+					objectiveCompiled <- "objectiveGLS"
+					gradient <- FALSE
+			}
 			else stop("optimizerSem requires the objectiveML or objectiveGLS objective function")
 
 				if (!warn) save.warn <- options(warn=-1)
 
-			res <- msemCompiledSolve(model.description=model.description, start=start, objective=objectiveCompiled, typsize=typsize, debug=debug, maxiter=maxiter)
+			res <- msemCompiledSolve(model.description=model.description, start=start, objective=objectiveCompiled, 
+															 typsize=typsize, debug=debug, maxiter=maxiter)
 
 				if (!warn) options(save.warn)
 				result <- list(covergence=NULL, iterations=NULL, coeff=NULL, vcov=NULL, criterion=NULL, C=NULL, A=NULL, P=NULL)
@@ -372,10 +401,13 @@ msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
 				result$vcov <- vcov
 				result$criterion <- res$minimum
 				#    result$df <- df
-				obj <- obj(par, model.description)
-				C <- attr(obj, "C")
-				A <- attr(obj, "A")
-				P <- attr(obj, "P")
+				#obj <- obj(par, model.description)
+				#C <- attr(obj, "C")
+				#A <- attr(obj, "A")
+				#P <- attr(obj, "P")
+				C <- res$C
+				A <- res$A
+				P <- res$P
 				for (g in 1:G){
 					rownames(C[[g]]) <- colnames(C[[g]]) <-rownames(S[[g]])
 					rownames(A[[g]]) <- colnames(A[[g]]) <- var.names[[g]]
@@ -384,7 +416,8 @@ msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
 				result$C <- C
 				result$A <- A
 				result$P <- P
-				result$group.criteria <- attr(obj, "f")
+				#result$group.criteria <- attr(obj, "f")
+				result$group.criteria <- res$ff
 				class(result) <- "msemResult"
 				result
 			})

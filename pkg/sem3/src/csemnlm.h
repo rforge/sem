@@ -151,7 +151,7 @@ typedef void (*myfcn_p)(int, const double *,  double *, double *, double *,  dou
 typedef void (*msem_fcn_p)(int, const double *,  double *, double *, double *,  double *, double *, double *, double *, void *);
 //typedef void (*msem_fcn_p)(int n,  double *x,  double *f, double *g, double *h,  double *A,  double *P, double *C, double *ff, void *state);
 
-#define FT_SIZE 5		/* default size of table to store computed
+#define FT_SIZE 3		/* default size of table to store computed
 				   function values */
 
 typedef struct {
