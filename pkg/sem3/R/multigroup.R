@@ -355,7 +355,6 @@ msemObjectiveGLS <- function(gradient=FALSE){
 optimizerMsem <- function(start, objective=msemObjectiveML, gradient=TRUE,
 		maxiter, debug, par.size, model.description, warn=FALSE, ...){
 	with(model.description, {
-			 #save(start, par.size, model.description, file="multigroup.model.description")
 				obj <- objective(gradient=gradient)$objective
 				typsize <- if (par.size == 'startvalues') abs(start) else rep(1, t)
 
@@ -428,7 +427,6 @@ optimizerMsem <- function(start, objective=msemObjectiveML, gradient=TRUE,
 msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
 		maxiter, debug, par.size, model.description, warn=FALSE, ...){
 	with(model.description, {
-			 #save(start, par.size, model.description, file="multigroup.model.description")
 				obj <- objective(gradient=gradient)$objective
 				typsize <- if (par.size == 'startvalues') abs(start) else rep(1, t)
 				if (!warn) save.warn <- options(warn=-1)

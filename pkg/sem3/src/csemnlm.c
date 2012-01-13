@@ -871,12 +871,11 @@ SEXP cmsemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian,
 
 				(*myobjfun)(n, x0, &fpls, gpls, a , matrixA, P,  C, ff,  state);
 
-				int num_objs=2;  //x0, objective,
+				int num_objs=3;  //x0, objective, *ff
 				//A, P, C
 				if(!csem_isnan(*matrixA)) ++num_objs;
 				if(!csem_isnan(*P)) ++num_objs;
 				if(!csem_isnan(*C)) ++num_objs;
-				if(!csem_isnan(*ff)) ++num_objs;
 
 				if(iagflg) {
 						++num_objs;
@@ -952,13 +951,11 @@ SEXP cmsemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian,
 						k++;
 				}
 
-				if(!csem_isnan(*ff)) { 
-						SET_STRING_ELT(names, k, mkChar("f"));
-						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, 1, state->model->G));
-						for (i = 0; i < state->model->G; i++)
-								REAL(VECTOR_ELT(value, k))[i] = ff[i];
-						k++;
-				}
+				SET_STRING_ELT(names, k, mkChar("f"));
+				SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, 1, state->model->G));
+				for (i = 0; i < state->model->G; i++)
+						REAL(VECTOR_ELT(value, k))[i] = ff[i];
+				k++;
 
 				setAttrib(value, R_NamesSymbol, names);
 				UNPROTECT(3);
@@ -1007,7 +1004,7 @@ SEXP cmsemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian,
 				if (code != 0 && (omsg&8) == 0)
 						optcode(code);
 
-				int num_objs = 5;
+				int num_objs = 6;  //  ff 
 
 				if (want_hessian) {
 						++num_objs;
@@ -1029,7 +1026,6 @@ SEXP cmsemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian,
 				if(!csem_isnan(*matrixA)) ++num_objs;
 				if(!csem_isnan(*P)) ++num_objs;
 				if(!csem_isnan(*C)) ++num_objs;
-				if(!csem_isnan(*ff)) ++num_objs;
 
 				PROTECT(value = allocVector(VECSXP, num_objs));
 				PROTECT(names = allocVector(STRSXP, num_objs));
@@ -1096,14 +1092,12 @@ SEXP cmsemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian,
 						k++;
 				}
 
-				/* C */
-				if(!csem_isnan(*ff)) {
-						SET_STRING_ELT(names, k, mkChar("f"));
-						SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, 1, state->model->G));
-						for (i = 0; i < state->model->G; i++)
-								REAL(VECTOR_ELT(value, k))[i] = ff[i];
-						k++;
-				}
+				/* ff */
+				SET_STRING_ELT(names, k, mkChar("f"));
+				SET_VECTOR_ELT(value, k, allocMatrix(REALSXP, 1, state->model->G));
+				for (i = 0; i < state->model->G; i++)
+						REAL(VECTOR_ELT(value, k))[i] = ff[i];
+				k++;
 
 				setAttrib(value, R_NamesSymbol, names);
 				UNPROTECT(3);
