@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-01-10
+# last modified J. Fox 2012-01-13
 
 ## model definition
 
@@ -132,8 +132,8 @@ parse.path <- function(path) {
 ## sem() method for msemmod objects
 
 sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FALSE, fixed.x, param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
-		maxiter=1000, par.size = c("ones", "startvalues"), start.tol = 1e-06, startvalues=c("initial.fit", "startvalues"),
-		optimizer = msemOptimizerNlm, objective = msemObjectiveML, ...){
+		maxiter=1000, par.size = c("ones", "startvalues"), start.tol = 1e-06, startvalues=c("startvalues", "initial.fit"),
+		optimizer = optimizerMsem, objective = msemObjectiveML, ...){
 	par.size <- match.arg(par.size)
 	startvalues <- match.arg(startvalues)
 	G <- length(S)
@@ -213,7 +213,9 @@ sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FAL
 			maxiter=maxiter, debug=debug, par.size=par.size, model.description=model.description, warn=warn, ...)
 	result <- c(result, list(ram=model, param.names=param.names, var.names=var.names, group=group, groups=groups,
 					S=S, N=N, J=J, n=n, m=m, t=t, raw=raw, optimizer=optimizer, objective=objective, fixed.x=fixed.x, n.fix=n.fix))
-	class(result) <- c(deparse(substitute(objective)), "msem")
+	cls <- gsub("\\.", "", deparse(substitute(objective)))
+	cls <- gsub("2", "", cls)
+	class(result) <- c(cls, "msem")
 	result
 }
 
@@ -350,7 +352,7 @@ msemObjectiveGLS <- function(gradient=FALSE){
 
 ##  nlm()-based optimizer for multigroup SEMs
 
-msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
+optimizerMsem <- function(start, objective=msemObjectiveML, gradient=TRUE,
 		maxiter, debug, par.size, model.description, warn=FALSE, ...){
 	with(model.description, {
 			 #save(start, par.size, model.description, file="multigroup.model.description")
@@ -362,7 +364,7 @@ msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
 					objectiveCompiled <- "objectiveGLS"
 					gradient <- FALSE
 			}
-			else stop("optimizerSem requires the objectiveML or objectiveGLS objective function")
+			else stop("optimizerMsem requires the msemObjectiveML or msemObjectiveGLS objective function")
 
 				if (!warn) save.warn <- options(warn=-1)
 
@@ -423,7 +425,7 @@ msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
 			})
 }
 
-msemOptimizerNlm2 <- function(start, objective=msemObjectiveML, gradient=TRUE,
+msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
 		maxiter, debug, par.size, model.description, warn=FALSE, ...){
 	with(model.description, {
 			 #save(start, par.size, model.description, file="multigroup.model.description")

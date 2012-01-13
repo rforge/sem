@@ -19,7 +19,8 @@
   unobserved variables). Observed variables are also called \emph{indicators} or 
   \emph{manifest variables}; unobserved variables are also called \emph{factors}
   or \emph{latent variables}. Normally, the generic function (\code{sem}) is
-  called directly with a \code{semmod} first argument, invoking the \code{sem.semmod}
+  called directly with a \code{semmod} first argument produced by \code{\link{specifyModel}},
+  \code{\link{specifyEquations}}, or \code{\link{cfa}}, invoking the \code{sem.semmod}
   method, which in turn sets up a call to the \code{sem.default} method; thus, the user
   may wish to specify arguments accepted by the \code{semmod} and \code{default} methods.
   Similarly, for a multigroup model, \code{sem} would normally be called with a
@@ -43,8 +44,8 @@
 \method{sem}{msemmod}(model, S, N, group="Group", groups=names(model), raw=FALSE, fixed.x, 
 		param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
 		maxiter=1000, par.size = c("ones", "startvalues"), start.tol = 1e-06, 
-		startvalues=c("initial.fit", "startvalues"),
-		optimizer = msemOptimizerNlm, objective = msemObjectiveML, ...)
+		startvalues=c("startvalues", "initial.fit"),
+		optimizer = optimizerMsem, objective = msemObjectiveML, ...)
     
 startvalues(S, ram, debug=FALSE, tol=1E-6)
 
@@ -134,19 +135,20 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     used depends upon the optimizer employed.}
   \item{start.tol, tol}{if the magnitude of an automatic start value is less than \code{start.tol}, then
     it is set to \code{start.tol}; defaults to 1E-6.}
-  \item{optimizer}{a function to be used to minimize the objective function; the default for singel-group models is 
+  \item{optimizer}{a function to be used to minimize the objective function; the default for single-group models is 
   	\code{\link{optimizerSem}}.
   	Alternatives are \code{\link[stats]{nlm}}, which employs the standard R optimizer \code{\link[stats]{nlm}};
   	\code{\link{optimizerOptim}}, which employs \code{\link[stats]{optim}};
   	and \code{\link{optimizerNlminb}}, which uses \code{\link[stats]{nlminb}} --- or
-  	the user can supply an optimizer. For multigroup model, the only optimizer currently 
-  	available is \code{msemOptimizerNlm}.}
+  	the user can supply an optimizer. For multigroup model, the default is \code{\link{optimizerMsem}}, and
+  	\code{\link{msemOptimizerNlm}}, based on \code{nlm}, is provided as an alternative.}
   \item{objective}{An objective function to be minimized, sometimes called a \dQuote{fit} function 
   	in the SEM literature. The default for single-group models is \code{\link{objectiveML}},
   	which produces maximum-likelihood estimates assuming multinormality. An alternative is 
   	\code{\link{objectiveGLS}}, which produced generalized least squares estimates --- or the user
-  	can supply an objective function to be minimzed. For multigroup models, the only objective function currently
-  	available is \code{\link{msemObjectiveML}}.}
+  	can supply an objective function to be minimzed. For multigroup models, the default is
+  	available is \code{\link{msemObjectiveML}} for ML estimates and an alternative is \code{\link{msemObjectiveGLS}}
+  	for GLS estiamtes.}
   \item{ram}{numeric RAM matrix.}
   \item{object}{an object of class \code{"sem"} or \code{"msem"}, returned by \code{sem}.}
   \item{standardized}{if \code{TRUE}, return standardized coefficients.}
@@ -156,8 +158,9 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   \item{group}{for a multigroup model, the quoted name of the group variable; if the \code{data} argument is given,
     then this should be a factor in the data set or a variable coercible to a factor.}
   \item{groups}{a character vector giving the names of the groups.}
-  \item{startvalues}{if \code{"initial.fit"} (the default), start values are computed by first fitting the intra-group
-    models separately by group; if \code{"startvalues"}, then start values are computed as for a single-group model.}
+  \item{startvalues}{if \code{"initial.fit"}, start values are computed by first fitting the intra-group
+    models separately by group; this option is worth exploring if convergence problems are encountered;
+    if \code{"startvalues"} (the default), then start values are computed as for a single-group model.}
 } 
 
 \details{

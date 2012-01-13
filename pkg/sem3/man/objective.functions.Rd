@@ -6,6 +6,9 @@
 \alias{objectiveML2}
 \alias{objectiveGLS2}
 \alias{msemObjectiveML}
+\alias{msemObjectiveML2}
+\alias{msemObjectiveGLS}
+
 
 \title{
 sem Objective-Function Builders
@@ -17,7 +20,9 @@ normally call these functions directly, but rather supply one of them in the \co
 \code{sem}. Users may also write their own objective functions. \code{objectiveML} and \code{objectiveML2} are for multinormal maximum-likelihood
 estimation; \code{objectiveGLS} and \code{objectiveGLS2} are for generalized least squares. \code{objectiveML} and \code{objectiveGLS} use
 compiled code and are therefore substantially faster. \code{objectiveML2} and \code{objectiveGLS2} are provided primarily to illustrate
-how to write \code{sem} objective functions in R. \code{msemObjectiveML} is for fitting multi-group models by multinormal maximum likelihood.
+how to write \code{sem} objective functions in R. \code{msemObjectiveML} uses compiled code is for fitting multi-group models by 
+multinormal maximum likelihood; \code{msemObjectiveML2} is similar but doesn't use compiled code. \code{msemObjectiveGLS} uses compiled
+code and is for fitting multi-group models by generalized least squares.
 }
 
 \usage{
@@ -28,11 +33,14 @@ objectiveGLS(gradient=FALSE)
 objectiveGLS2(gradient=FALSE)
 
 msemObjectiveML(gradient=TRUE)
+msemObjectiveML2(gradient=TRUE)
+
+msemObjectiveGLS(gradient=FALSE)
 }
 
 \arguments{
   \item{gradient}{If \code{TRUE}, the object that's returned includes a function for computing an analytic gradient; there is at present no
-  analytic gradient available for \code{objectiveGLS} or \code{objectiveGLS2}.}
+  analytic gradient available for \code{objectiveGLS}, \code{objectiveGLS2}, or \code{msemObjectiveGL}.}
   \item{hessian}{If \code{TRUE}, the objected returned includes a function to compute an analytic Hessian; only avaiable for \code{objectiveML}
   and not generally recommended.}
 }

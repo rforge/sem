@@ -1,4 +1,4 @@
-# last modified 2012-01-07 by J. Fox
+# last modified 2012-01-13 by J. Fox
 
 useDynLib(sem3)
 useDynLib(sem3, csemSolve)
@@ -20,7 +20,7 @@ export(ram, standardizedResiduals, normalizedResiduals, readMoments,
 	optimizerSem,  
 	objectiveML, objectiveGLS,   
 	multigroupModel, msemObjectiveML, msemObjectiveGLS, msemOptimizerNlm,
-	msemObjectiveML2, msemOptimizerNlm2,  
+	msemObjectiveML2, optimizerMsem,  
     # deprecated:
     standardized.residuals, normalized.residuals, read.moments,
     standardized.coefficients, std.coef, mod.indices, path.diagram,

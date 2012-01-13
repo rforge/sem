@@ -5,6 +5,7 @@
 \alias{optimizerNlm}
 \alias{optimizerOptim}
 \alias{optimizerNlminb}
+\alias{optimizerMsem}
 \alias{msemOptimizerNlm}
 
 \title{sem Optimizers}
@@ -22,6 +23,9 @@ The user would not normally call these functions directly, but rather supply one
 \usage{
 optimizerSem(start, objective=objectiveML,  
 	gradient=TRUE, maxiter, debug, par.size, model.description, warn, ...)
+	
+optimizerMsem(start, objective=msemObjectiveML, gradient=TRUE,
+	maxiter, debug, par.size, model.description, warn=FALSE, ...)
 	
 optimizerNlm(start, objective=objectiveML, gradient=TRUE, 
 	maxiter, debug, par.size, model.description, warn, ...)
