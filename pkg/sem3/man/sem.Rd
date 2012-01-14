@@ -34,7 +34,7 @@
     
 \method{sem}{default}(model, S, N, data=NULL, raw=FALSE, param.names, 
 		var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
-		analytic.gradient=TRUE, warn=FALSE, maxiter=500, 
+		analytic.gradient=TRUE, warn=FALSE, maxiter=1000, 
 		par.size=c("ones", "startvalues"), start.tol=1E-6, 
 		optimizer=optimizerSem, objective=objectiveML, ...) 
 		
@@ -43,8 +43,8 @@
 		
 \method{sem}{msemmod}(model, S, N, group="Group", groups=names(model), raw=FALSE, fixed.x, 
 		param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
-		maxiter=1000, par.size = c("ones", "startvalues"), start.tol = 1e-06, 
-		startvalues=c("startvalues", "initial.fit"),
+		maxiter=5000, par.size = c("ones", "startvalues"), start.tol = 1e-06, 
+		startvalues=c("initial.fit", "startvalues"), initial.maxiter=1000,
 		optimizer = optimizerMsem, objective = msemObjectiveML, ...)
     
 startvalues(S, ram, debug=FALSE, tol=1E-6)
@@ -158,9 +158,13 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   \item{group}{for a multigroup model, the quoted name of the group variable; if the \code{data} argument is given,
     then this should be a factor in the data set or a variable coercible to a factor.}
   \item{groups}{a character vector giving the names of the groups.}
-  \item{startvalues}{if \code{"initial.fit"}, start values are computed by first fitting the intra-group
-    models separately by group; this option is worth exploring if convergence problems are encountered;
-    if \code{"startvalues"} (the default), then start values are computed as for a single-group model.}
+  \item{startvalues}{if \code{"initial.fit"} (the default), start values 
+    for a multi-group model are computed by first fitting the intra-group models separately by group;
+    if \code{"startvalues"}, then start values are computed as for a single-group model.
+    In some cases, the intra-group models may not be identified even if the multi-group model is, and
+    then \code{startvalues="initial.fit"} should be used.}
+  \item{initial.maxiter}{if \code{startvalues="initial.fit"} for a multi-group model, then
+    \code{initial.maxiter} gives the maximum number of iterations for each initial intra-group fit.}
 } 
 
 \details{

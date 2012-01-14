@@ -1,4 +1,4 @@
-# last modified 2012-01-10 by J. Fox
+# last modified 2012-01-14 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -89,7 +89,7 @@ sem.semmod <- function(model, S, N, data, raw=FALSE, obs.variables=rownames(S),
 
 sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names, 
 		var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
-		analytic.gradient=TRUE, warn=FALSE, maxiter=500, par.size=c("ones", "startvalues"), 
+		analytic.gradient=TRUE, warn=FALSE, maxiter=1000, par.size=c("ones", "startvalues"), 
 		start.tol=1E-6, optimizer=optimizerSem, objective=objectiveML, ...){
 	ord <- function(x) 1 + apply(outer(unique(x), x, "<"), 2, sum)
 	is.triangular <- function(X) {
@@ -186,6 +186,7 @@ sem.default <- function(model, S, N, data=NULL, raw=FALSE, param.names,
 		result$C <- res$C
 		result$A <- res$A
 		result$P <- res$P
+		if (!is.na(result$iterations)) if(result$iterations >= maxiter) warning("maximum iterations exceeded")
 	}
 	cls <- gsub("\\.", "", deparse(substitute(objective)))
 	cls <- gsub("2", "", cls)

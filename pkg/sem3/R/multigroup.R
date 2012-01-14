@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-01-13
+# last modified J. Fox 2012-01-14
 
 ## model definition
 
@@ -132,7 +132,7 @@ parse.path <- function(path) {
 ## sem() method for msemmod objects
 
 sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FALSE, fixed.x, param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
-		maxiter=1000, par.size = c("ones", "startvalues"), start.tol = 1e-06, startvalues=c("startvalues", "initial.fit"),
+		maxiter=5000, par.size = c("ones", "startvalues"), start.tol = 1e-06, startvalues=c("initial.fit", "startvalues"), initial.maxiter=1000,
 		optimizer = optimizerMsem, objective = msemObjectiveML, ...){
 	par.size <- match.arg(par.size)
 	startvalues <- match.arg(startvalues)
@@ -167,13 +167,16 @@ sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FAL
 	logdetS <- sapply(S, function(s) log(det(unclass(s))))
 	sel.free.2 <- sel.free.1 <- arrows.2.free <- arrows.1.free <- arrows.2t <- arrows.2 <- arrows.1 <- 
 			two.free <- one.free <- one.head <- sel.free <- fixed <- par.posn <- correct <- J <- vector(mode="list", length=G)  
+	initial.iterations <- if (startvalues == "initial.fit") numeric(G) else NULL
 	for (g in 1:G){
 		mod <- model[[g]]
 		tt <- sum(mod[, 4] != 0)
 		mod[mod[, 4] != 0, 4] <- 1:tt
 		start <- if (startvalues == "initial.fit"){
 					##     browser()
-					prelim.fit <- sem(mod, S[[g]], N=N[[g]], raw=raw, param.names=as.character(1:tt), var.names=as.character(1:m[[g]]))
+					prelim.fit <- sem(mod, S[[g]], N=N[[g]], raw=raw, param.names=as.character(1:tt), var.names=as.character(1:m[[g]]), 
+							maxiter=initial.maxiter)
+					initial.iterations[g] <- prelim.fit$iterations
 					coef(prelim.fit)
 				}
 				else startvalues(S[[g]], mod)
@@ -211,8 +214,10 @@ sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FAL
 			var.names=var.names)
 	result <- optimizer(start=start, objective=objective, gradient=analytic.gradient,
 			maxiter=maxiter, debug=debug, par.size=par.size, model.description=model.description, warn=warn, ...)
+	if (!is.na(result$iterations)) if(result$iterations >= maxiter) warning("maximum iterations exceeded")
 	result <- c(result, list(ram=model, param.names=param.names, var.names=var.names, group=group, groups=groups,
-					S=S, N=N, J=J, n=n, m=m, t=t, raw=raw, optimizer=optimizer, objective=objective, fixed.x=fixed.x, n.fix=n.fix))
+					S=S, N=N, J=J, n=n, m=m, t=t, raw=raw, optimizer=optimizer, objective=objective, fixed.x=fixed.x, n.fix=n.fix,
+					initial.iterations=initial.iterations))
 	cls <- gsub("\\.", "", deparse(substitute(objective)))
 	cls <- gsub("2", "", cls)
 	class(result) <- c(cls, "msem")
@@ -501,7 +506,7 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, ...){
 	groups <- object$groups
 	G <- length(groups)
 	par <- object$coeff
-	vcov <- object$vcov
+	vcov <- vcov(object, ...)
 	n <- object$n
 	m <- object$m
 	S <- object$S
@@ -527,6 +532,7 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, ...){
 				iterations=object$iterations, semmod=semmod[[g]])
 		class(group) <- c("objectiveML", "sem")
 		group.summaries[[g]] <- summary(group, digits=digits, conf.level=conf.level, robust=FALSE, analytic.se=FALSE, ...)
+		group.summaries[[g]]$iterations <- NA
 	}
 	df <- sum(n*(n + 1)/2) - object$t - sum(n.fix*(n.fix + 1)/2)
 	chisq <- sum(N - !object$raw)*object$criterion
@@ -593,7 +599,8 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, ...){
 	cat("\n AICc =", AICc(object))
 	cat("\n BIC =", BIC(object))
 	cat("\n\n")
-	cat("Iterations (post initial fits):", object$iterations, "\n\n")
+	if (is.null(object$initial.iterations)) cat("Iterations:", object$iterations, "\n\n")
+	else cat("Iterations: initial fits,", object$initial.iterations, "  final fit,", object$iterations, "\n\n")
 	for (g in 1:G){
 		cat("\n Group: ", groups[g], "\n\n")
 		print(group.summaries[[g]])
