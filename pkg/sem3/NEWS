@@ -3,6 +3,8 @@ Changes to Version 3.0-0
 	o Compiled code for optimization.
 	
 	o Added multi-group models.
+	
+	o Modification indices for equality-constrained parameters.
 
 Changes to Version 2.1-2
 

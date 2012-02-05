@@ -39,7 +39,7 @@
 		optimizer=optimizerSem, objective=objectiveML, ...) 
 		
 \method{sem}{semmodList}(model, S, N, data, raw=FALSE, fixed.x=NULL, 
-		formula, group="Group", debug=FALSE, ...)
+		robust=!missing(data), formula, group="Group", debug=FALSE, ...)
 		
 \method{sem}{msemmod}(model, S, N, group="Group", groups=names(model), raw=FALSE, fixed.x, 
 		param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
@@ -53,7 +53,7 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
 \method{coef}{msem}(object, ...)
 \method{vcov}{sem}(object, robust=FALSE, 
 	analytic=inherits(object, "objectiveML") && object$t <= 500, ...)
-\method{vcov}{msem}(object, analytic = inherits(object, "msemObjectiveML") && object$t <= 500, ...)
+\method{vcov}{msem}(object, robust=FALSE, analytic=inherits(object, "msemObjectiveML") && object$t <= 500, ...)
 \method{df.residual}{sem}(object, ...)
 \method{df.residual}{msem}(object, ...)
 }
@@ -83,7 +83,9 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   \item{N}{number of observations on which the covariance matrix is based; for a multigroup model, a vector
     of group \eqn{N}s.}
   \item{data}{As a generally preferable alternative to specifying \code{S} and 
- 	\code{N}, the user may supply a data frame containing the data to which the model is to be fit.}
+ 	\code{N}, the user may supply a data frame containing the data to which the model is to be fit.
+ 	In a multigroup model, the \code{data} argument may be a list of data frames or a single data frame;
+ 	in the later event, the factor given as the \code{group} argument is used to split the data into groups.}
   \item{raw}{\code{TRUE} if \code{S} is a raw moment matrix or if a raw moment matrix ---  as
     opposed to a covariance matrix --- is to be
   	computed from \code{data}; the default is \code{FALSE}.}
@@ -97,7 +99,8 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   \item{formula}{a one-sided formula, to be applied to \code{data} to generate the variables for
   	which covariances or raw moments are computed. The default formula is \code{~.}, i.e., all of the
   	variables in the data, including an implied intercept; if a covariance matrix is to be computed,
-  	the constant is suppressed.}
+  	the constant is suppressed. In a multigroup model, alternatively a list one one-sided formulas as be
+  	given, to be applied individually to the groups.}
   \item{robust}{In \code{sem}: if \code{TRUE}, then quantities are calculated that can be used to compute robust
   	estimates of coefficient standard errors and robust tests when the model is fit by multinormal maximum likelihood;
   	the default is \code{TRUE} when the \code{data} argument is \code{TRUE}, and this option is only
@@ -156,8 +159,10 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   	at present only available for the \code{\link{objectiveML}} objective function. The default is \code{FALSE}
   	for this objective function if there are no more than 100 parameters and \code{FALSE} otherwise.}
   \item{group}{for a multigroup model, the quoted name of the group variable; if the \code{data} argument is given,
-    then this should be a factor in the data set or a variable coercible to a factor.}
-  \item{groups}{a character vector giving the names of the groups.}
+    snd is a single data frame, then this should be a factor in the data set or a variable coercible to a factor,
+    to be used to split the data into groups; otherwise, the name is arbitrary.}
+  \item{groups}{a character vector giving the names of the groups; will be ignored if \code{group} is a factor
+    in \code{data}.}
   \item{startvalues}{if \code{"initial.fit"} (the default), start values 
     for a multi-group model are computed by first fitting the intra-group models separately by group;
     if \code{"startvalues"}, then start values are computed as for a single-group model.

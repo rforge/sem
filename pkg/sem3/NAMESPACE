@@ -1,4 +1,4 @@
-# last modified 2012-01-13 by J. Fox
+# last modified 2012-02-05 by J. Fox
 
 useDynLib(sem3)
 useDynLib(sem3, csemSolve)
@@ -52,8 +52,11 @@ S3method(summary, objectiveML)
 S3method(summary, objectiveGLS)
 S3method(print, summary.objectiveML)
 S3method(summary, modIndices)
+S3method(summary, msemModIndices)
 S3method(print, modIndices)
+S3method(print, msemModIndices)
 S3method(modIndices, objectiveML)
+S3method(modIndices, msemObjectiveML)
 S3method(pathDiagram, sem)
 S3method(print, semeffects)     
 S3method(print, semmod)

@@ -52,7 +52,7 @@ These functions are for objects fit by \code{\link{sem}} using the \code{\link{o
 \method{print}{msemObjectiveML}(x, ...)
 \method{summary}{objectiveML}(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...)
 \method{summary}{objectiveGLS}(object, ...)
-\method{summary}{msemObjectiveML}(object, digits=5, conf.level=.90, ...)
+\method{summary}{msemObjectiveML}(object, digits=5, conf.level=.90, robust=FALSE, ...)
 }
 
 \arguments{

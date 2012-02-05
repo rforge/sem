@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-01-14
+# last modified J. Fox 2012-02-04
 
 ## model definition
 
@@ -40,33 +40,50 @@ print.semmodList <- function(x, ...){
 
 ## sem() method for semmodList objects
 
-sem.semmodList <- function(model, S, N, data, raw=FALSE, fixed.x=NULL, formula, group="Group", debug=FALSE, ...){
+sem.semmodList <- function(model, S, N, data, raw=FALSE, fixed.x=NULL, robust=!missing(data), formula, group="Group", debug=FALSE, ...){
+	data.out <- NULL
 	if (missing(S)){
-		if (missing(data) || missing(group)) stop("S and data/group cannot both be missing")
-		if (!is.factor(data[, group])) stop("Groups variable, ", group, ", is not a factor")
-		levels <- levels(data[, group])
+		if (missing(data)) stop("S and data cannot both be missing")
+		data.df <- inherits(data, "data.frame")
+		if (data.df && missing(group)) stop("S and group cannot both be missing")
+		if (data.df){
+			if (!is.factor(data[, group])) stop("Groups variable, ", group, ", is not a factor")
+			levels <- levels(data[, group])
+			if (missing(formula)) formula <- as.formula(paste("~ . -", group))
+		}
+		else {
+			if (!all(sapply(data, function(d) inherits(d, "data.frame")))) stop("data must be a data frame or list of data frames")
+			levels <- names(data)
+			if (is.null(levels)) levels <- paste("Group", seq(along=data), sep=".")
+			if (missing(formula)) formula <- ~ .
+		}
 		G <- length(levels)
+		if (is.list(formula) && length(formula) != G) stop("number of formulas, ", length(formula), ", not equal to number of groups, ", G, sep="")
 		S <- vector(G, mode="list")
 		names(S) <- levels
 		N <- numeric(G)
-		if (missing(formula)) formula <- as.formula(paste("~ . -", group))
+		data.out <- vector(G, mode="list")
 		for (g in 1:G){
-			data.group <- subset(data, subset = data[, group] == levels[g])
+			data.group <- if (data.df) subset(data, subset = data[, group] == levels[g]) else data[[g]]
 			N.all <- nrow(data.group)
-			data.group <- model.matrix(formula, data=data.group)
+			form <- if (is.list(formula)) formula[[g]] else formula
+			data.group <- model.matrix(form, data=data.group)
 			N[g] <- nrow(data.group)
 			if (N[g] < N.all) warning(N.all - N[g]," observations removed due to missingness in group ", levels[g])
 			S[[g]] <- if (raw) rawMoments(data.group) else{
 						data.group <- data.group[, colnames(data.group) != "(Intercept)"]
 						cov(data.group)
 					}
+			data.out[[g]] <- data.group
 		}
 	}
+	else G <- length(S)
+	if (length(model) != G) stop("number of group models, ", length(model), ", not equal to number of moment/data matrices, ", G, sep="")
 	pars <-  unique(na.omit(as.vector(sapply(model, function(mod) mod[, 2]))))
 	vars <- rams <- vector(length(model), mode="list")
 	all.par.names <- character(0)
 	all.pars <- numeric(0)
-	for (i in 1:length(model)){
+	for (i in 1:G){
 		obs.variables <- colnames(S[[i]])
 		mod <- model[[i]]
 		if ((!is.matrix(mod)) | ncol(mod) != 3) stop("model argument must be a 3-column matrix")
@@ -114,7 +131,13 @@ sem.semmodList <- function(model, S, N, data, raw=FALSE, fixed.x=NULL, formula, 
 	class(rams) <- "msemmod"
 	result <- sem(rams, S, N, group=group, groups=names(model), raw=raw, fixed.x=fixed.x, param.names=all.par.names[all.pars], var.names=vars, debug=debug, ...)
 	result$semmodList <- model
-	result$data <- if(missing(data)) NULL else data
+	result$data <- if(missing(data)) NULL else data.out
+	if (robust && !missing(data) && inherits(result, "msemObjectiveML")){
+		res <- robustVcovMsem(result)
+		result$robust.vcov <- res$vcov
+		result$chisq.scaled <- res$chisq.scaled
+		result$adj.objects <- res$adj.objects
+	}
 	result
 }
 
@@ -158,7 +181,6 @@ sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FAL
 			model[[g]] <- mod
 		}
 	}
-	##  browser()
 	t <- max(sapply(model, function(r) max(r[, 4])))
 	if(missing(param.names)) param.names <- paste("Parameter", 1:t, sep=".")
 	if (missing(var.names)) var.names <- lapply(model, function(mod) paste("Variable", 1:max(mod[, c(2,3)]), sep="."))
@@ -173,7 +195,6 @@ sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FAL
 		tt <- sum(mod[, 4] != 0)
 		mod[mod[, 4] != 0, 4] <- 1:tt
 		start <- if (startvalues == "initial.fit"){
-					##     browser()
 					prelim.fit <- sem(mod, S[[g]], N=N[[g]], raw=raw, param.names=as.character(1:tt), var.names=as.character(1:m[[g]]), 
 							maxiter=initial.maxiter)
 					initial.iterations[g] <- prelim.fit$iterations
@@ -248,13 +269,6 @@ msemObjectiveML2 <- function(gradient=TRUE){
 								AA[[g]] <- A
 								PP[[g]] <- P
 								if (gradient){
-									#             A <- P <- matrix(0, m[g], m[g])
-									#             val <- ifelse (fixed[[g]], ram[[g]][,5], par[sel.free[[g]]])
-									#             A[arrows.1[[g]]] <- val[one.head[[g]]]
-									#             P[arrows.2t[[g]]] <- P[arrows.2[[g]]] <- val[!one.head[[g]]]
-									#             I.Ainv <- solve(diag(m[g]) - A)
-									#             C <- J[[g]] %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J[[g]])
-									#             Cinv <- solve(C)
 									grad.P <- correct[[g]] * t(I.Ainv) %*% t(J[[g]]) %*% Cinv %*% (C - S[[g]]) %*% Cinv %*% J[[g]] %*% I.Ainv
 									grad.A <- grad.P %*% P %*% t(I.Ainv)        
 									grad <- rep(0, t)
@@ -300,16 +314,16 @@ msemObjectiveML <- function(gradient=TRUE){
 	result <- list(
 			objective = function(par, model.description){
 				with(model.description, {
-
-						 res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveML")
-						 AA <- PP <- CC <- vector(G,  mode="list")
-						 for(g in 1:model.description$G)
-						 {
-								 AA[[g]] <- res$A[[g]]
-								 PP[[g]] <- res$P[[g]]
-								 CC[[g]] <- res$C[[g]]
-						 }
-
+							
+							res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveML")
+							AA <- PP <- CC <- vector(G,  mode="list")
+							for(g in 1:model.description$G)
+							{
+								AA[[g]] <- res$A[[g]]
+								PP[[g]] <- res$P[[g]]
+								CC[[g]] <- res$C[[g]]
+							}
+							
 							f <- res$f
 							attributes(f) <- list(gradient=res$gradient, A=AA, P=PP, C=CC, f=res$ff)
 							f
@@ -319,11 +333,11 @@ msemObjectiveML <- function(gradient=TRUE){
 	if (gradient)
 		result$gradient <- function(par, model.description){
 			with(model.description, {
-
-						 res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveML")
-
+						
+						res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveML")
+						
 					})
-	    res$gradient
+			res$gradient
 		}
 	class(result) <- "msemObjective"
 	result
@@ -333,23 +347,23 @@ msemObjectiveGLS <- function(gradient=FALSE){
 	result <- list(
 			objective = function(par, model.description){
 				with(model.description, {
-
-						 res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveGLS")
-						 AA <- PP <- CC <- vector(G,  mode="list")
-						 for(g in 1:model.description$G)
-						 {
-								 AA[[g]] <- res$A[[g]]
-								 PP[[g]] <- res$P[[g]]
-								 CC[[g]] <- res$C[[g]]
-						 }
-
+							
+							res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveGLS")
+							AA <- PP <- CC <- vector(G,  mode="list")
+							for(g in 1:model.description$G)
+							{
+								AA[[g]] <- res$A[[g]]
+								PP[[g]] <- res$P[[g]]
+								CC[[g]] <- res$C[[g]]
+							}
+							
 							f <- res$f
 							attributes(f) <- list(A=AA, P=PP, C=CC, f=res$ff)
 							f
 						})
 			}
 	)
-
+	
 	class(result) <- "msemObjective"
 	result
 }
@@ -362,19 +376,19 @@ optimizerMsem <- function(start, objective=msemObjectiveML, gradient=TRUE,
 	with(model.description, {
 				obj <- objective(gradient=gradient)$objective
 				typsize <- if (par.size == 'startvalues') abs(start) else rep(1, t)
-
-			if(identical(objective, msemObjectiveML)) objectiveCompiled <- "objectiveML"
-			else if (identical(objective, msemObjectiveGLS)) {
+				
+				if(identical(objective, msemObjectiveML)) objectiveCompiled <- "objectiveML"
+				else if (identical(objective, msemObjectiveGLS)) {
 					objectiveCompiled <- "objectiveGLS"
 					gradient <- FALSE
-			}
-			else stop("optimizerMsem requires the msemObjectiveML or msemObjectiveGLS objective function")
-
+				}
+				else stop("optimizerMsem requires the msemObjectiveML or msemObjectiveGLS objective function")
+				
 				if (!warn) save.warn <- options(warn=-1)
-
-			res <- msemCompiledSolve(model.description=model.description, start=start, objective=objectiveCompiled, 
-															 typsize=typsize, debug=debug, maxiter=maxiter)
-
+				
+				res <- msemCompiledSolve(model.description=model.description, start=start, objective=objectiveCompiled, 
+						typsize=typsize, debug=debug, maxiter=maxiter)
+				
 				if (!warn) options(save.warn)
 				result <- list(covergence=NULL, iterations=NULL, coeff=NULL, vcov=NULL, criterion=NULL, C=NULL, A=NULL, P=NULL)
 				result$convergence <- res$code <= 2
@@ -406,11 +420,6 @@ optimizerMsem <- function(start, objective=msemObjectiveML, gradient=TRUE,
 				colnames(vcov) <- rownames(vcov) <- param.names
 				result$vcov <- vcov
 				result$criterion <- res$minimum
-				#    result$df <- df
-				#obj <- obj(par, model.description)
-				#C <- attr(obj, "C")
-				#A <- attr(obj, "A")
-				#P <- attr(obj, "P")
 				C <- res$C
 				A <- res$A
 				P <- res$P
@@ -422,7 +431,6 @@ optimizerMsem <- function(start, objective=msemObjectiveML, gradient=TRUE,
 				result$C <- C
 				result$A <- A
 				result$P <- P
-				#result$group.criteria <- attr(obj, "f")
 				result$group.criteria <- res$ff
 				class(result) <- "msemResult"
 				result
@@ -468,7 +476,6 @@ msemOptimizerNlm <- function(start, objective=msemObjectiveML, gradient=TRUE,
 				colnames(vcov) <- rownames(vcov) <- param.names
 				result$vcov <- vcov
 				result$criterion <- res$minimum
-				#    result$df <- df
 				obj <- obj(par, model.description)
 				C <- attr(obj, "C")
 				A <- attr(obj, "A")
@@ -500,7 +507,7 @@ print.msemObjectiveML <- function(x, ...){
 	invisible(x)
 }
 
-summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, ...){
+summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, ...){
 	old.digits <- options(digits = digits)
 	on.exit(options(old.digits))
 	groups <- object$groups
@@ -529,9 +536,10 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, ...){
 		group <- list(coeff=par.gr, vcov=vcov[par.names, par.names], n.fix=n.fix[g], n=n[[g]], m=m[[g]], S=S[[g]], C=C[[g]], N=N[[g]],
 				t=length(par.gr), raw=object$raw, var.names=var.names[[g]], ram=ram[[g]],
 				J=J[[g]], A=A[[g]], P=P[[g]], criterion=group.criteria[g], par.posn=ram[[g]][, 4] != 0, 
-				iterations=object$iterations, semmod=semmod[[g]])
+				iterations=object$iterations, semmod=semmod[[g]], adj.obj=object$adj.objects[[g]], 
+				robust.vcov=object$robust.vcov[par.names, par.names])
 		class(group) <- c("objectiveML", "sem")
-		group.summaries[[g]] <- summary(group, digits=digits, conf.level=conf.level, robust=FALSE, analytic.se=FALSE, ...)
+		group.summaries[[g]] <- summary(group, digits=digits, conf.level=conf.level, robust=robust, analytic.se=FALSE, ...)
 		group.summaries[[g]]$iterations <- NA
 	}
 	df <- sum(n*(n + 1)/2) - object$t - sum(n.fix*(n.fix + 1)/2)
@@ -602,7 +610,7 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, ...){
 	if (is.null(object$initial.iterations)) cat("Iterations:", object$iterations, "\n\n")
 	else cat("Iterations: initial fits,", object$initial.iterations, "  final fit,", object$iterations, "\n\n")
 	for (g in 1:G){
-		cat("\n Group: ", groups[g], "\n\n")
+		cat("\n  ", object$group, ": ", groups[g], "\n", sep="")
 		print(group.summaries[[g]])
 	}
 	invisible(object)
@@ -770,15 +778,16 @@ fscores.msem <- function (model, data = model$data, center = TRUE, scale = FALSE
 	else return(scores)
 }
 
-vcov.msem <- function (object, analytic = inherits(object, "msemObjectiveML") && object$t <= 500, ...) { 
+vcov.msem <- function (object, robust=FALSE, analytic = inherits(object, "msemObjectiveML") && object$t <= 500, ...) { 
+	if(robust){
+		if (is.null(object$robust.vcov)) stop("robust coefficient covariance matrix not available")
+		return(object$robust.vcov)
+	}
 	if (!analytic) 
 		return(object$vcov)
 	if (!inherits(object, "msemObjectiveML")) 
 		stop("analytic coefficient covariance matrix unavailable")
 	hessian <- function(model) {
-#		accumulate <- function(A, B, C, D, d) {
-#			B[1:d, 1:d] %x% A[1:d, 1:d] + matrix(rep(rep(t(C[1:d, 1:d]), 1, each=d), d), d^2, d^2, byrow=TRUE) * matrix(rep(rep((D[1:d, 1:d]), 1, each=d), d), d^2, d^2)
-#		}
 		A <- model$A
 		P <- model$P
 		S <- model$S
@@ -844,18 +853,15 @@ vcov.msem <- function (object, analytic = inherits(object, "msemObjectiveML") &&
 			pars <- ram[, 4][!fixed]
 			all.pars <- ram[, 4]
 			t <- length(pars)
-#			Z <- outer(1:t, pars, function(x, y) as.numeric(x == y))
 			Z <- outer(sort(unique(pars)), pars, function(x, y) as.numeric(x == y))
 			hessian <- Z %*% hessian %*% t(Z)
 			par.names <- c(nms[all.pars[one.free]], nms[all.pars[two.free]])
 			rownames(hessian) <- colnames(hessian) <- par.names
 			Hessian[par.names, par.names] <- Hessian[par.names, par.names] + wts[g]*hessian
-#			browser()
 		}
 		Hessian
 	}
 	h <- hessian(object)
-#	browser()
 	t <- object$t
 	N <- sum(object$N)
 	raw <- object$raw
@@ -879,4 +885,35 @@ vcov.msem <- function (object, analytic = inherits(object, "msemObjectiveML") &&
 		}
 	}
 	vcov
+}
+
+robustVcovMsem <- function(model){
+	G <- length(model$groups)
+	t <- model$t  
+	N <- model$N
+	raw <- model$raw
+	wts <- (N - !raw)/(sum(N) - !raw*G)
+	hessian <- matrix(0, t, t)
+	rownames(hessian) <- colnames(hessian) <- model$param.names
+	chisq <- 0
+	adj.objects <- vector(G, mode="list")
+	for (g in 1:G){
+		ram <- model$ram[[g]]
+		parameters <- ram[, 4]
+		unique.pars <- unique(parameters[parameters != 0])
+		par.posn <- sapply(unique.pars, function(x) which(x == parameters)[1])
+		unique.posn <- which(parameters %in% unique.pars)
+		rownames(ram)[unique.posn] <- unique(model$param.names[ram[, 4]])
+		ram[unique.posn, 4] <- unlist(apply(outer(unique.pars, parameters, "=="), 2, which))
+		mod.g <- list(var.names=model$var.names[[g]], ram=ram,J=model$J[[g]], n.fix=model$n.fix, n=model$n[[g]], 
+				N=model$N[g], m=model$m[[g]], t=length(unique.pars),
+				coeff=model$coeff[parameters],  criterion=model$group.criteria[g],  S=model$S[[g]], raw=model$raw,
+				C=model$C[[g]], A=model$A[[g]], P=model$P[[g]])
+		adj.objects[[g]] <- sbchisq(sem.obj=mod.g, sem.data=model$data[[g]])
+		hess <- solve((N[g] - 1)*robustVcov(mod.g, adj.obj=adj.objects[[g]]))
+		pars <- rownames(hess)
+		hessian[pars, pars] <- hessian[pars, pars] + wts[g]*hess
+		chisq <- chisq + adj.objects$chisq.scaled
+	}
+	return(list(vcov=solve(hessian)/(sum(N) - !raw*G), chisq.scaled=chisq, adj.objects=adj.objects))
 }
