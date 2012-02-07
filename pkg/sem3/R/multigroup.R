@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-02-06
+# last modified J. Fox 2012-02-07
 
 ## model definition
 
@@ -802,7 +802,7 @@ vcov.msem <- function (object, robust=FALSE, analytic = inherits(object, "msemOb
 		raw <- model$raw
 		Hessian <- matrix(0, nrow=length(nms), ncol=length(nms))
 		rownames(Hessian) <- colnames(Hessian) <- nms
-		wts <- (N - !raw)/(sum(N) - !raw*G)
+		wts <- (N - !raw)/(sum(N) - G*!raw)
 		for (g in 1:G){
 			I.Ainv <- solve(diag(m[g]) - A[[g]])
 			Cinv <- solve(C[[g]])
