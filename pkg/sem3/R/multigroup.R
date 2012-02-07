@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-02-04
+# last modified J. Fox 2012-02-06
 
 ## model definition
 
@@ -79,7 +79,7 @@ sem.semmodList <- function(model, S, N, data, raw=FALSE, fixed.x=NULL, robust=!m
 	}
 	else G <- length(S)
 	if (length(model) != G) stop("number of group models, ", length(model), ", not equal to number of moment/data matrices, ", G, sep="")
-	pars <-  unique(na.omit(as.vector(sapply(model, function(mod) mod[, 2]))))
+	pars <-  unique(na.omit(unlist(lapply(model, function(mod) mod[, 2]))))
 	vars <- rams <- vector(length(model), mode="list")
 	all.par.names <- character(0)
 	all.pars <- numeric(0)
