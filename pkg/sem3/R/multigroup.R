@@ -159,9 +159,21 @@ sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FAL
 		optimizer = optimizerMsem, objective = msemObjectiveML, ...){
 	par.size <- match.arg(par.size)
 	startvalues <- match.arg(startvalues)
-	G <- length(S)
+	G <- length(groups)
 	if (length(model) != G || length(N) != G) 
 		stop("inconsistent number of groups in model (", length(model), "), S (", G, "), and N (", length(N), ") arguments")
+	if (is.null(names(S))) names(S) <- groups
+	if (is.null(names(N))) names(N) <- groups
+	if (is.null(names(model))) names(model) <- groups
+	if (!all(groups == names(model))) warning("names of groups (", paste(groups, collapse=", "), 
+				") is not the same as names of models in model argument (", 
+				paste(names(model), collapse=", "), ")")
+	if (!all(groups == names(S))) warning("names of groups (", paste(groups, collapse=", "),
+				") is not the same as names of moment matrices in S argument (", 
+				paste(names(S), collapse=", "), ")")
+	if (!all(groups == names(N))) warning("names of groups (", paste(groups, collapse=", "),
+				") is not the same as names of sample sizes in N argument (", 
+				paste(names(N), collapse=", "), ")")
 	if (length(fixed.x) == 1) fixed.x <- lapply(1:G, function(g) fixed.x)
 	n.fix <- 0 
 	if (!is.null(fixed.x)){
