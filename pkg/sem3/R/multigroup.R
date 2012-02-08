@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-02-07
+# last modified J. Fox 2012-02-08
 
 ## model definition
 
@@ -611,6 +611,33 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FAL
 		RMSEA.L <- sqrt(G*lam.L/(sum(N - 1) * df))
 	}
 	else RMSEA.U <- RMSEA.L <- RMSEA <- NFI <- NNFI <- CFI <- AGFI <- NA
+	if (robust){
+		chisq.adjusted <- sum(sapply(group.summaries, function(x) x$chisq.adjusted))
+		if (!object$raw && df > 0){
+			chisqNull.adjusted <- sum(sapply(group.summaries, function(x) x$chisqNull.adjusted))
+			NFI.adjusted <- (chisqNull.adjusted - chisq.adjusted)/chisqNull.adjusted
+			NNFI.adjusted <- (chisqNull.adjusted/dfNull - chisq.adjusted/df)/(chisqNull.adjusted/dfNull - 1)
+			L1 <- max(chisq.adjusted - df, 0)
+			L0 <- max(L1, chisqNull.adjusted - dfNull)
+			CFI.adjusted <- 1 - L1/L0
+		}
+	}
+	if (object$raw) cat("\nModel fit to raw moment matrix.\n")	
+	if (robust && !is.null(object$robust.vcov)){
+		cat("\nSatorra-Bentler Corrected Fit Statistics:\n")
+		cat("\n Corrected Model Chisquare = ", chisq.adjusted, "  Df = ", df, 
+				"Pr(>Chisq) =", if (df > 0) pchisq(chisq.adjusted, df, lower.tail=FALSE)
+						else NA)
+		if (!object$raw) {		
+			cat("\n Corrected Chisquare (null model) = ", chisqNull.adjusted,  "  Df = ", dfNull)
+		}
+		if (df > 0 && !object$raw){
+			cat("\n Corrected Bentler-Bonnett NFI = ", NFI.adjusted)
+			cat("\n Corrected Tucker-Lewis NNFI = ", NNFI.adjusted)
+			cat("\n Corrected Bentler CFI = ", CFI.adjusted)
+		}
+		cat("\n\nUncorrected Fit Statistics:\n")
+	}
 	cat("\n Model Chisquare =", chisq, " Df =", df, " Pr(>Chisq) =", pchisq(chisq, df, lower.tail=FALSE))
 	if (!is.na(chisqNull)) cat("\n Chisquare (null model) =", chisqNull, " Df =", dfNull)
 	if (!is.na(GFI)) cat("\n Goodness-of-fit index =", GFI)

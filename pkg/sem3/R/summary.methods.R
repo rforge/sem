@@ -1,4 +1,4 @@
-# last modified 2011-12-10 by J. Fox
+# last modified 2012-02-08 by J. Fox
 
 
 summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...) {
@@ -21,13 +21,7 @@ summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, 
 	CS <- invC %*% S
 	CS <- CS %*% CS
 	chisqNull <- chisqNull(object)
-	if(!robust) {
-		chisq <- object$criterion * (N - (!object$raw))
-	}
-	else { 
-		chisq <- object$adj.obj$chisq.scaled
-		chisqNull <- chisqNull/object$adj.obj$c 
-	}	
+	chisq <- object$criterion * (N - (!object$raw))
 	GFI <- if (!object$raw) 1 - sum(diag(CSC))/sum(diag(CS)) else NA
 	if ((!object$raw) && df > 0){
 		AGFI <- 1 - (n*(n + 1)/(2*df))*(1 - GFI)
@@ -84,9 +78,23 @@ summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, 
 	CAIC <- CAIC(object)
 	SRMR <- sqrt(sum(standardizedResiduals(object)^2 * 
 							upper.tri(diag(n), diag=TRUE))/(n*(n + 1)/2))
+	if (robust) { 
+		chisq.adjusted <- object$adj.obj$chisq.scaled
+		chisqNull.adjusted <- chisqNull/object$adj.obj$c 
+		NFI.adjusted <- (chisqNull.adjusted - chisq)/chisqNull.adjusted
+		NNFI.adjusted <- (chisqNull.adjusted/dfNull - chisq.adjusted/df)/(chisqNull.adjusted/dfNull - 1)
+		L1 <- max(chisq.adjusted - df, 0)
+		L0 <- max(L1, chisqNull.adjusted - dfNull)
+		CFI.adjusted <- 1 - L1/L0
+	}
+	else{
+		chisq.adjusted <- chisqNull.adjusted <- NFI.adjusted <- NNFI.adjusted <- CFI.adjusted <- NULL
+	}
 	ans <- list(chisq=chisq, df=df, chisqNull=chisqNull, dfNull=dfNull,
 			GFI=GFI, AGFI=AGFI, RMSEA=RMSEA, NFI=NFI, NNFI=NNFI, CFI=CFI, BIC=BIC, SRMR=SRMR, 
 			AIC=AIC, AICc=AICc, CAIC=CAIC, Rsq=Rsq,
+			chisq.adjusted=chisq.adjusted, chisqNull.adjusted=chisqNull.adjusted, NFI.adjusted=NFI.adjusted,
+			NNFI.adjusted=NNFI.adjusted, CFI.adjusted=CFI.adjusted,
 			norm.res=norm.res, coeff=coeff, digits=digits, 
 			iterations=object$iterations, aliased=object$aliased, raw=object$raw,
 			robust=robust, robust.vcov=object$robust.vcov, adj.obj=object$adj.obj)
@@ -99,23 +107,27 @@ print.summary.objectiveML <- function(x, ...){
 	on.exit(options(old.digits))
 	if (x$raw) cat("\nModel fit to raw moment matrix.\n")	
 	if (x$robust && !is.null(x$robust.vcov)){
-		cat("\n\nSatorra-Bentler Corrected Fit Statistics and Standard Errors:\n")
-		cat("\n Adjusted Model Chisquare = ", x$adj.obj$chisq.scaled, "  Df = ", x$df, 
-				"Pr(>Chisq) =", if (x$df > 0) pchisq(x$adj.obj$chisq.scaled, x$df, lower.tail=FALSE)
-						else NA)		
-		#use the scaled chisq for all other indices
-		x$chisq<-x$adj.obj$chisq.scaled
-		x$coeff <- x$coef
+		cat("\nSatorra-Bentler Corrected Fit Statistics:\n")
+		cat("\n Corrected Model Chisquare = ", x$chisq.adjusted, "  Df = ", x$df, 
+				"Pr(>Chisq) =", if (x$df > 0) pchisq(x$chisq.adjusted, x$df, lower.tail=FALSE)
+						else NA)
+		if (!x$raw) {		
+			cat("\n Corrected Chisquare (null model) = ", x$chisqNull.adjusted,  "  Df = ", x$dfNull)
+		}
+		if (x$df > 0 && !x$raw){
+			cat("\n Corrected Bentler-Bonnett NFI = ", x$NFI.adjusted)
+			cat("\n Corrected Tucker-Lewis NNFI = ", x$NNFI.adjusted)
+			cat("\n Corrected Bentler CFI = ", x$CFI.adjusted)
+		}
+		cat("\n\nUncorrected Fit Statistics:\n")
 		x$coeff[,2] <- sqrt(diag(x$robust.vcov))
 		x$coeff[,3] <- x$coeff[,1]/x$coeff[,2]
 		x$coeff[,4] <- 2*pnorm(abs(x$coeff[,3]), lower.tail=FALSE)
 		colnames(x$coeff)[2] <- "Corrected SE"
 	}
-	else{
-		cat("\n Model Chisquare = ", x$chisq, "  Df = ", x$df, 
-				"Pr(>Chisq) =", if (x$df > 0) pchisq(x$chisq, x$df, lower.tail=FALSE)
-						else NA)
-	}	
+	cat("\n Model Chisquare = ", x$chisq, "  Df = ", x$df, 
+			"Pr(>Chisq) =", if (x$df > 0) pchisq(x$chisq, x$df, lower.tail=FALSE)
+					else NA)
 	if (!x$raw) {		
 		cat("\n Chisquare (null model) = ", x$chisqNull,  "  Df = ", x$dfNull)
 		cat("\n Goodness-of-fit index = ", x$GFI)
@@ -140,7 +152,7 @@ print.summary.objectiveML <- function(x, ...){
 		print(round(x$Rsq, 4))
 	}
 	if (!is.null(x$coeff)){
-		cat("\n Parameter Estimates\n")
+		if (x$robust && !is.null(x$robust.vcov)) cat("\n Parameter Estimates (with Robust Standard Errors)\n") else cat("\n Parameter Estimates\n")
 		print(x$coeff, right=FALSE)
 		if (!is.na(x$iterations)) cat("\n Iterations = ", x$iterations, "\n")
 		if (!is.null(x$aliased)) cat("\n Aliased parameters:", x$aliased, "\n")
