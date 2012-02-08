@@ -59,6 +59,11 @@ sem.semmodList <- function(model, S, N, data, raw=FALSE, fixed.x=NULL, robust=!m
 		}
 		G <- length(levels)
 		if (is.list(formula) && length(formula) != G) stop("number of formulas, ", length(formula), ", not equal to number of groups, ", G, sep="")
+		if (is.list(formula)){	
+			if (!all(names(model) == names(formula))) warning("names of groups (", paste(names(model), collapse=", "), 
+						") is not the same as names of formulas in formula argument (", 
+						paste(names(formula), collapse=", "), ")")
+		}
 		S <- vector(G, mode="list")
 		names(S) <- levels
 		N <- numeric(G)
