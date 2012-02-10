@@ -14,7 +14,9 @@
 \alias{summary.objectiveGLS}
 \alias{print.summary.objectiveML}
 \alias{print.msemObjectiveML}
+\alias{print.msemObjectiveGLS}
 \alias{summary.msemObjectiveML}
+\alias{summary.msemObjectiveGLS}
 \alias{deviance.msemObjectiveML}
 \alias{AIC.msemObjectiveML}
 \alias{AICc.msemObjectiveML}
@@ -25,7 +27,8 @@
 
 
 \title{
-Methods for sem Objects Fit Using the \code{objectiveML}, \code{objectiveGLS} and \code{msemObjectiveML} Objective Functions
+Methods for sem Objects Fit Using the \code{objectiveML}, \code{objectiveGLS}, \code{msemObjectiveML},
+and \code{msemObjectiveGLS} Objective Functions
 }
 
 \description{
@@ -50,9 +53,11 @@ These functions are for objects fit by \code{\link{sem}} using the \code{\link{o
 \method{print}{objectiveML}(x, ...)
 \method{print}{objectiveGLS}(x, ...)
 \method{print}{msemObjectiveML}(x, ...)
+\method{print}{msemObjectiveGLS}(x, ...)
 \method{summary}{objectiveML}(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...)
-\method{summary}{objectiveGLS}(object, ...)
-\method{summary}{msemObjectiveML}(object, digits=5, conf.level=.90, robust=FALSE, ...)
+\method{summary}{objectiveGLS}(object, digits=5, conf.level=.90, robust=FALSE, ...)
+\method{summary}{msemObjectiveML}(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...)
+\method{summary}{msemObjectiveGLS}(object, digits=5, conf.level=.90, robust=FALSE, ...)
 }
 
 \arguments{

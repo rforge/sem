@@ -1,4 +1,4 @@
-# last modified 2012-02-05 by J. Fox
+# last modified 2012-02-08 by J. Fox
 
 useDynLib(sem3)
 useDynLib(sem3, csemSolve)
@@ -85,6 +85,8 @@ S3method(sem, semmodList)
 S3method(sem, msemmod)
 S3method(print, msemObjectiveML)
 S3method(summary, msemObjectiveML)
+S3method(print, msemObjectiveGLS)
+S3method(summary, msemObjectiveGLS)
 S3method(deviance, msemObjectiveML)
 S3method(AIC, msemObjectiveML)
 S3method(AICc, msemObjectiveML)

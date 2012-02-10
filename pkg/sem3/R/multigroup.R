@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-02-08
+# last modified J. Fox 2012-02-09
 
 ## model definition
 
@@ -132,7 +132,7 @@ sem.semmodList <- function(model, S, N, data, raw=FALSE, fixed.x=NULL, robust=!m
 		all.par.names <- c(all.par.names, par.names)
 	}
 	all.pars <- unique(unlist(all.pars))
-	all.par.names <- na.omit(all.par.names)
+	all.par.names <- unique(na.omit(all.par.names))	
 	class(rams) <- "msemmod"
 	result <- sem(rams, S, N, group=group, groups=names(model), raw=raw, fixed.x=fixed.x, param.names=all.par.names[all.pars], var.names=vars, debug=debug, ...)
 	result$semmodList <- model
@@ -524,13 +524,17 @@ print.msemObjectiveML <- function(x, ...){
 	invisible(x)
 }
 
-summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, ...){
+print.msemObjectiveGLS <- function(x, ...) print.msemObjectiveML(x, ...)
+
+summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, 
+		analytic.se=object$t <= 500, ...){
 	old.digits <- options(digits = digits)
 	on.exit(options(old.digits))
+	if(inherits(object, "msemObjectiveGLS")) analytic.se <- FALSE
 	groups <- object$groups
 	G <- length(groups)
 	par <- object$coeff
-	vcov <- vcov(object, ...)
+	vcov <- vcov(object, robust=robust, analytic.se=analytic.se)
 	n <- object$n
 	m <- object$m
 	S <- object$S
@@ -555,8 +559,10 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FAL
 				J=J[[g]], A=A[[g]], P=P[[g]], criterion=group.criteria[g], par.posn=ram[[g]][, 4] != 0, 
 				iterations=object$iterations, semmod=semmod[[g]], adj.obj=object$adj.objects[[g]], 
 				robust.vcov=object$robust.vcov[par.names, par.names])
-		class(group) <- c("objectiveML", "sem")
-		group.summaries[[g]] <- summary(group, digits=digits, conf.level=conf.level, robust=robust, analytic.se=FALSE, ...)
+		class(group) <- if(inherits(object, "msemObjectiveGLS")) c("objectiveGLS", "sem") else c("objectiveML", "sem")
+		group.summaries[[g]] <- if(inherits(object, "msemObjectiveGLS"))
+					summary(group, digits=digits, conf.level=conf.level, robust=FALSE, ...)
+			else summary(group, digits=digits, conf.level=conf.level, robust=FALSE, analytic.se=FALSE, ...)
 		group.summaries[[g]]$iterations <- NA
 	}
 	df <- sum(n*(n + 1)/2) - object$t - sum(n.fix*(n.fix + 1)/2)
@@ -638,6 +644,14 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FAL
 		}
 		cat("\n\nUncorrected Fit Statistics:\n")
 	}
+	if (inherits(object, "msemObjectiveGLS")) {
+		AIC <- AICc <- BIC <- NA
+	}
+	else {
+		AIC <- AIC(object)
+		AICc <- AICc(object)
+		BIC <- BIC(object)
+	}
 	cat("\n Model Chisquare =", chisq, " Df =", df, " Pr(>Chisq) =", pchisq(chisq, df, lower.tail=FALSE))
 	if (!is.na(chisqNull)) cat("\n Chisquare (null model) =", chisqNull, " Df =", dfNull)
 	if (!is.na(GFI)) cat("\n Goodness-of-fit index =", GFI)
@@ -647,9 +661,9 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FAL
 	if (!is.na(NNFI)) cat("\n Tucker-Lewis NNFI =", NNFI)
 	if (!is.na(CFI)) cat("\n Bentler CFI =", CFI)
 	if (!is.na(SRMR)) cat("\n SRMR =", SRMR)
-	cat("\n AIC =", AIC(object))
-	cat("\n AICc =", AICc(object))
-	cat("\n BIC =", BIC(object))
+	if (!is.na(AIC)) cat("\n AIC =", AIC)
+	if (!is.na(AICc)) cat("\n AICc =", AICc)
+	if (!is.na(BIC)) cat("\n BIC =", BIC)
 	cat("\n\n")
 	if (is.null(object$initial.iterations)) cat("Iterations:", object$iterations, "\n\n")
 	else cat("Iterations: initial fits,", object$initial.iterations, "  final fit,", object$iterations, "\n\n")
@@ -657,6 +671,12 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FAL
 		cat("\n  ", object$group, ": ", groups[g], "\n", sep="")
 		print(group.summaries[[g]])
 	}
+	invisible(object)
+}
+
+summary.msemObjectiveGLS <- function(object, digits=5, conf.level=.90, robust=FALSE, ...){
+	summary.msemObjectiveML(object, digits=digits, conf.level=conf.level, 
+			robust=robust, ...)
 	invisible(object)
 }
 

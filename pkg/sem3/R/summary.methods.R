@@ -144,8 +144,8 @@ print.summary.objectiveML <- function(x, ...){
 	if (!is.null(x$AIC)) cat("\n AIC = ", x$AIC)
 	if (!is.null(x$AICc)) cat("\n AICc = ", x$AICc)
 	if (!is.null(x$BIC)) cat("\n BIC = ", x$BIC)
-	if (!is.null(x$CAIC)) cat("\n CAIC = ", x$CAIC, "\n")
-	cat("\n Normalized Residuals\n")
+	if (!is.null(x$CAIC)) cat("\n CAIC = ", x$CAIC)
+	cat("\n\n Normalized Residuals\n")
 	print(summary(as.vector(x$norm.res)))
 	if (!is.na(x$Rsq[1])){
 		cat("\n R-square for Endogenous Variables\n")
@@ -160,9 +160,8 @@ print.summary.objectiveML <- function(x, ...){
 	invisible(x)
 }
 
-summary.objectiveGLS <- function(object, ...){
-	summary <- summary.objectiveML(object, ..., analytic.se=FALSE)
-#	summary$chisqNull <- chisqNull(object) # object$chisqNull
+summary.objectiveGLS <- function(object, digits=5, conf.level=.90, robust=FALSE, ...){
+	summary <- summary.objectiveML(object, digits=digits, conf.level=conf.level, robust=robust, analytic.se=FALSE, ...)
 	S <- object$S
 	Sinv <- solve(S)
 	C <- object$C
