@@ -17,7 +17,8 @@
   Create the RAM specification of a structural equation model.
 }
 \usage{
-specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs, quiet=FALSE)
+specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs, 
+	suffix="", quiet=FALSE)
 
 specifyEquations(file="", ...)
 
@@ -50,6 +51,8 @@ removeRedundantPaths(model, warn=TRUE)
   	among all variables in each such string are added to the model. For confirmatory
   	factor analysis models specified via \code{cfa}, \code{covs} defaults to all of
   	the factors in the model, thus specifying all covariances among these factors.}
+  \item{suffix}{a character string (defaulting to an empty string) to be 
+    appended to each parameter name; this can be convenient for specifying multiple-group models.}
   \item{reference.indicators}{if \code{FALSE}, the default, variances of factors are
     set to 1 by \code{cfa}; if \code{TRUE}, variances of factors are free parameters
     to estimate from the data, and instead the first factor loading for each factor is set
