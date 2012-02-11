@@ -289,8 +289,8 @@ msemObjectiveML2 <- function(gradient=TRUE){
 									grad.P <- correct[[g]] * t(I.Ainv) %*% t(J[[g]]) %*% Cinv %*% (C - S[[g]]) %*% Cinv %*% J[[g]] %*% I.Ainv
 									grad.A <- grad.P %*% P %*% t(I.Ainv)        
 									grad <- rep(0, t)
-									grad[unique.free.1[[g]]] <- tapply(grad.A[arrows.1.free[[g]]], ram[[g]][ram[[g]][,1]==1 & ram[[g]][,4]!=0, 4], sum)
-									grad[unique.free.2[[g]]] <- tapply(grad.P[arrows.2.free[[g]]], ram[[g]][ram[[g]][,1]==2 & ram[[g]][,4]!=0, 4], sum)
+									grad[sort(unique.free.1[[g]])] <- tapply(grad.A[arrows.1.free[[g]]], ram[[g]][ram[[g]][,1]==1 & ram[[g]][,4]!=0, 4], sum)
+									grad[sort(unique.free.2[[g]])] <- tapply(grad.P[arrows.2.free[[g]]], ram[[g]][ram[[g]][,1]==2 & ram[[g]][,4]!=0, 4], sum)
 									grad.all <- grad.all + ((N[g] - (!raw))/(sum(N) - (!raw)*G))*grad
 								}
 							}
@@ -316,11 +316,11 @@ msemObjectiveML2 <- function(gradient=TRUE){
 							grad.P <- correct[[g]] * t(I.Ainv) %*% t(J[[g]]) %*% Cinv %*% (C - S[[g]]) %*% Cinv %*% J[[g]] %*% I.Ainv
 							grad.A <- grad.P %*% P %*% t(I.Ainv)        
 							grad <- rep(0, t)
-							grad[unique.free.1[[g]]] <- tapply(grad.A[arrows.1.free[[g]]], ram[[g]][ram[[g]][,1]==1 & ram[[g]][,4]!=0, 4], sum)
-							grad[unique.free.2[[g]]] <- tapply(grad.P[arrows.2.free[[g]]], ram[[g]][ram[[g]][,1]==2 & ram[[g]][,4]!=0, 4], sum)
+							grad[sort(unique.free.1[[g]])] <- tapply(grad.A[arrows.1.free[[g]]], ram[[g]][ram[[g]][,1]==1 & ram[[g]][,4]!=0, 4], sum)
+							grad[sort(unique.free.2[[g]])] <- tapply(grad.P[arrows.2.free[[g]]], ram[[g]][ram[[g]][,1]==2 & ram[[g]][,4]!=0, 4], sum)
 							grad.total <- grad.total + ((N[g] - (!raw))/(sum(N) - (!raw)*G))*grad
 						}
-			grad.total
+						grad.total
 					})
 		}
 	class(result) <- "msemObjective"

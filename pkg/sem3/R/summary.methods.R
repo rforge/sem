@@ -1,4 +1,4 @@
-# last modified 2012-02-08 by J. Fox
+# last modified 2012-02-11 by J. Fox
 
 
 summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...) {

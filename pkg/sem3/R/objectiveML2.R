@@ -1,4 +1,4 @@
-# last modified 2012-01-06 by J. Fox
+# last modified 2012-01-11 by J. Fox
 
 objectiveML2 <- function(gradient=TRUE){
 	result <- list(
@@ -17,8 +17,8 @@ objectiveML2 <- function(gradient=TRUE){
 						grad.P <- correct * t(I.Ainv) %*% t(J) %*% Cinv %*% (C - S) %*% Cinv %*% J %*% I.Ainv
 						grad.A <- grad.P %*% P %*% t(I.Ainv)        
 						grad <- rep(0, t)
-						grad[unique.free.1] <- tapply(grad.A[arrows.1.free],ram[ram[,1]==1 & ram[,4]!=0, 4], sum)
-						grad[unique.free.2] <- tapply(grad.P[arrows.2.free],ram[ram[,1]==2 & ram[,4]!=0, 4], sum)
+						grad[sort(unique.free.1)] <- tapply(grad.A[arrows.1.free],ram[ram[,1]==1 & ram[,4]!=0, 4], sum)
+						grad[sort(unique.free.2)] <- tapply(grad.P[arrows.2.free],ram[ram[,1]==2 & ram[,4]!=0, 4], sum)
 					}
 					attributes(f) <- list(C=C, A=A, P=P, gradient=grad)
 					f
@@ -39,8 +39,8 @@ objectiveML2 <- function(gradient=TRUE){
 					grad.P <- correct * t(I.Ainv) %*% t(J) %*% Cinv %*% (C - S) %*% Cinv %*% J %*% I.Ainv
 					grad.A <- grad.P %*% P %*% t(I.Ainv)        
 					grad <- rep(0, t)
-					grad[unique.free.1] <- tapply(grad.A[arrows.1.free],ram[ram[,1]==1 & ram[,4]!=0, 4], sum)
-					grad[unique.free.2] <- tapply(grad.P[arrows.2.free],ram[ram[,1]==2 & ram[,4]!=0, 4], sum)
+					grad[sort(unique.free.1)] <- tapply(grad.A[arrows.1.free],ram[ram[,1]==1 & ram[,4]!=0, 4], sum)
+					grad[sort(unique.free.2)] <- tapply(grad.P[arrows.2.free],ram[ram[,1]==2 & ram[,4]!=0, 4], sum)
 					attributes(grad) <- list(C=C, A=A, P=P, gradient=grad)
 					grad
 				}
