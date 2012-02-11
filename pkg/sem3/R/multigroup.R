@@ -291,7 +291,7 @@ msemObjectiveML2 <- function(gradient=TRUE){
 									grad <- rep(0, t)
 									grad[unique.free.1[[g]]] <- tapply(grad.A[arrows.1.free[[g]]], ram[[g]][ram[[g]][,1]==1 & ram[[g]][,4]!=0, 4], sum)
 									grad[unique.free.2[[g]]] <- tapply(grad.P[arrows.2.free[[g]]], ram[[g]][ram[[g]][,1]==2 & ram[[g]][,4]!=0, 4], sum)
-									grad.all <- grad.all + ((N[g] - !raw)/(sum(N) - (!raw)*G))*grad
+									grad.all <- grad.all + ((N[g] - (!raw))/(sum(N) - (!raw)*G))*grad
 								}
 							}
 							ff <- f
@@ -318,10 +318,10 @@ msemObjectiveML2 <- function(gradient=TRUE){
 							grad <- rep(0, t)
 							grad[unique.free.1[[g]]] <- tapply(grad.A[arrows.1.free[[g]]], ram[[g]][ram[[g]][,1]==1 & ram[[g]][,4]!=0, 4], sum)
 							grad[unique.free.2[[g]]] <- tapply(grad.P[arrows.2.free[[g]]], ram[[g]][ram[[g]][,1]==2 & ram[[g]][,4]!=0, 4], sum)
-							grad.total <- grad.total + ((N[g] - !raw)/(sum(N) - (!raw)*G))*grad
+							grad.total <- grad.total + ((N[g] - (!raw))/(sum(N) - (!raw)*G))*grad
 						}
-					})
 			grad.total
+					})
 		}
 	class(result) <- "msemObjective"
 	result
@@ -331,7 +331,6 @@ msemObjectiveML <- function(gradient=TRUE){
 	result <- list(
 			objective = function(par, model.description){
 				with(model.description, {
-							
 							res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveML")
 							AA <- PP <- CC <- vector(G,  mode="list")
 							for(g in 1:model.description$G)
@@ -352,9 +351,8 @@ msemObjectiveML <- function(gradient=TRUE){
 			with(model.description, {
 						
 						res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveML")
-						
+						res$gradient
 					})
-			res$gradient
 		}
 	class(result) <- "msemObjective"
 	result
