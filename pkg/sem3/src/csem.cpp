@@ -247,7 +247,7 @@ void printSEXP(SEXP sexp, const string msg)
 //print a mtrix (double)
 void printMatrix(double *x, int row, int col, const string msg, int column_wise)
 {
-		Rprintf("Matrix: %s\t", msg.c_str());
+		Rprintf("Matrix: %s [%d*%d]\t", msg.c_str(), row, col);
 		if(column_wise) {
 				Rprintf("(column-wise)\n");
 				for(int i=0;i<row;++i){
@@ -759,10 +759,12 @@ extern "C" {
 				int sumN=0;
 				double *grad = new double[n];
 				int maxmn = 0;
+				int maxmni;
 				for(i = 0;i < G; ++i)
 				{
 						sumN += INTEGER(AS_INTEGER(m_model->N))[i];
-						maxmn = (m_model->gmodel[i].n > m_model->gmodel[i].m ? m_model->gmodel[i].n:m_model->gmodel[i].m);
+						maxmni = (m_model->gmodel[i].n > m_model->gmodel[i].m ? m_model->gmodel[i].n:m_model->gmodel[i].m);
+						maxmn = (maxmni > maxmn ? maxmni : maxmn);
 				}
 				
 				double *C0 = new double[maxmn*maxmn];
