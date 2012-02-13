@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-02-09
+# last modified J. Fox 2012-02-12
 
 ## model definition
 
@@ -816,27 +816,29 @@ fscores.msem <- function (model, data = model$data, center = TRUE, scale = FALSE
 	group <- model$group
 	groups <- model$groups
 	G <- length(groups)
-	scores <- B <- vector(G, mode="list")
+	scores <- B <- vector(G, mode = "list")
 	names(scores) <- names(B) <- groups
-	for (g in 1:G){
+	for (g in 1:G) {
 		observed <- var.names[[g]] %in% rownames(C[[g]])
 		if (all(observed)) {
-			warning("there are no latent variables in group ", groups[g])
+			warning("there are no latent variables in group ", 
+					groups[g])
 		}
 		IAinv <- solve(diag(m[g]) - A[[g]])
 		Sigma <- IAinv %*% P[[g]] %*% t(IAinv)
-		B[[g]] <- solve(Sigma[observed, observed]) %*% Sigma[observed, !observed]
+		B[[g]] <- solve(Sigma[observed, observed]) %*% Sigma[observed, 
+				!observed]
 		rownames(B[[g]]) <- var.names[[g]][observed]
 		colnames(B[[g]]) <- var.names[[g]][!observed]
-		if (!is.null(data)){
-			dat <- subset(data, subset=data[, group] == groups[g])
-			X <- as.matrix(dat[, var.names[[g]][observed]])
+		if (!is.null(data)) {
+			X <- data[[g]][, var.names[[g]][observed]]
 			if (center || scale) 
 				X <- scale(X, center = center, scale = scale)
 			scores[[g]] <- X %*% B[[g]]
 		}
 	}
-	if (is.null(data)) return(B)
+	if (is.null(data)) 
+		return(B)
 	else return(scores)
 }
 
