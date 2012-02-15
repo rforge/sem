@@ -5,6 +5,8 @@ Changes to Version 3.0-0
 	o Added multi-group models.
 	
 	o Modification indices for equality-constrained parameters.
+	
+	o weights argument added to tsls().
 
 Changes to Version 2.1-2
 

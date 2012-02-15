@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-02-12
+# last modified J. Fox 2012-02-14
 
 ## model definition
 
@@ -560,7 +560,7 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FAL
 		class(group) <- if(inherits(object, "msemObjectiveGLS")) c("objectiveGLS", "sem") else c("objectiveML", "sem")
 		group.summaries[[g]] <- if(inherits(object, "msemObjectiveGLS"))
 					summary(group, digits=digits, conf.level=conf.level, robust=FALSE, ...)
-			else summary(group, digits=digits, conf.level=conf.level, robust=FALSE, analytic.se=FALSE, ...)
+			else summary(group, digits=digits, conf.level=conf.level, robust=robust, analytic.se=FALSE, ...)
 		group.summaries[[g]]$iterations <- NA
 	}
 	df <- sum(n*(n + 1)/2) - object$t - sum(n.fix*(n.fix + 1)/2)
