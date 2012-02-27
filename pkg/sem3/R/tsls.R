@@ -1,7 +1,7 @@
 # Two-Stage Least Squares
 #   John Fox
 
-# last modified 2012-02-14 by J. Fox
+# last modified 2012-02-26 by J. Fox
 
 tsls <- function (y, ...) {
 	UseMethod("tsls")
@@ -106,7 +106,7 @@ summary.tsls <- function (object, digits = 4, ...) {
 	rownames(table) <- names(b)
 	colnames(table) <- c("Estimate", "Std. Error", "t value", 
 			"Pr(>|t|)")
-	print(table)
+	printCoefmat(table)
 	cat(paste("\nResidual standard error:", round(object$s, digits), 
 					"on", df, "degrees of freedom\n\n"))
 }
