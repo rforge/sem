@@ -954,7 +954,7 @@ anova(sem.mg, sem.mg.eq) # test equality constraints
 	
 # The following examples use file input and may be executed via example():
 
-etc <- file.path(.path.package(package="sem3")[1], "etc") # path to data and model files
+etc <- file.path(.path.package(package="sem")[1], "etc") # path to data and model files
 
 # ------------- Duncan, Haller and Portes peer-influences model ----------------------
 # A nonrecursive SEM with unobserved endogenous variables and fixed exogenous variables
