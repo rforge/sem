@@ -98,7 +98,7 @@ fscores(sem.wh.1)
 
 # The following example can be executed via example():
 
-etc <- file.path(.path.package(package="sem")[1], "etc") # path to data and model files
+etc <- file.path(.path.package(package="sem2")[1], "etc") # path to data and model files
    
 (S.wh <- readMoments(file=file.path(etc, "S-Wheaton.txt"),
 					names=c('Anomia67','Powerless67','Anomia71',
