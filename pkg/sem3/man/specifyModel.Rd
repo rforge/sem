@@ -22,7 +22,8 @@ specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs,
 
 specifyEquations(file="", ...)
 
-cfa(file="", covs=paste(factors, collapse=","), reference.indicators=FALSE, ...)
+cfa(file="", covs=paste(factors, collapse=","), reference.indicators=FALSE, 
+     raw=FALSE, ...)
 
 multigroupModel(..., groups=names(models), allEqual=FALSE)
 
@@ -57,6 +58,11 @@ removeRedundantPaths(model, warn=TRUE)
     set to 1 by \code{cfa}; if \code{TRUE}, variances of factors are free parameters
     to estimate from the data, and instead the first factor loading for each factor is set
     to 1 to identify the model.}
+  \item{raw}{if \code{TRUE} (the default is \code{FALSE}), a path from \code{(Intercept)} to each
+    observed variable is added to the model, and the raw second moment for \code{(Intercept)} is
+    fixed to \code{1}. The \code{sem} function should then be called with \code{raw=TRUE}, and either
+    supplied with a data set (via the \code{data} argument) or a raw-moment matrix (via the \code{S}
+    argument).}
   \item{quiet}{if \code{FALSE}, the default, then the number of input lines is reported.}
   \item{x, model, object, name}{An object of class \code{semmod} or \code{semmodList}, as produced by
     \code{specifyModel} or \code{multigroupModel}.}

@@ -1,4 +1,4 @@
-# last modified 2012-02-10 by J. Fox
+# last modified 2012-03-14 by J. Fox
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
@@ -223,7 +223,7 @@ specifyEquations <- function(file="", ...){
 	specifyModel(file=textConnection(ram), ..., quiet=TRUE)
 }
 
-cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators=FALSE, ...){
+cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators=FALSE, raw=FALSE, ...){
 	Lines <- scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
 	lines <- character(0)
 	current.line <- ""
@@ -238,7 +238,7 @@ cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators
 	}
 	nfactor <- length(lines)
 	factors <- rep("", nfactor)
-	ram <- character(0)
+	all.obs.vars <- ram <- character(0)
 	for (i in 1:nfactor){
 		Line <- line <- lines[[i]]
 		line <- gsub(" ", "", line)
@@ -246,10 +246,12 @@ cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators
 		if (length(line) == 1){
 			factors[i] <- paste("Factor.", i, sep="")
 			variables <- strsplit(line, ",")[[1]]
+			all.obs.vars <- c(all.obs.vars, variables)
 		}
 		else if (length(line) == 2){
 			factors[i] <- line[1]
 			variables <- strsplit(line[2], ",")[[1]]
+			all.obs.vars <- c(all.obs.vars, variables)
 		}
 		else stop("Parse error in ", Line)
 		if (reference.indicators){
@@ -276,6 +278,11 @@ cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators
 			else{
 				c(ram, sapply(factors, function(factor) paste(factor, " <-> ", factor, ", NA, 1", sep="")))
 			}
+	if (raw){
+		all.obs.vars <- unique(all.obs.vars)
+		ram <- c(ram, sapply(all.obs.vars, function(var) paste("(Intercept) -> ", var, ", Intercept(", var, "), NA", sep="")))
+		ram <- c(ram, "(Intercept) <-> (Intercept), NA, 1")
+	}
 	specifyModel(file=textConnection(ram), covs=covs, ..., quiet=TRUE)
 }
 
