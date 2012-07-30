@@ -29,14 +29,17 @@
 }
 
 \usage{
-\method{sem}{semmod}(model, S, N, data, raw=FALSE, obs.variables=rownames(S), 
-		fixed.x=NULL, formula= ~ ., robust=!missing(data), debug=FALSE, ...)
+\method{sem}{semmod}(model, S, N, data, 
+    raw=identical(na.action, na.pass), obs.variables=rownames(S), 
+  	fixed.x=NULL, formula= ~ ., na.action=na.omit, robust=!missing(data), debug=FALSE, 
+    optimizer=optimizerSem, objective=objectiveML, ...)
     
-\method{sem}{default}(model, S, N, data=NULL, raw=FALSE, param.names, 
-		var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
-		analytic.gradient=TRUE, warn=FALSE, maxiter=1000, 
-		par.size=c("ones", "startvalues"), start.tol=1E-6, 
-		optimizer=optimizerSem, objective=objectiveML, ...) 
+\method{sem}{default}(model, S, N, raw=FALSE, data=NULL, 
+    pattern.number=NULL, valid.data.patterns=NULL,
+    use.means=TRUE, param.names, 
+  	var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
+		analytic.gradient=TRUE, warn=FALSE, maxiter=1000, par.size=c("ones", "startvalues"), 
+		start.tol=1E-6, optimizer=optimizerSem, objective=objectiveML, cls, ...)
 		
 \method{sem}{semmodList}(model, S, N, data, raw=FALSE, fixed.x=NULL, 
 		robust=!missing(data), formula, group="Group", debug=FALSE, ...)
@@ -83,12 +86,21 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   \item{N}{number of observations on which the covariance matrix is based; for a multigroup model, a vector
     of group \eqn{N}s.}
   \item{data}{As a generally preferable alternative to specifying \code{S} and 
- 	\code{N}, the user may supply a data frame containing the data to which the model is to be fit.
- 	In a multigroup model, the \code{data} argument may be a list of data frames or a single data frame;
- 	in the later event, the factor given as the \code{group} argument is used to split the data into groups.}
+ 	  \code{N}, the user may supply a data frame containing the data to which the model is to be fit.
+ 	  In a multigroup model, the \code{data} argument may be a list of data frames or a single data frame;
+ 	  in the later event, the factor given as the \code{group} argument is used to split the data into groups.}
+  \item{na.action}{a function to process missing data, if raw data are supplied in the \code{data} argument.
+    The default is \code{na.omit}, which returns only complete cases; specify \code{na.action=na.pass} to
+    get FIML estimates in the presence of missing data from the \code{objectiveFIML} 
+    and \code{objectiveFIML2} objective functions.}
   \item{raw}{\code{TRUE} if \code{S} is a raw moment matrix or if a raw moment matrix ---  as
     opposed to a covariance matrix --- is to be
-  	computed from \code{data}; the default is \code{FALSE}.}
+  	computed from \code{data}; the default is \code{FALSE} unless the \code{na.action} argument
+    is set to \code{na.pass}.}
+  \item{pattern.number, valid.data.patterns}{these arguments pass information about valid (i.e.,
+    non-missing) data patterns and normally would not be specified directly by the user.}
+  \item{use.means}{When raw data are supplied and intercepts are included in the model, use the
+    observed-variable means as start values for the intercepts; the default is \code{TRUE}.}
   \item{obs.variables}{names of observed variables, by default taken from the row names of
     the covariance or moment matrix \code{S}, which may be given directly or generated according to the
     \code{data} and \code{formula} arguments.}
@@ -152,6 +164,8 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   	can supply an objective function to be minimzed. For multigroup models, the default is
   	available is \code{\link{msemObjectiveML}} for ML estimates and an alternative is \code{\link{msemObjectiveGLS}}
   	for GLS estiamtes.}
+  \item{cls}{primary class to be assigned to the result; normally this is not specified directly, but
+    raither is inferred from the objective function.}
   \item{ram}{numeric RAM matrix.}
   \item{object}{an object of class \code{"sem"} or \code{"msem"}, returned by \code{sem}.}
   \item{standardized}{if \code{TRUE}, return standardized coefficients.}
@@ -913,6 +927,17 @@ F3 <-> F3,                            NA,     1
 cfa.thur.p <- sem(mod.cfa.thur.p, R.thur, 213)
 summary(cfa.thur.p)
 
+# -------  a CFA model fit by FIML to the mental-tests dataset with missing data -------
+
+mod.cfa.tests <- cfa(raw=TRUE)
+verbal: x1, x2, x3
+math: y1, y2, y3
+
+cfa.tests <- sem(mod.cfa.tests, data=Tests, na.action=na.pass, 
+                optimizer=optimizerNlm, objective=objectiveFIML2, fixed.x="Intercept")
+summary(cfa.tests)
+summary(cfa.tests, saturated=TRUE) # takes time to fit saturated model for comparison
+
 
 # -------  a multigroup CFA model fit to the Holzinger-Swineford mental-tests data  ---------
 
@@ -1046,6 +1071,13 @@ summary(sem.bollen, analytic.se=FALSE) # uses numeric rather than analytic Hessi
 
 sem.bollen.gls <- sem(model.bollen, data=Bollen, objective=objectiveGLS) # GLS rather than ML estimator
 summary(sem.bollen.gls)
+
+# -------  a CFA model fit by FIML to the mental-tests dataset with missing data -------
+
+(mod.cfa.tests <- cfa(file=file.path(etc, "model-Tests.txt"), raw=TRUE))
+cfa.tests <- sem(mod.cfa.tests, data=Tests, na.action=na.pass, 
+                optimizer=optimizerNlm, objective=objectiveFIML2, fixed.x="Intercept")
+summary(cfa.tests)
 
 #------------ Holzinger and Swineford muiltigroup CFA example ----------------
 

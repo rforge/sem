@@ -1,4 +1,4 @@
-# last modified 2012-02-11 by J. Fox
+# last modified 2012-07-29 by J. Fox
 
 
 summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...) {
@@ -125,28 +125,31 @@ print.summary.objectiveML <- function(x, ...){
 		x$coeff[,4] <- 2*pnorm(abs(x$coeff[,3]), lower.tail=FALSE)
 		colnames(x$coeff)[2] <- "Corrected SE"
 	}
-	cat("\n Model Chisquare = ", x$chisq, "  Df = ", x$df, 
-			"Pr(>Chisq) =", if (x$df > 0) pchisq(x$chisq, x$df, lower.tail=FALSE)
-					else NA)
+	if (!is.null(x$chisq)) cat("\n Model Chisquare = ", x$chisq, "  Df = ", x$df, 
+				"Pr(>Chisq) =", if (x$df > 0) pchisq(x$chisq, x$df, lower.tail=FALSE)
+						else NA)
+	else if (!is.null(x$logLik)) cat("\n Model log-likelihood = ", x$logLik, "  Df = ", x$df, "\n")
 	if (!x$raw) {		
-		cat("\n Chisquare (null model) = ", x$chisqNull,  "  Df = ", x$dfNull)
-		cat("\n Goodness-of-fit index = ", x$GFI)
+		if ((!is.null(x$chisqNULL)) && (!is.na(x$chisqNULL))) cat("\n Chisquare (null model) = ", x$chisqNull,  "  Df = ", x$dfNull)
+		if (!is.na(x$GFI)) cat("\n Goodness-of-fit index = ", x$GFI)
 	}
 	if (x$df > 0 && !x$raw){
-		cat("\n Adjusted goodness-of-fit index = ", x$AGFI)
-		cat("\n RMSEA index =  ", x$RMSEA[1],
-				"   ", 100*x$RMSEA[4], "% CI: (", x$RMSEA[2], ", ", x$RMSEA[3],")", sep="")
-		cat("\n Bentler-Bonnett NFI = ", x$NFI)
-		cat("\n Tucker-Lewis NNFI = ", x$NNFI)
-		cat("\n Bentler CFI = ", x$CFI)
-		cat("\n SRMR = ", x$SRMR)
+		if (!is.na(x$AGFI)) cat("\n Adjusted goodness-of-fit index = ", x$AGFI)
+		if (length(x$RMSEA) > 1 || !is.na(x$RMSEA)) cat("\n RMSEA index =  ", x$RMSEA[1],
+					"   ", 100*x$RMSEA[4], "% CI: (", x$RMSEA[2], ", ", x$RMSEA[3],")", sep="")
+		if (!is.na(x$NFI)) cat("\n Bentler-Bonnett NFI = ", x$NFI)
+		if (!is.na(x$NNFI)) cat("\n Tucker-Lewis NNFI = ", x$NNFI)
+		if (!is.na(x$CFI)) cat("\n Bentler CFI = ", x$CFI)
+		if (!is.na(x$SRMR)) cat("\n SRMR = ", x$SRMR)
 	}
-	if (!is.null(x$AIC)) cat("\n AIC = ", x$AIC)
-	if (!is.null(x$AICc)) cat("\n AICc = ", x$AICc)
-	if (!is.null(x$BIC)) cat("\n BIC = ", x$BIC)
-	if (!is.null(x$CAIC)) cat("\n CAIC = ", x$CAIC)
-	cat("\n\n Normalized Residuals\n")
-	print(summary(as.vector(x$norm.res)))
+	if (!is.null(x$AIC) && !is.na(x$AIC)) cat("\n AIC = ", x$AIC)
+	if (!is.null(x$AICc) && !is.na(x$AICc)) cat("\n AICc = ", x$AICc)
+	if (!is.null(x$BIC) && !is.na(x$BIC)) cat("\n BIC = ", x$BIC)
+	if (!is.null(x$CAIC) && !is.na(x$CAIC)) cat("\n CAIC = ", x$CAIC)
+	if (length(x$norm.res) > 1 || !is.na(x$norm.res)){
+		cat("\n\n Normalized Residuals\n")
+		print(summary(as.vector(x$norm.res)))
+	}
 	if (!is.na(x$Rsq[1])){
 		cat("\n R-square for Endogenous Variables\n")
 		print(round(x$Rsq, 4))
@@ -176,19 +179,18 @@ summary.objectiveGLS <- function(object, digits=5, conf.level=.90, robust=FALSE,
 deviance.objectiveML <- function(object, ...) object$criterion * (object$N - (!object$raw))
 
 df.residual.sem <- function(object, ...) {
-n.fix <- object$n.fix
-n <- object$n
-t <- object$t
-n*(n + 1)/2 - t - n.fix*(n.fix + 1)/2
+	n.fix <- object$n.fix
+	n <- object$n
+	t <- object$t
+	n*(n + 1)/2 - t - n.fix*(n.fix + 1)/2
 }
 
 Rsq <- function(model){
-A <- model$A
-P <- model$P
-IAinv <- solve(diag(nrow(A)) - A)
-C <- IAinv %*% P %*% t(IAinv)
-R2 <- 1 - diag(P)/diag(C)
-R2 <- R2[classifyVariables(model$semmod)$endogenous]
-R2
+	A <- model$A
+	P <- model$P
+	IAinv <- solve(diag(nrow(A)) - A)
+	C <- IAinv %*% P %*% t(IAinv)
+	R2 <- 1 - diag(P)/diag(C)
+	R2 <- R2[classifyVariables(model$semmod)$endogenous]
+	R2
 }
-
