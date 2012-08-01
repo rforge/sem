@@ -2,6 +2,7 @@
 \alias{ML.methods}
 \alias{GLS.methods}
 \alias{anova.objectiveML}
+\alias{anova.objectiveFIML}
 \alias{logLik.objectiveML}
 \alias{logLik.objectiveFIML}
 \alias{AIC.objectiveML}
@@ -47,9 +48,10 @@ the presence of missing data),
 
 \usage{
 \method{anova}{objectiveML}(object, model.2, robust=FALSE, ...)
+\method{anova}{objectiveFIML}(object, model.2, ...)
 
 \method{logLik}{objectiveML}(object, ...)
-\method{logLik}{objectiveFIML}(object, saturated=FALSE, iterlim=1000, ...)
+\method{logLik}{objectiveFIML}(object, saturated=FALSE, intercept="Intercept", iterlim=1000, ...)
 \method{deviance}{objectiveML}(object, ...)
 \method{deviance}{objectiveFIML}(object, saturated.logLik, ...)
 \method{deviance}{msemObjectiveML}(object, ...) 
@@ -73,7 +75,7 @@ the presence of missing data),
 
 \method{summary}{objectiveML}(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...)
 \method{summary}{objectiveFIML}(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=FALSE, 
-  saturated=FALSE, saturated.logLik, ...)
+  saturated=FALSE, intercept="Intercept", saturated.logLik, ...)
 \method{summary}{objectiveGLS}(object, digits=5, conf.level=.90, robust=FALSE, ...)
 \method{summary}{msemObjectiveML}(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...)
 \method{summary}{msemObjectiveGLS}(object, digits=5, conf.level=.90, robust=FALSE, ...)
@@ -92,6 +94,8 @@ the presence of missing data),
   \item{saturated}{if \code{TRUE} (the default is \code{FALSE}); compute the log-likelihood (and statistics that
     depend on it) for the saturated model when the objective function is FIML in the presence of missing data. 
     This can be computationally costly.}
+  \item{intercept}{the name of the intercept regressor in the raw data, to be used in calculating the
+    saturated log-likelihood for the FIML estimator; the default is \code{"Intercept"}.}
   \item{saturated.logLik}{the log-likelihood for the saturated model, as returned by \code{logLik}
     with \code{saturated=TRUE}; if absent, this will be computed and the computation can be time-consuming.}
   \item{iterlim}{iteration limit used by the \code{nlm} optimizer to compute the saturated log-likelihood for

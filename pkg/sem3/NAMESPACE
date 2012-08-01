@@ -1,4 +1,4 @@
-# last modified 2012-07-29 by J. Fox
+# last modified 2012-08-01 by J. Fox
 
 useDynLib(sem)
 useDynLib(sem, csemSolve)
@@ -48,6 +48,7 @@ S3method(coef, sem)
 S3method(fitted, tsls)
 S3method(anova, tsls)
 S3method(anova, objectiveML)
+S3method(anova, objectiveFIML)
 S3method(vcov, tsls)
 S3method(vcov, sem)
 S3method(sem, semmod)

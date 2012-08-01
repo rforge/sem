@@ -1,4 +1,4 @@
-# last modified 2012-07-29 by J. Fox
+# last modified 2012-07-31 by J. Fox
 
 ## this is the straightforward approach summing over observations:
 # objectiveFIML2 <- function(gradient=FALSE){
@@ -130,52 +130,56 @@ objectiveFIML2 <- function(gradient=FALSE){
   result
 }
 
-logLik.objectiveFIML <- function(object, saturated=FALSE, iterlim=1000, ...){
-  logLikSaturated <- function(object, iterlim, ...){
-    objective <- function(par){
-      C <- matrix(0, n, n)
-      C[tri] <- par
-      C <- C + t(C) - diag(diag(C))
-      f <- 0
-      for (i in 1:n.pat){
-        sel <- valid.data.patterns[i, ]
-        X <- data[pattern.number == i, sel, drop=FALSE]
-        f <- f + sum(diag(X %*% solve(C[sel, sel]) %*% t(X))) + nrow(X)*(log.2pi + log(det(C[sel, sel])))
-      }
-      f
-    }
-    data <- object$data
-    valid <- !is.na(data)
-    valid.pattern <- apply(valid, 1, function(row) paste(row, collapse="."))
-    unique.patterns <- unique(valid.pattern)
-    pattern.number <- apply(outer(valid.pattern, unique.patterns, `==`), 1, which)
-    valid.data.patterns <- t(sapply(strsplit(unique.patterns, "\\."), as.logical))
-    n.pat <- nrow(valid.data.patterns) 
-    log.2pi <- log(2*pi)
-    n <- ncol(data)
-    N <- nrow(data)
-    C <- object$C
-    tri <- lower.tri(C, diag=TRUE)
-    start <- C[tri]
-    opt <- options(warn=-1)
-    on.exit(options(opt))
-    res <- nlm(objective, start, iterlim=iterlim)
-    logL <- - res$minimum/2
-    C <- matrix(0, n, n)
-    C[tri] <- res$estimate
-    C <- C + t(C) - diag(diag(C))
-    list(logL=logL, C=C, code=res$code)
-  }
-  if (saturated) {
-    res <- logLikSaturated(object, iterlim=iterlim)
-    if (res$code > 3) warning("nlm return code = ", res$code)
-    logL <- res$logL
-    attr(logL, "C") <- res$C
-    return(logL)
-  }
-  else return(- object$criterion*object$N/2)
-}
 
+logLik.objectiveFIML <- function(object, saturated=FALSE, intercept="Intercept", iterlim=1000, ...){
+    logLikSaturated <- function(object, iterlim, ...){
+        objective <- function(par){
+            C <- matrix(0, n, n)
+            C[posn.intercept, posn.intercept] <- 1
+            C[tri] <- par
+            C <- C + t(C) - diag(diag(C))
+            f <- 0
+            for (i in 1:n.pat){
+                sel <- valid.data.patterns[i, ]
+                X <- data[pattern.number == i, sel, drop=FALSE]
+                f <- f + sum(diag(X %*% solve(C[sel, sel]) %*% t(X))) + nrow(X)*(log.2pi + log(det(C[sel, sel])))
+            }
+            f
+        }
+        data <- object$data
+        valid <- !is.na(data)
+        valid.pattern <- apply(valid, 1, function(row) paste(row, collapse="."))
+        unique.patterns <- unique(valid.pattern)
+        pattern.number <- apply(outer(valid.pattern, unique.patterns, `==`), 1, which)
+        valid.data.patterns <- t(sapply(strsplit(unique.patterns, "\\."), as.logical))
+        n.pat <- nrow(valid.data.patterns) 
+        log.2pi <- log(2*pi)
+        n <- ncol(data)
+        N <- nrow(data)
+        C <- object$C
+        tri <- lower.tri(C, diag=TRUE)
+        posn.intercept <- which(rownames(C) == intercept)
+        tri[posn.intercept, posn.intercept] <- FALSE
+        start <- C[tri]
+        opt <- options(warn=-1)
+        on.exit(options(opt))
+        res <- nlm(objective, start, iterlim=iterlim)
+        logL <- - res$minimum/2
+        C <- matrix(0, n, n)
+        C[tri] <- res$estimate
+        C <- C + t(C) - diag(diag(C))
+        C[posn.intercept, posn.intercept] <- 1
+        list(logL=logL, C=C, code=res$code)
+    }
+    if (saturated) {
+        res <- logLikSaturated(object, iterlim=iterlim)
+        if (res$code > 3) warning("nlm return code = ", res$code)
+        logL <- res$logL
+        attr(logL, "C") <- res$C
+        return(logL)
+    }
+    else return(- object$criterion*object$N/2)
+}
 
 residuals.objectiveFIML <- function(object, S, ...){
   if (missing(S)) S <- attr(logLik(object, saturated=TRUE), "C")
@@ -224,10 +228,12 @@ BIC.objectiveFIML <- function(object, saturated.logLik, ...) {
   deviance(object, saturated.logLik) + object$t*log(object$N)
 }
 
-summary.objectiveFIML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=FALSE, saturated=FALSE, saturated.logLik, ...) {
+summary.objectiveFIML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=FALSE, 
+        saturated=FALSE, intercept="Intercept", saturated.logLik, ...) {
   vcov <- vcov(object, robust=robust, analytic=analytic.se)
   if (any(is.na(vcov))) stop("coefficient covariances cannot be computed")
-  if (missing(saturated.logLik)) saturated.logLik <- if (saturated) logLik(object, saturated=TRUE) else NULL
+  if (missing(saturated.logLik)) saturated.logLik <- if (saturated) 
+      logLik(object, saturated=TRUE, intercept=intercept) else NULL
   S <- attr(saturated.logLik, "C")
   norm.res <- if (saturated) normalizedResiduals(object, S) else NA
   se <- sqrt(diag(vcov))
