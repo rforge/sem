@@ -86,7 +86,7 @@ An object of class \code{"semResult"}, with elements:
 
 }
 
-\author{John Fox \email{jfox@mcmaster.ca}, and Zhenghua Nie, partly adapting work by
+\author{John Fox \email{jfox@mcmaster.ca}, and Zhenghua Nie, in part adapting work by
 Saikat DebRoy, R-core, and Richard H. Jones.}
 
 \seealso{\code{\link{sem}}, \code{\link{objective.functions}}, \code{\link[stats]{nlm}}, \code{\link[stats]{optim}}, \code{\link[stats]{nlminb}}}
