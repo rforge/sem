@@ -21,8 +21,8 @@ sem.semmod <- function(model, S, N, data, raw=identical(na.action, na.pass), obs
 	unique.patterns <- valid.pattern <- valid <- pattern.number <- valid.data.patterns <- NULL
 	if (missing(S)){
 		if (missing(data)) stop("S and data cannot both be missing")
-		data <- model.frame(formula, data=data, na.action=na.action)
 		N.all <- nrow(data)
+		data <- model.frame(formula, data=data, na.action=na.action)
 		data <- model.matrix(formula, data=data)
 		colnames(data)[colnames(data) == "(Intercept)"] <- "Intercept"
 		S <- if (raw) rawMoments(data, na.rm=TRUE) else {
