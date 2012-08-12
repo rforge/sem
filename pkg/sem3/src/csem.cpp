@@ -11,6 +11,7 @@
  *       Compiler:  gcc
  *
  *         Author:  Zhenghua Nie (ZHN), zhenghua.nie@gmail.com
+ *         (in part adapting work by Saikat DebRoy,  R-core,  and Richard H. Jones.)
  *        Company:  McMaster University
  *
  *    Copyright (C) 2011 Zhenghua Nie. All Rights Reserved.

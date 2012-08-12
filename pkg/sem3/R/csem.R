@@ -2,13 +2,7 @@
 # Author: Zhenghua Nie 
 # Date:   Mon 26 Dec 2011 23:54:22 EST
 #
-# We use ipoptr developed by Jelmer Ypma as the prototype of this package.
-# Some code is copied and edited from ipoptr. 
-# Please reference the license of ipoptr.
 #
-# Input: 
-#
-# Output: structure with inputs and
 #
 # Copyright (C) 2011 Zhenghua Nie. All Rights Reserved.
 # This code is published under GNU GENERAL PUBLIC LICENSE.
@@ -165,6 +159,8 @@ csem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), ob
 		arrows.1.seq <- model$ram[model$ram[, 1]==1 & model$ram[, 4]!=0,  4] 
 		arrows.2.seq <- model$ram[model$ram[, 1]==2 & model$ram[, 4]!=0,  4]
 
+# this function is modfied from ipoptr developed by Jelmer Ypma (http://www.ucl.ac.uk/~uctpjyy/ipoptr.html).
+# Please reference the license of ipoptr.
 		get.option.types <- function(opts) {
 				# define types of nlm options,  we should add all options here.
 				nlm.option.types <- list(

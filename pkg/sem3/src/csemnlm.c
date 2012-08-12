@@ -1,9 +1,9 @@
 /* ********************
  * Please note that this function "csenlm" is modified from the R core program main/optimize.c
  * by Zhenghua Nie.
- * The major goal of this modification is that we want to call "nlm" in C when
- * the objetive function and gradients, or hessians are computed in C. This is for 
- * speed-up of the package "sem". In future,  if we find more efficient solver of 
+ * The major goal of this modification is that we want to call "nlm" in C/C++ when
+ * the objetive function and gradients, or hessians are computed in C/C++. This is for 
+ * speed-up of the package "sem". In future,  if we find a more efficient solver of 
  * non-linear optimization problems,  we may replace the solver.
  * ********************/
 /*
