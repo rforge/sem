@@ -56,6 +56,9 @@
 #endif 
 
 /* 
+    "data" = model$data, 
+		"pattern.number" = model$model.number, 
+		"valid.data.patterns"= model$valid.data.patterns, 
 		"S" = model$S, 
 		"logdetS" = model$logdetS, 
 		"invS" = model$invS, 
@@ -83,6 +86,9 @@
 		"raw" = model$raw)
  * */
 typedef struct model_Info {
+	SEXP data;
+	SEXP pattern_number; 
+	SEXP valid_data_patterns;
   SEXP S; //n-by-n
 	double logdetS;
 	SEXP invS; //n-by-n
@@ -114,6 +120,9 @@ typedef struct model_Info {
 
 typedef struct msem_model_Info {
 	int G;  //number of groups
+	SEXP data;
+	SEXP pattern_number; 
+	SEXP valid_data_patterns;
   SEXP S; //n-by-n
 	SEXP logdetS;
 	SEXP invS; //n-by-n

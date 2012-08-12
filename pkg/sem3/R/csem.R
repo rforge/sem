@@ -29,7 +29,7 @@
 # The following function is a wrapper to compute the objective function and its gradient.
 # If hessian=TRUE,  csem will return Hessian computed by the numerical method,  but
 # is flexible to return Hessian computed by the analytical solution.
-CompiledObjective <- function(par, model.description, hessian=FALSE, objective=c("objectiveML", "objectiveGLS"), ...)
+CompiledObjective <- function(par, model.description, hessian=FALSE, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"), ...)
 {
 		if(missing(objective)) objective <- "objectiveML"
 		objective <- match.arg(objective)
@@ -47,7 +47,7 @@ CompiledObjective <- function(par, model.description, hessian=FALSE, objective=c
 		return(ret)
 }
 
-msemCompiledObjective <- function(par, model.description, hessian=FALSE, objective=c("objectiveML", "objectiveGLS"), ...)
+msemCompiledObjective <- function(par, model.description, hessian=FALSE, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"), ...)
 {
 		if(missing(objective)) objective <- "objectiveML"
 		objective <- match.arg(objective)
@@ -82,7 +82,7 @@ msemCompiledObjective <- function(par, model.description, hessian=FALSE, objecti
 }
 
 # The wrapper function for solving optimization problems. Please note that the objective function is written in C/C++,  we need to know the name.
-CompiledSolve <- function(model.description, start, objective=c("objectiveML", "objectiveGLS"),  typsize=rep(1.0, length(start)), debug=FALSE, maxiter=100,...)
+CompiledSolve <- function(model.description, start, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"),  typsize=rep(1.0, length(start)), debug=FALSE, maxiter=100,...)
 {
 		if(missing(objective)) objective <- "objectiveML"
 		objective <- match.arg(objective)
@@ -97,7 +97,7 @@ CompiledSolve <- function(model.description, start, objective=c("objectiveML", "
 }
 
 # The wrapper function for solving optimization problems. Please note that the objective function is written in C/C++,  we need to know the name.
-msemCompiledSolve <- function(model.description, start, objective=c("objectiveML", "objectiveGLS"),  
+msemCompiledSolve <- function(model.description, start, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"),  
 															typsize=rep(1.0, length(start)), debug=FALSE, maxiter=100,gradtol=1e-6, ...)
 {
 		if(missing(objective)) objective <- "objectiveML"
@@ -144,7 +144,7 @@ msemCompiledSolve <- function(model.description, start, objective=c("objectiveML
 
 #optimze:0 we only compute the objective function,  gradients or hessian and return them.
 # 
-csem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), objective=c("objectiveML", "objectiveGLS", "test_objective"),  
+csem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), objective=c("objectiveML", "objectiveGLS", "objectiveFIML", "test_objective"),  
 								 opts=list("hessian"=1, "fscale"=1, "gradtol"=1e-6, "steptol"=1e-6, "stepmax"=max(1000 * sqrt(sum((start/typsize)^2)),  1000), "iterlim"=100, 
 													 "ndigit"=12,"print.level"=0, "check.analyticals"=1), 
 								 csem.environment = new.env(), ...){
@@ -224,6 +224,9 @@ csem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), ob
 		"opt.flg" = as.integer(opt.flag), 
 		"start" = start, 
 		"options" = get.option.types(opts), 
+		"data" = model$data, 
+		"pattern.number" = model$pattern.number, 
+		"valid.data.patterns" = model$valid.data.patterns, 
 		"S" = model$S, 
 		"logdetS" = as.numeric(model$logdetS), 
 		"invS" = model$invS, 
@@ -270,7 +273,7 @@ csem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), ob
 		return(ret)
 }
 
-cmsem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), objective=c("objectiveML", "objectiveGLS", "test_objective"),  
+cmsem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), objective=c("objectiveML", "objectiveGLS", "objectiveFIML", "test_objective"),  
 								 opts=list("hessian"=1, "fscale"=1, "gradtol"=1e-6, "steptol"=1e-6, "stepmax"=max(1000 * sqrt(sum((start/typsize)^2)),  1000), "iterlim"=100, 
 													 "ndigit"=12,"print.level"=0, "check.analyticals"=1), 
 								 csem.environment = new.env(), ...){
@@ -356,6 +359,9 @@ cmsem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), o
 								"start" = start, 
 								"options" = get.option.types(opts), 
 								"G" = as.integer(model$G), 
+								"data" = model$data, 
+								"pattern.number" = model$pattern.number, 
+								"valid.data.patterns" = model$valid.data.patterns, 
 								"S" = model$S, 
 								"logdetS" = model$logdetS, 
 								"invS" = model$invS, 

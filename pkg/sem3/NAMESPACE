@@ -18,8 +18,9 @@ export(ram, standardizedResiduals, normalizedResiduals, readMoments,
 	# CompiledSolve, 
 	# msemCompiledObjective,msemCompiledSolve,  
 	optimizerSem,  
-	objectiveML, objectiveGLS,   
+	objectiveML, objectiveGLS, objectiveFIML,   
 	multigroupModel, msemObjectiveML, msemObjectiveGLS, msemOptimizerNlm,
+	msemObjectiveFIML, 
 	msemObjectiveML2, optimizerMsem,  
     # deprecated:
     standardized.residuals, normalized.residuals, read.moments,
@@ -99,6 +100,8 @@ S3method(print, msemObjectiveML)
 S3method(summary, msemObjectiveML)
 S3method(print, msemObjectiveGLS)
 S3method(summary, msemObjectiveGLS)
+S3method(print, msemObjectiveFIML)
+S3method(summary, msemObjectiveFIML)
 S3method(deviance, msemObjectiveML)
 S3method(AIC, msemObjectiveML)
 S3method(AICc, msemObjectiveML)

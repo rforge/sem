@@ -383,6 +383,30 @@ msemObjectiveGLS <- function(gradient=FALSE){
 	result
 }
 
+msemObjectiveFIML <- function(gradient=FALSE){
+	result <- list(
+			objective = function(par, model.description){
+				with(model.description, {
+							
+							res <- msemCompiledObjective(par=par, model.description=model.description, objective="objectiveFIML")
+							AA <- PP <- CC <- vector(G,  mode="list")
+							for(g in 1:model.description$G)
+							{
+								AA[[g]] <- res$A[[g]]
+								PP[[g]] <- res$P[[g]]
+								CC[[g]] <- res$C[[g]]
+							}
+							
+							f <- res$f
+							attributes(f) <- list(A=AA, P=PP, C=CC, f=res$ff)
+							f
+						})
+			}
+	)
+	
+	class(result) <- "msemObjective"
+	result
+}
 
 ##  nlm()-based optimizer for multigroup SEMs
 
@@ -397,7 +421,11 @@ optimizerMsem <- function(start, objective=msemObjectiveML, gradient=TRUE,
 					objectiveCompiled <- "objectiveGLS"
 					gradient <- FALSE
 				}
-				else stop("optimizerMsem requires the msemObjectiveML or msemObjectiveGLS objective function")
+				else if (identical(objective, msemObjectiveFIML)) {
+					objectiveCompiled <- "objectiveFIML"
+					gradient <- FALSE
+				}
+				else stop("optimizerMsem requires the msemObjectiveML, msemObjectiveGLS or msemObjectiveFIML objective function")
 				
 				if (!warn) save.warn <- options(warn=-1)
 				
@@ -523,12 +551,14 @@ print.msemObjectiveML <- function(x, ...){
 }
 
 print.msemObjectiveGLS <- function(x, ...) print.msemObjectiveML(x, ...)
+print.msemObjectiveFIML <- function(x, ...) print.msemObjectiveML(x, ...)
 
 summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, 
 		analytic.se=object$t <= 500, ...){
 	old.digits <- options(digits = digits)
 	on.exit(options(old.digits))
 	if(inherits(object, "msemObjectiveGLS")) analytic.se <- FALSE
+	else if(inherits(object, "msemObjectiveFIML")) analytic.se <- FALSE
 	groups <- object$groups
 	G <- length(groups)
 	par <- object$coeff
@@ -557,8 +587,12 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FAL
 				J=J[[g]], A=A[[g]], P=P[[g]], criterion=group.criteria[g], par.posn=ram[[g]][, 4] != 0, 
 				iterations=object$iterations, semmod=semmod[[g]], adj.obj=object$adj.objects[[g]], 
 				robust.vcov=object$robust.vcov[par.names, par.names])
-		class(group) <- if(inherits(object, "msemObjectiveGLS")) c("objectiveGLS", "sem") else c("objectiveML", "sem")
+		class(group) <- if(inherits(object, "msemObjectiveGLS")) c("objectiveGLS", "sem") 
+				else if(inherits(object, "msemObjectiveFIML")) c("objectiveFIML", "sem")
+				else c("objectiveML", "sem")
 		group.summaries[[g]] <- if(inherits(object, "msemObjectiveGLS"))
+					summary(group, digits=digits, conf.level=conf.level, robust=FALSE, ...)
+			else if(inherits(object, "msemObjectiveFIML")) 
 					summary(group, digits=digits, conf.level=conf.level, robust=FALSE, ...)
 			else summary(group, digits=digits, conf.level=conf.level, robust=robust, analytic.se=FALSE, ...)
 		group.summaries[[g]]$iterations <- NA
@@ -642,7 +676,7 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FAL
 		}
 		cat("\n\nUncorrected Fit Statistics:\n")
 	}
-	if (inherits(object, "msemObjectiveGLS")) {
+	if (inherits(object, "msemObjectiveGLS") || inherits(object, "msemObjectiveFIML")) {
 		AIC <- AICc <- BIC <- NA
 	}
 	else {
@@ -673,6 +707,12 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FAL
 }
 
 summary.msemObjectiveGLS <- function(object, digits=5, conf.level=.90, robust=FALSE, ...){
+	summary.msemObjectiveML(object, digits=digits, conf.level=conf.level, 
+			robust=robust, ...)
+	invisible(object)
+}
+
+summary.msemObjectiveFIML <- function(object, digits=5, conf.level=.90, robust=FALSE, ...){
 	summary.msemObjectiveML(object, digits=digits, conf.level=conf.level, 
 			robust=robust, ...)
 	invisible(object)

@@ -38,8 +38,8 @@ sem.semmod <- function(model, S, N, data, raw=identical(na.action, na.pass), obs
 				colnames(valid) <- colnames(data)
 			}
 			else {
-				valid <- matrix(TRUE, nrow(data), ncol(data))
-				colnames(valid) <- colnames(data)
+					valid <- matrix(TRUE, nrow(data), ncol(data))
+					colnames(valid) <- colnames(data)
 			}
 		}
 	}
@@ -109,7 +109,7 @@ sem.semmod <- function(model, S, N, data, raw=identical(na.action, na.pass), obs
 			valid.data.patterns <- t(sapply(strsplit(unique.patterns, "\\."), as.logical))
 		}
 	}
-	if (identical(objective, objectiveFIML2)){
+	if (identical(objective, objectiveFIML2) || identical(objective, objectiveFIML)){
 		message("NOTE: start values computed from preliminary ML fit")
 		prelim.fit <- sem(ram, S=S, N=N, raw=raw, data=na.omit(data), valid=valid, param.names=pars, var.names=vars, fixed.x=fixed.x,
 				semmod=model, robust=robust, debug=debug, ...)

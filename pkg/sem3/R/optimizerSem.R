@@ -19,7 +19,8 @@ optimizerSem <- function(start, objective=objectiveML,
 				
 			if(identical(objective, objectiveML)) objectiveCompiled <- "objectiveML"
 			else if (identical(objective, objectiveGLS)) objectiveCompiled <- "objectiveGLS"
-			else stop("optimizerSem requires the objectiveML or objectiveGLS objective function")
+			else if (identical(objective, objectiveFIML)) objectiveCompiled <- "objectiveFIML"
+			else stop("optimizerSem requires the objectiveML or objectiveGLS or objectiveFIML objective function")
 			
 			if (!warn) save.warn <- options(warn=-1)
 
