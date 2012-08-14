@@ -3,12 +3,14 @@
 \alias{objective.functions}
 \alias{objectiveML}
 \alias{objectiveGLS}
+\alias{objectiveFIML}
 \alias{objectiveML2}
 \alias{objectiveGLS2}
 \alias{objectiveFIML2}
 \alias{msemObjectiveML}
 \alias{msemObjectiveML2}
 \alias{msemObjectiveGLS}
+\alias{msemObjectiveFIML}
 
 
 \title{
@@ -37,12 +39,15 @@ objectiveML2(gradient=TRUE)
 objectiveGLS(gradient=FALSE)
 objectiveGLS2(gradient=FALSE)
 
+objectiveFIML(gradient=FALSE)
 objectiveFIML2(gradient=FALSE)
 
 msemObjectiveML(gradient=TRUE)
 msemObjectiveML2(gradient=TRUE)
 
 msemObjectiveGLS(gradient=FALSE)
+
+msemObjectiveFIML(gradient=FALSE)
 }
 
 \arguments{

@@ -1,4 +1,4 @@
-# last modified 2012-07-29 by J. Fox
+# last modified 2012-08-14 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -30,9 +30,8 @@ sem.semmod <- function(model, S, N, data, raw=identical(na.action, na.pass), obs
 					cov(data, use="complete.obs")
 				}
 		N <- nrow(data)
-		if (N < N.all) warning(N - N.all, " observations removed due to missingness")
-		if (identical(na.action, na.pass)){
-			if (any(is.na(data))){
+		if (N < N.all) warning(N - N.all, " observations removed due to missingness")        
+		if (identical(na.action, na.pass) && any(is.na(data))){
 				any.NA <- TRUE
 				valid <- !is.na(data)
 				colnames(valid) <- colnames(data)
@@ -42,7 +41,6 @@ sem.semmod <- function(model, S, N, data, raw=identical(na.action, na.pass), obs
 					colnames(valid) <- colnames(data)
 			}
 		}
-	}
 	if ((!is.matrix(model)) | ncol(model) != 3) stop ("model argument must be a 3-column matrix")
 	startvalues <- as.numeric(model[,3])
 	par.names <- model[,2]
@@ -209,7 +207,7 @@ sem.default <- function(model, S, N, raw=FALSE, data=NULL,
 		if (!is.null(data) && raw && use.means){
 			to <- ram[, 2]
 			from <- ram[, 3]
-			rows <- (from == which(var.names == "Intercept")) & (ram[, 1] == 1) & (ram[, 4] != 0) & (to < n) & is.na(ram[, 5])
+			rows <- (from == which(var.names == "Intercept")) & (ram[, 1] == 1) & (ram[, 4] != 0) & (to <= n) & is.na(ram[, 5])
 			ram[rows, 5] <- colMeans(data, na.rm=TRUE)[var.names[to[rows]]]
 		}
 		start <- if (any(is.na(ram[,5][par.posn])))

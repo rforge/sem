@@ -934,7 +934,7 @@ verbal: x1, x2, x3
 math: y1, y2, y3
 
 cfa.tests <- sem(mod.cfa.tests, data=Tests, na.action=na.pass, 
-                optimizer=optimizerNlm, objective=objectiveFIML2, fixed.x="Intercept")
+                objective=objectiveFIML, fixed.x="Intercept")
 summary(cfa.tests)
 summary(cfa.tests, saturated=TRUE) # takes time to fit saturated model for comparison
 
