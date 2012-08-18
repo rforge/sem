@@ -1,4 +1,4 @@
-# last modified 2012-08-14 by J. Fox
+# last modified 2012-08-18 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -109,8 +109,12 @@ sem.semmod <- function(model, S, N, data, raw=identical(na.action, na.pass), obs
 	}
 	if (identical(objective, objectiveFIML2) || identical(objective, objectiveFIML)){
 		message("NOTE: start values computed from preliminary ML fit")
+        opt <- options(warn=-1)
+        on.exit(options(opt)) # in case of error
 		prelim.fit <- sem(ram, S=S, N=N, raw=raw, data=na.omit(data), valid=valid, param.names=pars, var.names=vars, fixed.x=fixed.x,
 				semmod=model, robust=robust, debug=debug, ...)
+        if (!prelim.fit$convergence) message("NOTE: preliminary ML fit may not have converged")
+        options(opt)
 		message("NOTE: preliminary iterations, ", prelim.fit$iterations)
 		message("NOTE: iterations reported for final fit are post preliminary fit")
 		coeff <- coef(prelim.fit)
