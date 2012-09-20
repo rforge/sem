@@ -2,6 +2,10 @@ Changes to Version 3.1-0
 
     o Added FIML objective function for handling missing data.
 
+    o Added miSem() for multiple imputation.
+
+    o Small fixes and changes.
+
 Changes to Version 3.0-0
 
 	o Compiled code for optimization.

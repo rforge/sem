@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-02-14
+# last modified J. Fox 2012-09-17
 
 ## model definition
 
@@ -553,10 +553,8 @@ print.msemObjectiveML <- function(x, ...){
 print.msemObjectiveGLS <- function(x, ...) print.msemObjectiveML(x, ...)
 print.msemObjectiveFIML <- function(x, ...) print.msemObjectiveML(x, ...)
 
-summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, 
+summary.msemObjectiveML <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, 
 		analytic.se=object$t <= 500, ...){
-	old.digits <- options(digits = digits)
-	on.exit(options(old.digits))
 	if(inherits(object, "msemObjectiveGLS")) analytic.se <- FALSE
 	else if(inherits(object, "msemObjectiveFIML")) analytic.se <- FALSE
 	groups <- object$groups
@@ -706,13 +704,13 @@ summary.msemObjectiveML <- function(object, digits=5, conf.level=.90, robust=FAL
 	invisible(object)
 }
 
-summary.msemObjectiveGLS <- function(object, digits=5, conf.level=.90, robust=FALSE, ...){
+summary.msemObjectiveGLS <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, ...){
 	summary.msemObjectiveML(object, digits=digits, conf.level=conf.level, 
 			robust=robust, ...)
 	invisible(object)
 }
 
-summary.msemObjectiveFIML <- function(object, digits=5, conf.level=.90, robust=FALSE, ...){
+summary.msemObjectiveFIML <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, ...){
 	summary.msemObjectiveML(object, digits=digits, conf.level=conf.level, 
 			robust=robust, ...)
 	invisible(object)

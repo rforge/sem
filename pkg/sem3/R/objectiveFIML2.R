@@ -1,4 +1,4 @@
-# last modified 2012-07-31 by J. Fox
+# last modified 2012-09-17 by J. Fox
 
 ## this is the straightforward approach summing over observations:
 # objectiveFIML2 <- function(gradient=FALSE){
@@ -228,7 +228,7 @@ BIC.objectiveFIML <- function(object, saturated.logLik, ...) {
   deviance(object, saturated.logLik) + object$t*log(object$N)
 }
 
-summary.objectiveFIML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=FALSE, 
+summary.objectiveFIML <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, analytic.se=FALSE, 
         saturated=FALSE, intercept="Intercept", saturated.logLik, ...) {
   vcov <- vcov(object, robust=robust, analytic=analytic.se)
   if (any(is.na(vcov))) stop("coefficient covariances cannot be computed")

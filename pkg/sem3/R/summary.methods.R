@@ -1,7 +1,7 @@
-# last modified 2012-07-29 by J. Fox
+# last modified 2012-09-17 by J. Fox
 
 
-summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...) {
+summary.objectiveML <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...) {
 	vcov <- vcov(object, robust=robust, analytic=analytic.se)
 	if (any(is.na(vcov))) stop("coefficient covariances cannot be computed")
 	norm.res <- normalizedResiduals(object)
@@ -102,8 +102,8 @@ summary.objectiveML <- function(object, digits=5, conf.level=.90, robust=FALSE, 
 	ans
 }
 
-print.summary.objectiveML <- function(x, ...){
-	old.digits <- options(digits=x$digits)
+print.summary.objectiveML <- function(x, digits=getOption("digits"), ...){
+	old.digits <- options(digits=digits)
 	on.exit(options(old.digits))
 	if (x$raw) cat("\nModel fit to raw moment matrix.\n")	
 	if (x$robust && !is.null(x$robust.vcov)){
@@ -156,14 +156,14 @@ print.summary.objectiveML <- function(x, ...){
 	}
 	if (!is.null(x$coeff)){
 		if (x$robust && !is.null(x$robust.vcov)) cat("\n Parameter Estimates (with Robust Standard Errors)\n") else cat("\n Parameter Estimates\n")
-		print(x$coeff, right=FALSE)
+		print(x$coeff, right=FALSE, digits=digits)
 		if (!is.na(x$iterations)) cat("\n Iterations = ", x$iterations, "\n")
 		if (!is.null(x$aliased)) cat("\n Aliased parameters:", x$aliased, "\n")
 	}
 	invisible(x)
 }
 
-summary.objectiveGLS <- function(object, digits=5, conf.level=.90, robust=FALSE, ...){
+summary.objectiveGLS <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, ...){
 	summary <- summary.objectiveML(object, digits=digits, conf.level=conf.level, robust=robust, analytic.se=FALSE, ...)
 	S <- object$S
 	Sinv <- solve(S)

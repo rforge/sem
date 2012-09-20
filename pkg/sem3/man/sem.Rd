@@ -396,7 +396,7 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
 	\emph{Innovations in Multivariate Statistical Analysis. A Festschrift for Heinz Neudecker }, Kluwer. 
 }
 
-\author{John Fox \email{jfox@mcmaster.ca} and Jarrett Byrnes}
+\author{John Fox \email{jfox@mcmaster.ca}, Zhenghua Nie, and Jarrett Byrnes}
 
 \seealso{\code{\link{rawMoments}}, \code{\link{startvalues}}, 
 	\code{\link{objectiveML}}, \code{\link{objectiveGLS}},  

@@ -1,4 +1,4 @@
-# last modified 2012-08-01 by J. Fox
+# last modified 2012-09-20 by J. Fox
 
 useDynLib(sem)
 useDynLib(sem, csemSolve)
@@ -22,6 +22,7 @@ export(ram, standardizedResiduals, normalizedResiduals, readMoments,
 	multigroupModel, msemObjectiveML, msemObjectiveGLS, msemOptimizerNlm,
 	msemObjectiveFIML, 
 	msemObjectiveML2, optimizerMsem,  
+    miSem,
     # deprecated:
     standardized.residuals, normalized.residuals, read.moments,
     standardized.coefficients, std.coef, mod.indices, path.diagram,
@@ -31,6 +32,7 @@ export(ram, standardizedResiduals, normalizedResiduals, readMoments,
 S3method(effects, sem)
 S3method(logLik, objectiveML)
 S3method(logLik, objectiveFIML)
+S3method(miSem, semmod)
 S3method(residuals, sem)
 S3method(residuals, objectiveFIML)
 S3method(standardizedCoefficients, sem)
@@ -73,6 +75,9 @@ S3method(print, objectiveGLS)
 S3method(print, objectiveFIML)
 S3method(summary, bootsem)
 S3method(print, summary.bootsem)
+S3method(print, miSem)
+S3method(summary, miSem)
+S3method(print, summary.miSem)
 S3method(rawMoments, formula)
 S3method(rawMoments, default)
 S3method(print, rawmoments)

@@ -73,12 +73,12 @@ the presence of missing data),
 \method{print}{msemObjectiveML}(x, ...)
 \method{print}{msemObjectiveGLS}(x, ...)
 
-\method{summary}{objectiveML}(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...)
-\method{summary}{objectiveFIML}(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=FALSE, 
+\method{summary}{objectiveML}(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...)
+\method{summary}{objectiveFIML}(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, analytic.se=FALSE, 
   saturated=FALSE, intercept="Intercept", saturated.logLik, ...)
-\method{summary}{objectiveGLS}(object, digits=5, conf.level=.90, robust=FALSE, ...)
-\method{summary}{msemObjectiveML}(object, digits=5, conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...)
-\method{summary}{msemObjectiveGLS}(object, digits=5, conf.level=.90, robust=FALSE, ...)
+\method{summary}{objectiveGLS}(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, ...)
+\method{summary}{msemObjectiveML}(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...)
+\method{summary}{msemObjectiveGLS}(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, ...)
 }
 
 \arguments{
