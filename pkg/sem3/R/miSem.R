@@ -1,6 +1,7 @@
 # last modified 2012-09-20 by J. Fox
 
 miSem <- function(model, ...){
+    if (!require(mi)) stop("mi package missing")
     UseMethod("miSem")
 }
 
@@ -71,8 +72,8 @@ summary.miSem <- function(object, digits=max(3, getOption("digits") - 2), ...){
     coefs <- lapply(object$mi.fits, coef)
     table <- do.call("cbind", coefs)
     rownames(table) <- names(coefs[[1]])
-    table <- cbind(table, rowMeans(table))
-    colnames(table) <- c(paste("Imputation", 1:length(coefs)), "Averaged")
+    table <- cbind(table, rowMeans(table), coef(object$initial.fit))
+    colnames(table) <- c(paste("Imputation", 1:length(coefs)), "Averaged", "Initial Fit")
     result <- list(object=object, mi.results=table, digits=digits)
     class(result) <- "summary.miSem"
     result
