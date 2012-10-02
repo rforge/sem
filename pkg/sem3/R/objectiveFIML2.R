@@ -1,4 +1,4 @@
-# last modified 2012-09-17 by J. Fox
+# last modified 2012-10-02 by J. Fox
 
 ## this is the straightforward approach summing over observations:
 # objectiveFIML2 <- function(gradient=FALSE){
@@ -224,8 +224,14 @@ CAIC.objectiveFIML <- function(object, saturated.logLik, ...) {
 }
 
 BIC.objectiveFIML <- function(object, saturated.logLik, ...) {
-  if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
-  deviance(object, saturated.logLik) + object$t*log(object$N)
+    n <- object$n
+    n.fix <- object$n.fix
+    N <- object$N
+    t <- object$t
+    df <- n*(n + 1)/2 - t - n.fix*(n.fix + 1)/2
+    if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
+#    deviance(object, saturated.logLik) + object$t*log(object$N)
+    deviance(object, saturated.logLik) - df*log(N)
 }
 
 summary.objectiveFIML <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, analytic.se=FALSE, 

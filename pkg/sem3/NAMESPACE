@@ -1,4 +1,4 @@
-# last modified 2012-09-20 by J. Fox
+# last modified 2012-10-02 by J. Fox
 
 useDynLib(sem)
 useDynLib(sem, csemSolve)
@@ -13,14 +13,10 @@ export(ram, standardizedResiduals, normalizedResiduals, readMoments,
     classifyVariables, combineModels, removeRedundantPaths,
     optimizerNlm, optimizerOptim, optimizerNlminb,
     objectiveML2, objectiveGLS2, objectiveFIML2,
-	#it may not be necessay to export csem. We have two wrappers of csem to CompiledSolve and CompiledObjective. 
-	# csem, cmsem,  
-	# CompiledSolve, 
-	# msemCompiledObjective,msemCompiledSolve,  
 	optimizerSem,  
 	objectiveML, objectiveGLS, objectiveFIML,   
 	multigroupModel, msemObjectiveML, msemObjectiveGLS, msemOptimizerNlm,
-	msemObjectiveFIML, 
+	# msemObjectiveFIML, 
 	msemObjectiveML2, optimizerMsem,  
     miSem,
     # deprecated:
@@ -33,6 +29,7 @@ S3method(effects, sem)
 S3method(logLik, objectiveML)
 S3method(logLik, objectiveFIML)
 S3method(miSem, semmod)
+S3method(miSem, semmodList)
 S3method(residuals, sem)
 S3method(residuals, objectiveFIML)
 S3method(standardizedCoefficients, sem)

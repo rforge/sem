@@ -881,7 +881,7 @@ R.thur <- readMoments(diag=FALSE, names=c('Sentences','Vocabulary',
 
 	#  (1) in CFA format:
 
-mod.cfa.thur.c <- cfa()
+mod.cfa.thur.c <- cfa(reference.indicators=FALSE)
 FA: Sentences, Vocabulary, Sent.Completion
 FB: First.Letters, 4.Letter.Words, Suffixes
 FC: Letter.Series, Pedigrees, Letter.Group

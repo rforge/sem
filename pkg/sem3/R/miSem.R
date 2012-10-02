@@ -1,4 +1,4 @@
-# last modified 2012-09-20 by J. Fox
+# last modified 2012-10-02 by J. Fox
 
 miSem <- function(model, ...){
     if (!require(mi)) stop("mi package missing")
@@ -44,6 +44,65 @@ miSem.semmod <- function(model, ..., data, formula = ~., raw=FALSE, fixed.x=NULL
         fit <- sem(ram, S=S, N=N, data=data.i, raw=raw, param.names=coef.names, var.names=var.names, fixed.x=fixed.x,
                               optimizer=initial.fit$optimizer, objective=objective, ...)
         class(fit) <- cls   
+	    fits[[i]] <- fit
+    }
+    if (has.tcltk) close(pb)
+    result <- list(initial.fit=initial.fit, mi.fits=fits, imputations=mi.data, seed=seed)
+    class(result) <- "miSem"
+    result
+}
+
+miSem.semmodList <- function(model, ..., data, formula = ~., group, raw=FALSE, 
+        fixed.x=NULL, objective=msemObjectiveML,
+        n.imp=5, n.iter=30, seed=sample(1e6, 1), mi.args=list()){
+    if (missing(formula)) formula <- as.formula(paste("~ . -", group))
+    warn <- options(warn=-1)
+    on.exit(options(warn))
+    initial.fit <- sem(model, ..., data=na.omit(data), formula=formula, group=group, raw=raw, fixed.x=fixed.x,
+                       objective = objective)
+    options(warn)
+    coefficients <- coefficients(initial.fit)
+    coef.names <- names(coefficients)
+    var.names <- initial.fit$var.names 
+    ram <- initial.fit$ram 
+    groups <- initial.fit$groups
+    group <- initial.fit$group
+    G <- length(groups)
+    fixed <- numeric(0)
+    for (g in 1:G){
+        pars <- ram[[g]][, "parameter"]
+        free <- pars != 0
+        ram[[g]][free, "start value"] <- coefficients[pars[free]]
+    }
+    mi.args$n.imp <- n.imp
+    mi.args$n.iter <- n.iter
+    mi.args$seed <- seed
+    mi.args$object <- data
+    mi.data <- do.call("mi", mi.args)
+    fits <- vector(n.imp, mode="list")
+    has.tcltk <- require("tcltk")
+    if (has.tcltk) pb <- tkProgressBar("Fitting", "Imputation no.: ", 0, n.imp)
+    for (i in 1:n.imp){
+        if (has.tcltk) setTkProgressBar(pb, i, label=sprintf("Imputation no.: %d", i))
+        data.i <- mi.data.frame(mi.data, m=i)
+        group.i <- data.i[, group]
+        data.i <- model.frame(formula, data=data.i)
+        data.i <- model.matrix(formula, data=data.i)
+        colnames(data.i)[colnames(data.i) == "(Intercept)"] <- "Intercept"
+        S <- data.out <- vector(G, mode="list")
+        N <- numeric(G)
+        for (g in 1:G){
+            data.g <- data.i[group.i == groups[g], ]
+            data.out[[g]] <- data.g
+            N[g] <- nrow(data.g)
+            S[[g]] <- if (raw) rawMoments(data.g) else {
+    			data.g <-  data.g[, colnames(data.g) != "Intercept"]
+    			cov(data.g)
+    		}
+        }
+        fit <- sem(ram, S=S, N=N, group=group, groups=groups, raw=raw, data=data.out, 
+                  fixed.x=initial.fit$fixed.x, param.names=coef.names, var.names=var.names,
+                  optimizer=initial.fit$optimizer, objective=objective, ...)
 	    fits[[i]] <- fit
     }
     if (has.tcltk) close(pb)

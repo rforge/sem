@@ -1,4 +1,4 @@
-# last modified 2012-09-17 by J. Fox
+# last modified 2012-10-02 by J. Fox
 
 
 summary.objectiveML <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...) {
@@ -115,7 +115,7 @@ print.summary.objectiveML <- function(x, digits=getOption("digits"), ...){
 			cat("\n Corrected Chisquare (null model) = ", x$chisqNull.adjusted,  "  Df = ", x$dfNull)
 		}
 		if (x$df > 0 && !x$raw){
-			cat("\n Corrected Bentler-Bonnett NFI = ", x$NFI.adjusted)
+			cat("\n Corrected Bentler-Bonett NFI = ", x$NFI.adjusted)
 			cat("\n Corrected Tucker-Lewis NNFI = ", x$NNFI.adjusted)
 			cat("\n Corrected Bentler CFI = ", x$CFI.adjusted)
 		}
@@ -137,7 +137,7 @@ print.summary.objectiveML <- function(x, digits=getOption("digits"), ...){
 		if (!is.na(x$AGFI)) cat("\n Adjusted goodness-of-fit index = ", x$AGFI)
 		if (length(x$RMSEA) > 1 || !is.na(x$RMSEA)) cat("\n RMSEA index =  ", x$RMSEA[1],
 					"   ", 100*x$RMSEA[4], "% CI: (", x$RMSEA[2], ", ", x$RMSEA[3],")", sep="")
-		if (!is.na(x$NFI)) cat("\n Bentler-Bonnett NFI = ", x$NFI)
+		if (!is.na(x$NFI)) cat("\n Bentler-Bonett NFI = ", x$NFI)
 		if (!is.na(x$NNFI)) cat("\n Tucker-Lewis NNFI = ", x$NNFI)
 		if (!is.na(x$CFI)) cat("\n Bentler CFI = ", x$CFI)
 		if (!is.na(x$SRMR)) cat("\n SRMR = ", x$SRMR)

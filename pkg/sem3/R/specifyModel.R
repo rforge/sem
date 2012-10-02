@@ -223,7 +223,7 @@ specifyEquations <- function(file="", ...){
 	specifyModel(file=textConnection(ram), ..., quiet=TRUE)
 }
 
-cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators=FALSE, raw=FALSE, ...){
+cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators=TRUE, raw=FALSE, ...){
 	Lines <- scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
 	lines <- character(0)
 	current.line <- ""

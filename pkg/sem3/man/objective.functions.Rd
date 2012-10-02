@@ -10,7 +10,7 @@
 \alias{msemObjectiveML}
 \alias{msemObjectiveML2}
 \alias{msemObjectiveGLS}
-\alias{msemObjectiveFIML}
+%% \alias{msemObjectiveFIML}
 
 
 \title{
@@ -47,7 +47,7 @@ msemObjectiveML2(gradient=TRUE)
 
 msemObjectiveGLS(gradient=FALSE)
 
-msemObjectiveFIML(gradient=FALSE)
+%% msemObjectiveFIML(gradient=FALSE)
 }
 
 \arguments{

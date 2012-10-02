@@ -4,6 +4,10 @@ Changes to Version 3.1-0
 
     o Added miSem() for multiple imputation.
 
+    o Redefinition of BIC (differs by constant from previous version, suggested by Ken Bollen).
+
+    o Default reference.indicators=TRUE in cfa() (suggestion of Ken Bollen).
+
     o Small fixes and changes.
 
 Changes to Version 3.0-0

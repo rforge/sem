@@ -22,7 +22,7 @@ specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs,
 
 specifyEquations(file="", ...)
 
-cfa(file="", covs=paste(factors, collapse=","), reference.indicators=FALSE, 
+cfa(file="", covs=paste(factors, collapse=","), reference.indicators=TRUE, 
      raw=FALSE, ...)
 
 multigroupModel(..., groups=names(models), allEqual=FALSE)
@@ -329,7 +329,7 @@ R.thur <- readMoments(diag=FALSE, names=c('Sentences','Vocabulary',
 
 	#  (1a) in CFA format:
 
-mod.cfa.thur.c <- cfa()
+mod.cfa.thur.c <- cfa(reference.indicators=FALSE)
 FA: Sentences, Vocabulary, Sent.Completion
 FB: First.Letters, 4.Letter.Words, Suffixes
 FC: Letter.Series, Pedigrees, Letter.Group
@@ -339,7 +339,7 @@ summary(cfa.thur.c)
 
 	#  (1b) in CFA format, using reference indicators:
 	
-mod.cfa.thur.r <- cfa(reference.indicators=TRUE)
+mod.cfa.thur.r <- cfa()
 FA: Sentences, Vocabulary, Sent.Completion
 FB: First.Letters, 4.Letter.Words, Suffixes
 FC: Letter.Series, Pedigrees, Letter.Group

@@ -1,5 +1,5 @@
 ### multigroup SEMs  
-# last modified J. Fox 2012-09-17
+# last modified J. Fox 2012-10-02
 
 ## model definition
 
@@ -668,7 +668,7 @@ summary.msemObjectiveML <- function(object, digits=getOption("digits"), conf.lev
 			cat("\n Corrected Chisquare (null model) = ", chisqNull.adjusted,  "  Df = ", dfNull)
 		}
 		if (df > 0 && !object$raw){
-			cat("\n Corrected Bentler-Bonnett NFI = ", NFI.adjusted)
+			cat("\n Corrected Bentler-Bonett NFI = ", NFI.adjusted)
 			cat("\n Corrected Tucker-Lewis NNFI = ", NNFI.adjusted)
 			cat("\n Corrected Bentler CFI = ", CFI.adjusted)
 		}
@@ -687,7 +687,7 @@ summary.msemObjectiveML <- function(object, digits=getOption("digits"), conf.lev
 	if (!is.na(GFI)) cat("\n Goodness-of-fit index =", GFI)
 	if (!is.na(AGFI)) cat("\n Adjusted goodness-of-fit index =", AGFI)
 	if (!is.na(RMSEA)) cat("\n RMSEA index = ", RMSEA, " ", 100*conf.level, "% CI: (", RMSEA.L, ", ", RMSEA.U, ")", sep="")
-	if (!is.na(NFI)) cat("\n Bentler-Bonnett NFI =", NFI)
+	if (!is.na(NFI)) cat("\n Bentler-Bonett NFI =", NFI)
 	if (!is.na(NNFI)) cat("\n Tucker-Lewis NNFI =", NNFI)
 	if (!is.na(CFI)) cat("\n Bentler CFI =", CFI)
 	if (!is.na(SRMR)) cat("\n SRMR =", SRMR)
