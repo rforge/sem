@@ -68,7 +68,6 @@ miSem.semmodList <- function(model, ..., data, formula = ~., group, raw=FALSE,
     groups <- initial.fit$groups
     group <- initial.fit$group
     G <- length(groups)
-    fixed <- numeric(0)
     for (g in 1:G){
         pars <- ram[[g]][, "parameter"]
         free <- pars != 0

@@ -73,10 +73,11 @@ sem.semmodList <- function(model, S, N, data, raw=FALSE, fixed.x=NULL, robust=!m
 			N.all <- nrow(data.group)
 			form <- if (is.list(formula)) formula[[g]] else formula
 			data.group <- model.matrix(form, data=data.group)
+            colnames(data.group)[colnames(data.group) == "(Intercept)"] <- "Intercept"
 			N[g] <- nrow(data.group)
 			if (N[g] < N.all) warning(N.all - N[g]," observations removed due to missingness in group ", levels[g])
 			S[[g]] <- if (raw) rawMoments(data.group) else{
-						data.group <- data.group[, colnames(data.group) != "(Intercept)"]
+						data.group <- data.group[, colnames(data.group) != "Intercept"]
 						cov(data.group)
 					}
 			data.out[[g]] <- data.group

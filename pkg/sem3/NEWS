@@ -1,8 +1,10 @@
 Changes to Version 3.1-0
 
-    o Added FIML objective function for handling missing data.
+    o Added FIML objective function for handling missing data. (Preliminary implementation for single-group models only, using compiled code but no analytic derivatives.)
 
     o Added miSem() for multiple imputation.
+
+    o Added bootSem.msem() method for multi-group models; bootSem() now generic.
 
     o Redefinition of BIC (differs by constant from previous version, suggested by Ken Bollen).
 

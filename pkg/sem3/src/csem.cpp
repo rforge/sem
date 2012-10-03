@@ -212,8 +212,8 @@ void setApplicationOptions(int &hessian, double &fscale, double &steptol, double
 		}
 
 		// loop over the string options and set them
-		SEXP opts_string_names;
-		opts_string_names = getAttrib(opts_string, R_NamesSymbol);
+		//SEXP opts_string_names;
+		//opts_string_names = getAttrib(opts_string, R_NamesSymbol);
 		for (int list_cnt=0;list_cnt<length( opts_string );list_cnt++) {
 
 				// opt_value will contain the first (should be the only one) element of the list
@@ -619,20 +619,6 @@ static void generate_AP(int n,  const double x[], double *A, double *P,  double 
 		return;
 }
 
-static int *PatternNumberIth(const int *pattern_number, const int &nsize, const int &ith)
-{
-		int *pattern_bool_vec = new int[nsize];
-
-		for(int i = 0; i < nsize; ++i)
-		{
-				*pattern_bool_vec++ = (*pattern_number++ == ith ? 1 : 0);
-		}
-
-		// go back to the first element.
-		pattern_bool_vec -= nsize;
-
-		return(pattern_bool_vec); 
-}
 
 // Please note that R uses the column-wise to store matrices.
 // this is for valid.data.pattern[i, ]
