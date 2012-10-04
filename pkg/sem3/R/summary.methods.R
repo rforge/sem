@@ -1,7 +1,15 @@
-# last modified 2012-10-02 by J. Fox
+# last modified 2012-10-04 by J. Fox
 
 
-summary.objectiveML <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, ...) {
+summary.objectiveML <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, analytic.se=object$t <= 500, 
+                                fit.indices=c("GFI", "AGFI", "RMSEA", "NFI", "NNFI", "CFI", "RNI", "IFI", "SRMR", "AIC", "AICc", "BIC", "CAIC"), ...) {
+    fit.indices <- if (is.null(fit.indices)) ""
+    else {
+        if (missing(fit.indices)){
+            if (is.null(opt <- getOption("fit.indices"))) c("AIC", "BIC") else opt
+        }
+        else match.arg(fit.indices, several.ok=TRUE)
+    }
 	vcov <- vcov(object, robust=robust, analytic=analytic.se)
 	if (any(is.na(vcov))) stop("coefficient covariances cannot be computed")
 	norm.res <- normalizedResiduals(object)
@@ -22,46 +30,53 @@ summary.objectiveML <- function(object, digits=getOption("digits"), conf.level=.
 	CS <- CS %*% CS
 	chisqNull <- chisqNull(object)
 	chisq <- object$criterion * (N - (!object$raw))
-	GFI <- if (!object$raw) 1 - sum(diag(CSC))/sum(diag(CS)) else NA
+	GFI <- if (!"GFI" %in% fit.indices) NA else if (!object$raw) 1 - sum(diag(CSC))/sum(diag(CS)) else NA
 	if ((!object$raw) && df > 0){
-		AGFI <- 1 - (n*(n + 1)/(2*df))*(1 - GFI)
-		NFI <- (chisqNull - chisq)/chisqNull
-		NNFI <- (chisqNull/dfNull - chisq/df)/(chisqNull/dfNull - 1)
+		AGFI <- if (!"AGFI" %in% fit.indices) NA else 1 - (n*(n + 1)/(2*df))*(1 - GFI)
+		NFI <- if (!"NFI" %in% fit.indices) NA else (chisqNull - chisq)/chisqNull
+		NNFI <- if (!"NNFI" %in% fit.indices) NA else (chisqNull/dfNull - chisq/df)/(chisqNull/dfNull - 1)
 		L1 <- max(chisq - df, 0)
 		L0 <- max(L1, chisqNull - dfNull)
-		CFI <- 1 - L1/L0
-		RMSEA <- sqrt(max(object$criterion/df - 1/(N - (!object$raw)), 0))
-		tail <- (1 - conf.level)/2 
-		max <- N
-		while (max > 1){
-			res <- optimize(function(lam) (tail - pchisq(chisq, df, ncp=lam))^2, interval=c(0, max))
-			if (is.na(res$objective) || res$objective < 0){
-				max <- 0
-				warning("cannot find upper bound of RMSEA")
-				break
-			}				
-			if (sqrt(res$objective) < tail/100) break
-			max <- max/2
+		CFI <- if (!"CFI" %in% fit.indices) NA else 1 - L1/L0
+        RNI <- if (!"RNI" %in% fit.indices) NA else 1 - (chisq - df)/(chisqNull - dfNull)
+        IFI <- if (!"IFI" %in% fit.indices) NA else (chisqNull - chisq)/(chisqNull - df)
+        if (!"RMSEA" %in% fit.indices) {
+            RMSEA <- NA
+            }
+		else {
+		    RMSEA <- sqrt(max(object$criterion/df - 1/(N - (!object$raw)), 0))
+		    tail <- (1 - conf.level)/2 
+		    max <- N
+		    while (max > 1){
+		        res <- optimize(function(lam) (tail - pchisq(chisq, df, ncp=lam))^2, interval=c(0, max))
+		        if (is.na(res$objective) || res$objective < 0){
+		            max <- 0
+		            warning("cannot find upper bound of RMSEA")
+		            break
+		        }				
+		        if (sqrt(res$objective) < tail/100) break
+		        max <- max/2
+		    }
+		    lam.U <- if (max <= 1) NA else res$minimum
+		    max <- max(max, 1)
+		    while (max > 1){
+		        res <- optimize(function(lam) (1 - tail - pchisq(chisq, df, ncp=lam))^2, interval=c(0, max))
+		        if (sqrt(res$objective) < tail/100) break
+		        max <- max/2
+		        if (is.na(res$objective) || res$objective < 0){
+		            max <- 0
+		            warning("cannot find lower bound of RMSEA")
+		            break
+		        }				
+		    }
+		    lam.L <- if (max <= 1) NA else res$minimum
+		    RMSEA.U <- sqrt(lam.U/((N - (!object$raw))*df))
+		    RMSEA.L <- sqrt(lam.L/((N - (!object$raw))*df))
 		}
-		lam.U <- if (max <= 1) NA else res$minimum
-		max <- max(max, 1)
-		while (max > 1){
-			res <- optimize(function(lam) (1 - tail - pchisq(chisq, df, ncp=lam))^2, interval=c(0, max))
-			if (sqrt(res$objective) < tail/100) break
-			max <- max/2
-			if (is.na(res$objective) || res$objective < 0){
-				max <- 0
-				warning("cannot find lower bound of RMSEA")
-				break
-			}				
-		}
-		lam.L <- if (max <= 1) NA else res$minimum
-		RMSEA.U <- sqrt(lam.U/((N - (!object$raw))*df))
-		RMSEA.L <- sqrt(lam.L/((N - (!object$raw))*df))
 		Rsq <- Rsq(object)
 	}
-	else Rsq <- RMSEA.U <- RMSEA.L <- RMSEA <- NFI <- NNFI <- CFI <- AGFI <- NA
-	RMSEA <- c(RMSEA, RMSEA.L, RMSEA.U, conf.level)
+	else Rsq <- RMSEA.U <- RMSEA.L <- RMSEA <- NFI <- NNFI <- CFI <- AGFI <- RNI <- IFI <- NA
+	if (!is.na(RMSEA)) RMSEA <- c(RMSEA, RMSEA.L, RMSEA.U, conf.level)
 	if (!is.null(object$coeff)){
 		var.names <- rownames(object$A)
 		ram <- object$ram[object$par.posn, , drop=FALSE]
@@ -72,29 +87,31 @@ summary.objectiveML <- function(object, digits=getOption("digits"), conf.level=.
 		row.names(coeff) <- names(object$coeff)
 	}
 	else coeff <- NULL
-	AIC <- AIC(object)
-	AICc <- AICc(object)
-	BIC <- BIC(object)
-	CAIC <- CAIC(object)
-	SRMR <- sqrt(sum(standardizedResiduals(object)^2 * 
+	AIC <- if (!"AIC" %in% fit.indices) NULL else AIC(object)
+	AICc <- if (!"AICc" %in% fit.indices) NULL else AICc(object)
+	BIC <- if (!"BIC" %in% fit.indices) NULL else BIC(object)
+	CAIC <- if (!"CAIC" %in% fit.indices) NULL else CAIC(object)
+	SRMR <- if (!"SRMR" %in% fit.indices) NA else sqrt(sum(standardizedResiduals(object)^2 * 
 							upper.tri(diag(n), diag=TRUE))/(n*(n + 1)/2))
 	if (robust) { 
 		chisq.adjusted <- object$adj.obj$chisq.scaled
 		chisqNull.adjusted <- chisqNull/object$adj.obj$c 
-		NFI.adjusted <- (chisqNull.adjusted - chisq)/chisqNull.adjusted
-		NNFI.adjusted <- (chisqNull.adjusted/dfNull - chisq.adjusted/df)/(chisqNull.adjusted/dfNull - 1)
+		NFI.adjusted <- if (!"NFI" %in% fit.indices) NULL else (chisqNull.adjusted - chisq)/chisqNull.adjusted
+		NNFI.adjusted <- if (!"NNFI" %in% fit.indices) NULL else (chisqNull.adjusted/dfNull - chisq.adjusted/df)/(chisqNull.adjusted/dfNull - 1)
 		L1 <- max(chisq.adjusted - df, 0)
 		L0 <- max(L1, chisqNull.adjusted - dfNull)
-		CFI.adjusted <- 1 - L1/L0
+		CFI.adjusted <- if (!"CFI" %in% fit.indices) NULL else 1 - L1/L0
+        RNI.adjusted <- if (!"RNI" %in% fit.indices) NULL else 1 - (chisq.adjusted - df)/(chisqNull.adjusted - dfNull)
+        IFI.adjusted <- if (!"IFI" %in% fit.indices) NULL else (chisqNull.adjusted - chisq.adjusted)/(chisqNull.adjusted - df)
 	}
 	else{
-		chisq.adjusted <- chisqNull.adjusted <- NFI.adjusted <- NNFI.adjusted <- CFI.adjusted <- NULL
+		chisq.adjusted <- chisqNull.adjusted <- NFI.adjusted <- NNFI.adjusted <- CFI.adjusted <- RNI.adjusted <- IFI.adjusted <- NULL
 	}
 	ans <- list(chisq=chisq, df=df, chisqNull=chisqNull, dfNull=dfNull,
-			GFI=GFI, AGFI=AGFI, RMSEA=RMSEA, NFI=NFI, NNFI=NNFI, CFI=CFI, BIC=BIC, SRMR=SRMR, 
+			GFI=GFI, AGFI=AGFI, RMSEA=RMSEA, NFI=NFI, NNFI=NNFI, CFI=CFI, RNI=RNI, IFI=IFI, BIC=BIC, SRMR=SRMR, 
 			AIC=AIC, AICc=AICc, CAIC=CAIC, Rsq=Rsq,
 			chisq.adjusted=chisq.adjusted, chisqNull.adjusted=chisqNull.adjusted, NFI.adjusted=NFI.adjusted,
-			NNFI.adjusted=NNFI.adjusted, CFI.adjusted=CFI.adjusted,
+			NNFI.adjusted=NNFI.adjusted, CFI.adjusted=CFI.adjusted, RNI.adjusted=RNI.adjusted, IFI.adjusted=IFI.adjusted,
 			norm.res=norm.res, coeff=coeff, digits=digits, 
 			iterations=object$iterations, aliased=object$aliased, raw=object$raw,
 			robust=robust, robust.vcov=object$robust.vcov, adj.obj=object$adj.obj)
@@ -115,9 +132,11 @@ print.summary.objectiveML <- function(x, digits=getOption("digits"), ...){
 			cat("\n Corrected Chisquare (null model) = ", x$chisqNull.adjusted,  "  Df = ", x$dfNull)
 		}
 		if (x$df > 0 && !x$raw){
-			cat("\n Corrected Bentler-Bonett NFI = ", x$NFI.adjusted)
-			cat("\n Corrected Tucker-Lewis NNFI = ", x$NNFI.adjusted)
-			cat("\n Corrected Bentler CFI = ", x$CFI.adjusted)
+			if (!is.null(x$NFI.adjusted)) cat("\n Corrected Bentler-Bonett NFI = ", x$NFI.adjusted)
+			if (!is.null(x$NNFI.adjusted)) cat("\n Corrected Tucker-Lewis NNFI = ", x$NNFI.adjusted)
+			if (!is.null(x$CFI.adjusted)) cat("\n Corrected Bentler CFI = ", x$CFI.adjusted)
+            if (!is.null(x$RNI.adjusted)) cat("\n Corrected Bentler RNI = ", x$RNI.adjusted)
+            if (!is.null(x$IFI.adjusted)) cat("\n Corrected Bollen IFI = ", x$IFI.adjusted)
 		}
 		cat("\n\nUncorrected Fit Statistics:\n")
 		x$coeff[,2] <- sqrt(diag(x$robust.vcov))
@@ -140,6 +159,8 @@ print.summary.objectiveML <- function(x, digits=getOption("digits"), ...){
 		if (!is.na(x$NFI)) cat("\n Bentler-Bonett NFI = ", x$NFI)
 		if (!is.na(x$NNFI)) cat("\n Tucker-Lewis NNFI = ", x$NNFI)
 		if (!is.na(x$CFI)) cat("\n Bentler CFI = ", x$CFI)
+        if (!is.na(x$RNI)) cat("\n Bentler RNI = ", x$RNI)
+        if (!is.na(x$IFI)) cat("\n Bollen IFI = ", x$IFI)
 		if (!is.na(x$SRMR)) cat("\n SRMR = ", x$SRMR)
 	}
 	if (!is.null(x$AIC) && !is.na(x$AIC)) cat("\n AIC = ", x$AIC)
@@ -163,16 +184,21 @@ print.summary.objectiveML <- function(x, digits=getOption("digits"), ...){
 	invisible(x)
 }
 
-summary.objectiveGLS <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, ...){
-	summary <- summary.objectiveML(object, digits=digits, conf.level=conf.level, robust=robust, analytic.se=FALSE, ...)
+summary.objectiveGLS <- function(object, digits=getOption("digits"), conf.level=.90, 
+                                 fit.indices=c("GFI", "AGFI", "RMSEA", "NFI", "NNFI", "CFI", "RNI", "IFI", "SRMR"), ...){
+    fit.indices <- if (missing(fit.indices)){
+        getOption("fit.indices")
+    }
+    else if (fit.indices[1] != "") match.arg(fit.indices, several.ok=TRUE)
+	summary <-  summary.objectiveML(object, digits=digits, conf.level=conf.level, analytic.se=FALSE, fit.indices=fit.indices, ...)
 	S <- object$S
 	Sinv <- solve(S)
 	C <- object$C
 	SinvSmC <- Sinv %*% (S - C)
 	SinvS <- Sinv %*% S
 	n <- object$n
-	summary$GFI <- 1 - sum(diag(SinvSmC %*% SinvSmC))/sum(diag(SinvS %*% SinvS))
-	summary$AGFI <-  1 - (n*(n + 1)/(2*summary$df))*(1 - summary$GFI)
+	if ("GFI" %in% fit.indices) summary$GFI <- 1 - sum(diag(SinvSmC %*% SinvSmC))/sum(diag(SinvS %*% SinvS))
+	if ("AGFI" %in% fit.indices) summary$AGFI <-  1 - (n*(n + 1)/(2*summary$df))*(1 - summary$GFI)
 	summary
 }
 

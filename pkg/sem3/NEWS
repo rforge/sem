@@ -10,6 +10,8 @@ Changes to Version 3.1-0
 
     o Default reference.indicators=TRUE in cfa() (suggestion of Ken Bollen).
 
+    o Added fit.indices argument to summary() methods, along with fit.indices global option. AIC and BIC provided by default; other fit indices (including addition of RNI and IFI, suggested by Ken Bollen) available optionally.
+
     o Small fixes and changes.
 
 Changes to Version 3.0-0

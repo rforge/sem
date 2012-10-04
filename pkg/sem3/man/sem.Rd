@@ -981,6 +981,10 @@ anova(sem.mg, sem.mg.eq) # test equality constraints
 
 etc <- file.path(.path.package(package="sem")[1], "etc") # path to data and model files
 
+#   to get all fit indices (not recommended, but for illustration):
+
+opt <- options(fit.indices = c("GFI", "AGFI", "RMSEA", "NFI", "NNFI", "CFI", "RNI", "IFI", "SRMR", "AIC", "AICc", "BIC", "CAIC"))
+
 # ------------- Duncan, Haller and Portes peer-influences model ----------------------
 # A nonrecursive SEM with unobserved endogenous variables and fixed exogenous variables
 
@@ -1076,7 +1080,7 @@ summary(sem.bollen.gls)
 
 (mod.cfa.tests <- cfa(file=file.path(etc, "model-Tests.txt"), raw=TRUE))
 cfa.tests <- sem(mod.cfa.tests, data=Tests, na.action=na.pass, 
-                optimizer=optimizerNlm, objective=objectiveFIML2, fixed.x="Intercept")
+                optimizer=optimizerNlm, objective=objectiveFIML, fixed.x="Intercept")
 summary(cfa.tests)
 
 #------------ Holzinger and Swineford muiltigroup CFA example ----------------
@@ -1109,6 +1113,8 @@ if (require(MBESS)){ # for data
 	summary(sem.mg.eq)
 	
 	anova(sem.mg, sem.mg.eq) # test equality constraints
+    
+    options(opt) # restore fit.indices option
 	}
 }   
 

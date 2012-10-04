@@ -1,4 +1,4 @@
-# last modified 2012-10-02 by J. Fox
+# last modified 2012-10-04 by J. Fox
 
 ## this is the straightforward approach summing over observations:
 # objectiveFIML2 <- function(gradient=FALSE){
@@ -234,78 +234,83 @@ BIC.objectiveFIML <- function(object, saturated.logLik, ...) {
     deviance(object, saturated.logLik) - df*log(N)
 }
 
-summary.objectiveFIML <- function(object, digits=getOption("digits"), conf.level=.90, robust=FALSE, analytic.se=FALSE, 
-        saturated=FALSE, intercept="Intercept", saturated.logLik, ...) {
-  vcov <- vcov(object, robust=robust, analytic=analytic.se)
-  if (any(is.na(vcov))) stop("coefficient covariances cannot be computed")
-  if (missing(saturated.logLik)) saturated.logLik <- if (saturated) 
-      logLik(object, saturated=TRUE, intercept=intercept) else NULL
-  S <- attr(saturated.logLik, "C")
-  norm.res <- if (saturated) normalizedResiduals(object, S) else NA
-  se <- sqrt(diag(vcov))
-  z <- object$coeff/se
-  n.fix <- object$n.fix
-  n <- object$n
-  t <- object$t
-  C <- object$C
-  N <- object$N
-  df <- n*(n + 1)/2 - t - n.fix*(n.fix + 1)/2
-  if (saturated){
-    invC <- solve(C)
-    CSC <- invC %*% (S - C)
-    CSC <- CSC %*% CSC
-    CS <- invC %*% S
-    CS <- CS %*% CS
-    chisq <- 2*(saturated.logLik - logLik(object))
-    logLik <- NULL
-  }
-  else {
-    chisq <- NULL
-    logLik <- logLik(object)
-  }
-  Rsq <- RMSEA.U <- RMSEA.L <- RMSEA <- NFI <- NNFI <- CFI <- AGFI <- NA
-  RMSEA <- c(RMSEA, RMSEA.L, RMSEA.U, conf.level)
-  if (!is.null(object$coeff)){
-    var.names <- rownames(object$A)
-    ram <- object$ram[object$par.posn, , drop=FALSE]
-    par.code <- paste(var.names[ram[,2]], c('<---', '<-->')[ram[,1]],
-                      var.names[ram[,3]])
-    coeff <- data.frame(object$coeff, se, z, 2*pnorm(abs(z), lower.tail=FALSE), par.code)
-    names(coeff) <- c("Estimate", "Std Error", "z value", "Pr(>|z|)", " ")
-    row.names(coeff) <- names(object$coeff)
-  }
-  else coeff <- NULL
-  if(saturated){
-    AIC <- AIC(object, saturated.logLik=saturated.logLik)
-    AICc <- AICc(object, saturated.logLik=saturated.logLik)
-    BIC <- BIC(object, saturated.logLik=saturated.logLik)
-    CAIC <- CAIC(object, saturated.logLik=saturated.logLik)
-    SRMR <- sqrt(sum(standardizedResiduals(object, S=S)^2 * 
-      upper.tri(diag(n), diag=TRUE))/(n*(n + 1)/2))
-  }
-  else AIC <- AICc <- BIC <- CAIC <- SRMR <- NA
-#   if (robust) { 
-#     chisq.adjusted <- object$adj.obj$chisq.scaled
-#     chisqNull.adjusted <- chisqNull/object$adj.obj$c 
-#     NFI.adjusted <- (chisqNull.adjusted - chisq)/chisqNull.adjusted
-#     NNFI.adjusted <- (chisqNull.adjusted/dfNull - chisq.adjusted/df)/(chisqNull.adjusted/dfNull - 1)
-#     L1 <- max(chisq.adjusted - df, 0)
-#     L0 <- max(L1, chisqNull.adjusted - dfNull)
-#     CFI.adjusted <- 1 - L1/L0
-#   }
-#   else{
+summary.objectiveFIML <- function(object, digits=getOption("digits"), conf.level=.90,
+                                  fit.indices=c("AIC", "AICc", "BIC", "CAIC"),
+                                  saturated=FALSE, intercept="Intercept", saturated.logLik, ...) {
+    fit.indices <- if (missing(fit.indices)){
+        if (is.null(opt <- getOption("fit.indices"))) c("AIC", "BIC") else opt
+    }
+    else match.arg(fit.indices, several.ok=TRUE)
+    vcov <- vcov(object, robust=FALSE, analytic=FALSE)
+    if (any(is.na(vcov))) stop("coefficient covariances cannot be computed")
+    if (missing(saturated.logLik)) saturated.logLik <- if (saturated) 
+        logLik(object, saturated=TRUE, intercept=intercept) else NULL
+    S <- attr(saturated.logLik, "C")
+    norm.res <- if (saturated) normalizedResiduals(object, S) else NA
+    se <- sqrt(diag(vcov))
+    z <- object$coeff/se
+    n.fix <- object$n.fix
+    n <- object$n
+    t <- object$t
+    C <- object$C
+    N <- object$N
+    df <- n*(n + 1)/2 - t - n.fix*(n.fix + 1)/2
+    if (saturated){
+        invC <- solve(C)
+        CSC <- invC %*% (S - C)
+        CSC <- CSC %*% CSC
+        CS <- invC %*% S
+        CS <- CS %*% CS
+        chisq <- 2*(saturated.logLik - logLik(object))
+        logLik <- NULL
+    }
+    else {
+        chisq <- NULL
+        logLik <- logLik(object)
+    }
+    Rsq <- RMSEA.U <- RMSEA.L <- RMSEA <- NFI <- NNFI <- CFI <- AGFI <- SRMR <- NA
+    RMSEA <- c(RMSEA, RMSEA.L, RMSEA.U, conf.level)
+    if (!is.null(object$coeff)){
+        var.names <- rownames(object$A)
+        ram <- object$ram[object$par.posn, , drop=FALSE]
+        par.code <- paste(var.names[ram[,2]], c('<---', '<-->')[ram[,1]],
+                          var.names[ram[,3]])
+        coeff <- data.frame(object$coeff, se, z, 2*pnorm(abs(z), lower.tail=FALSE), par.code)
+        names(coeff) <- c("Estimate", "Std Error", "z value", "Pr(>|z|)", " ")
+        row.names(coeff) <- names(object$coeff)
+    }
+    else coeff <- NULL
+    if(saturated){
+        AIC <- if ("AIC" %in% fit.indices) AIC(object, saturated.logLik=saturated.logLik) else NA
+        AICc <- if ("AICc" %in% fit.indices) AICc(object, saturated.logLik=saturated.logLik) else NA
+        BIC <- if ("BIC" %in% fit.indices) BIC(object, saturated.logLik=saturated.logLik) else NA
+        CAIC <- if ("CAIC" %in% fit.indices)  CAIC(object, saturated.logLik=saturated.logLik) else NA
+    #         SRMR <- if ("SRMR" %in% fit.indices  && !object$raw) sqrt(sum(standardizedResiduals(object, S=S)^2 * 
+    #             upper.tri(diag(n), diag=TRUE))/(n*(n + 1)/2)) else NA
+    }
+    else AIC <- AICc <- BIC <- CAIC <- NA
+    #   if (robust) { 
+    #     chisq.adjusted <- object$adj.obj$chisq.scaled
+    #     chisqNull.adjusted <- chisqNull/object$adj.obj$c 
+    #     NFI.adjusted <- (chisqNull.adjusted - chisq)/chisqNull.adjusted
+    #     NNFI.adjusted <- (chisqNull.adjusted/dfNull - chisq.adjusted/df)/(chisqNull.adjusted/dfNull - 1)
+    #     L1 <- max(chisq.adjusted - df, 0)
+    #     L0 <- max(L1, chisqNull.adjusted - dfNull)
+    #     CFI.adjusted <- 1 - L1/L0
+    #   }
+    #   else{
     chisq.adjusted <- chisqNull.adjusted <- NFI.adjusted <- NNFI.adjusted <- CFI.adjusted <- NULL
-#   }
-  ans <- list(chisq=chisq, logLik=logLik, df=df, chisqNull=chisqNull, dfNull=NA,
-              GFI=NULL, AGFI=AGFI, RMSEA=RMSEA, NFI=NFI, NNFI=NNFI, CFI=CFI, BIC=BIC, SRMR=SRMR, 
-              AIC=AIC, AICc=AICc, CAIC=CAIC, Rsq=Rsq,
-              chisq.adjusted=chisq.adjusted, chisqNull.adjusted=chisqNull.adjusted, NFI.adjusted=NFI.adjusted,
-              NNFI.adjusted=NNFI.adjusted, CFI.adjusted=CFI.adjusted,
-              norm.res=norm.res, coeff=coeff, digits=digits, 
-              iterations=object$iterations, aliased=object$aliased, raw=object$raw,
-              robust=robust, robust.vcov=object$robust.vcov, adj.obj=object$adj.obj)
-  class(ans) <- "summary.objectiveML"
-  ans
+    #   }
+    ans <- list(chisq=chisq, logLik=logLik, df=df, chisqNull=chisqNull, dfNull=NA,
+                GFI=NULL, AGFI=AGFI, RMSEA=RMSEA, NFI=NFI, NNFI=NNFI, CFI=CFI, BIC=BIC, SRMR=SRMR, 
+                AIC=AIC, AICc=AICc, CAIC=CAIC, Rsq=Rsq,
+                chisq.adjusted=chisq.adjusted, chisqNull.adjusted=chisqNull.adjusted, NFI.adjusted=NFI.adjusted,
+                NNFI.adjusted=NNFI.adjusted, CFI.adjusted=CFI.adjusted,
+                norm.res=norm.res, coeff=coeff, digits=digits, 
+                iterations=object$iterations, aliased=object$aliased, raw=object$raw,
+                robust=FALSE, robust.vcov=NULL, adj.obj=NULL)
+    class(ans) <- "summary.objectiveML"
+    ans
 }
 
 print.objectiveFIML <- function(x, saturated=FALSE, ...) {
