@@ -6,7 +6,7 @@ useDynLib(sem, csemSolve)
 import(stats)
 
 export(ram, standardizedResiduals, normalizedResiduals, readMoments, 
-    startvalues,
+    startvalues, startvalues2,
     standardizedCoefficients, stdCoef, tsls, sem, modIndices, pathDiagram,
     specifyModel, specifyEquations, cfa, bootSem, rawMoments, cov2raw, fscores,
     AICc, CAIC,

@@ -160,11 +160,11 @@ parse.path <- function(path) {
 
 ## sem() method for msemmod objects
 
-sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FALSE, fixed.x, param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
-		maxiter=5000, par.size = c("ones", "startvalues"), start.tol = 1e-06, startvalues=c("initial.fit", "startvalues"), initial.maxiter=1000,
+sem.msemmod <- function(model, S, N, start.fn=startvalues, group="Group", groups=names(model), raw=FALSE, fixed.x, param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
+		maxiter=5000, par.size = c("ones", "startvalues"), start.tol = 1e-06, start=c("initial.fit", "startvalues"), initial.maxiter=1000,
 		optimizer = optimizerMsem, objective = msemObjectiveML, ...){
 	par.size <- match.arg(par.size)
-	startvalues <- match.arg(startvalues)
+	start <- match.arg(start)
 	G <- length(groups)
 	if (length(model) != G || length(N) != G) 
 		stop("inconsistent number of groups in model (", length(model), "), S (", G, "), and N (", length(N), ") arguments")
@@ -207,19 +207,19 @@ sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FAL
 	logdetS <- sapply(S, function(s) log(det(unclass(s))))
 	sel.free.2 <- sel.free.1 <- arrows.2.free <- arrows.1.free <- arrows.2t <- arrows.2 <- arrows.1 <- 
 			two.free <- one.free <- one.head <- sel.free <- fixed <- par.posn <- correct <- J <- vector(mode="list", length=G)  
-	initial.iterations <- if (startvalues == "initial.fit") numeric(G) else NULL
+	initial.iterations <- if (start == "initial.fit") numeric(G) else NULL
 	for (g in 1:G){
 		mod <- model[[g]]
 		tt <- sum(mod[, 4] != 0)
 		mod[mod[, 4] != 0, 4] <- 1:tt
-		start <- if (startvalues == "initial.fit"){
+		startvals <- if (start == "initial.fit"){
 					prelim.fit <- sem(mod, S[[g]], N=N[[g]], raw=raw, param.names=as.character(1:tt), var.names=as.character(1:m[[g]]), 
 							maxiter=initial.maxiter)
 					initial.iterations[g] <- prelim.fit$iterations
 					coef(prelim.fit)
 				}
-				else startvalues(S[[g]], mod)
-		model[[g]][mod[, 4] != 0, 5] <- ifelse(is.na(mod[mod[, 4] != 0, 5]), start, mod[mod[, 4] != 0, 5])
+				else start.fn(S[[g]], mod)
+		model[[g]][mod[, 4] != 0, 5] <- ifelse(is.na(mod[mod[, 4] != 0, 5]), startvals, mod[mod[, 4] != 0, 5])
 		J[[g]] <- matrix(0, n[g], m[g])
 		correct[[g]] <- matrix(2, m[g], m[g])
 		diag(correct[[g]]) <- 1
@@ -244,14 +244,14 @@ sem.msemmod <- function(model, S, N, group="Group", groups=names(model), raw=FAL
 	}
 	unique.free.1 <- lapply(sel.free.1, unique)
 	unique.free.2 <- lapply(sel.free.2, unique)
-	start <- numeric(t)
-	for (j in 1:t) start[j] <- mean(unlist(sapply(model, function(r) r[r[, 4] == j, 5])), na.rm=TRUE)
+	startvals <- numeric(t)
+	for (j in 1:t) startvals[j] <- mean(unlist(sapply(model, function(r) r[r[, 4] == j, 5])), na.rm=TRUE)
 	model.description <- list(G=G, m=m, n=n, t=t, fixed=fixed, ram=model, sel.free=sel.free, arrows.1=arrows.1, 
 			one.head=one.head, arrows.2=arrows.2, arrows.2t=arrows.2t, J=J, S=S, logdetS=logdetS, 
 			N=N, raw=raw, correct=correct, unique.free.1=unique.free.1, unique.free.2=unique.free.2, 
 			arrows.1.free=arrows.1.free, arrows.2.free=arrows.2.free, param.names=param.names, 
 			var.names=var.names)
-	result <- optimizer(start=start, objective=objective, gradient=analytic.gradient,
+	result <- optimizer(start=startvals, objective=objective, gradient=analytic.gradient,
 			maxiter=maxiter, debug=debug, par.size=par.size, model.description=model.description, warn=warn, ...)
 	if (!is.na(result$iterations)) if(result$iterations >= maxiter) warning("maximum iterations exceeded")
 	result <- c(result, list(ram=model, param.names=param.names, var.names=var.names, group=group, groups=groups,

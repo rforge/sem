@@ -6,6 +6,7 @@
 \alias{sem.semmodList}
 \alias{sem.msemmod}
 \alias{startvalues}
+\alias{startvalues2}
 \alias{coef.sem}
 \alias{vcov.sem}
 \alias{df.residual.sem}
@@ -34,7 +35,7 @@
   	fixed.x=NULL, formula= ~ ., na.action=na.omit, robust=!missing(data), debug=FALSE, 
     optimizer=optimizerSem, objective=objectiveML, ...)
     
-\method{sem}{default}(model, S, N, raw=FALSE, data=NULL, 
+\method{sem}{default}(model, S, N, raw=FALSE, data=NULL, start.fn=startvalues,
     pattern.number=NULL, valid.data.patterns=NULL,
     use.means=TRUE, param.names, 
   	var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
@@ -44,13 +45,15 @@
 \method{sem}{semmodList}(model, S, N, data, raw=FALSE, fixed.x=NULL, 
 		robust=!missing(data), formula, group="Group", debug=FALSE, ...)
 		
-\method{sem}{msemmod}(model, S, N, group="Group", groups=names(model), raw=FALSE, fixed.x, 
+\method{sem}{msemmod}(model, S, N, start.fn=startvalues,
+        group="Group", groups=names(model), raw=FALSE, fixed.x, 
 		param.names, var.names, debug=FALSE, analytic.gradient=TRUE, warn=FALSE,
 		maxiter=5000, par.size = c("ones", "startvalues"), start.tol = 1e-06, 
-		startvalues=c("initial.fit", "startvalues"), initial.maxiter=1000,
+		start=c("initial.fit", "startvalues"), initial.maxiter=1000,
 		optimizer = optimizerMsem, objective = msemObjectiveML, ...)
     
 startvalues(S, ram, debug=FALSE, tol=1E-6)
+startvalues2(S, ram, debug=FALSE, tol=1E-6)
 
 \method{coef}{sem}(object, standardized=FALSE, ...)
 \method{coef}{msem}(object, ...)
@@ -89,6 +92,9 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
  	  \code{N}, the user may supply a data frame containing the data to which the model is to be fit.
  	  In a multigroup model, the \code{data} argument may be a list of data frames or a single data frame;
  	  in the later event, the factor given as the \code{group} argument is used to split the data into groups.}
+  \item{start.fn}{a function to compute startvalues for the free parameters of the model;
+  two functions are supplied, \code{startvalues} and a older version, \code{startvalues2},
+  the first of which is the default.}
   \item{na.action}{a function to process missing data, if raw data are supplied in the \code{data} argument.
     The default is \code{na.omit}, which returns only complete cases; specify \code{na.action=na.pass} to
     get FIML estimates in the presence of missing data from the \code{objectiveFIML} 
@@ -177,12 +183,12 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
     to be used to split the data into groups; otherwise, the name is arbitrary.}
   \item{groups}{a character vector giving the names of the groups; will be ignored if \code{group} is a factor
     in \code{data}.}
-  \item{startvalues}{if \code{"initial.fit"} (the default), start values 
+  \item{start}{if \code{"initial.fit"} (the default), start values 
     for a multi-group model are computed by first fitting the intra-group models separately by group;
     if \code{"startvalues"}, then start values are computed as for a single-group model.
     In some cases, the intra-group models may not be identified even if the multi-group model is, and
-    then \code{startvalues="initial.fit"} should be used.}
-  \item{initial.maxiter}{if \code{startvalues="initial.fit"} for a multi-group model, then
+    then \code{start="initial.fit"} should not be used.}
+  \item{initial.maxiter}{if \code{start="initial.fit"} for a multi-group model, then
     \code{initial.maxiter} gives the maximum number of iterations for each initial intra-group fit.}
 } 
 
@@ -288,7 +294,7 @@ startvalues(S, ram, debug=FALSE, tol=1E-6)
   means). Usually \eqn{v} contains endogenous and exogenous observed and unobserved variables, but not
   error variables (see the examples below).
   
-  The \code{startvalues} function may be called directly, but is usually called by \code{sem.default}.
+  The \code{startvalues} function may be called directly, but is usually called by \code{sem.default}; \code{startvalues2} is an older version of this function that may be used alternatively; see the \code{startvalues} argument to \code{sem}.
 }
 
 \value{

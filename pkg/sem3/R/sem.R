@@ -1,4 +1,4 @@
-# last modified 2012-08-18 by J. Fox
+# last modified 2012-10-24 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -131,7 +131,7 @@ sem.semmod <- function(model, S, N, data, raw=identical(na.action, na.pass), obs
 	result
 }
 
-sem.default <- function(model, S, N, raw=FALSE, data=NULL, 
+sem.default <- function(model, S, N, raw=FALSE, data=NULL, start.fn=startvalues,
 		pattern.number=NULL, valid.data.patterns=NULL,
 		use.means=TRUE, param.names, 
 		var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
@@ -215,7 +215,7 @@ sem.default <- function(model, S, N, raw=FALSE, data=NULL,
 			ram[rows, 5] <- colMeans(data, na.rm=TRUE)[var.names[to[rows]]]
 		}
 		start <- if (any(is.na(ram[,5][par.posn])))
-					startvalues(S, ram, debug=debug, tol=start.tol)
+					start.fn(S, ram, debug=debug, tol=start.tol)
 				else ram[,5][par.posn]
 		typsize <- if (par.size == "startvalues") abs(start) else rep(1,t)
 		model.description <- list(data=data, 

@@ -12,6 +12,8 @@ Changes to Version 3.1-0
 
     o Added fit.indices argument to summary() methods, along with fit.indices global option. AIC and BIC provided by default; other fit indices (including addition of RNI and IFI, suggested by Ken Bollen) available optionally.
 
+    o New version of startvalues(); old version now named startvalues2().
+
     o Small fixes and changes.
 
 Changes to Version 3.0-0
