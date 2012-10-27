@@ -1,4 +1,4 @@
-# last modified 2012-10-04 by J. Fox
+# last modified 2012-10-25 by J. Fox
 
 ## this is the straightforward approach summing over observations:
 # objectiveFIML2 <- function(gradient=FALSE){
@@ -95,39 +95,191 @@
 # }
 
 ## this sums over distinct valid data patterns rather than observations:
-objectiveFIML2 <- function(gradient=FALSE){
-  result <- list(
-    objective = function(par, model.description){
-      with(model.description, {
-        A <- P <- matrix(0, m, m)
-        val <- ifelse (fixed, ram[,5], par[sel.free])
-        A[arrows.1] <- val[one.head]
-        P[arrows.2t] <- P[arrows.2] <- val[!one.head]
-        I.Ainv <- solve(diag(m) - A)
-        C <- J %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J)
-        f <- 0
-        log.2pi <- log(2*pi)
-        n.pat <- nrow(valid.data.patterns)
-        for (i in 1:n.pat){
-          sel <- valid.data.patterns[i, ]
-          X <- data[pattern.number == i, sel, drop=FALSE]
-          # note: in the matrix product X %*% solve(C[sel, sel]) %*% t(X))
-          #       only the trace is required and so it isn't necessary to form the whole product
-          # f <- f + sum(diag(X %*% solve(C[sel, sel]) %*% t(X))) + nrow(X)*(log.2pi + log(det(C[sel, sel])))
-          CC <- solve(C[sel, sel])
-          for (j in 1:nrow(X)){
-            f <- f + as.vector(X[j, ] %*% CC %*% X[j, ])
-          }
-          f <- f + nrow(X)*(log.2pi + log(det(C[sel, sel])))
-        }
-        f <- f/N
-        attributes(f) <- list(C=C, A=A, P=P)
-        f
-      })
-    }
-  )
-  class(result) <- "semObjective"
-  result
+objectiveFIML2 <- function(gradient=TRUE, hessian=FALSE){
+
+## the following two functions are commented since right now we require the package matriccalc when loading sem.		
+#				commutation <- function( m, n )
+#				{
+						# this function return a permutation matrix T_(m, n) which
+						# have the following definition:
+						# T_(m, n)vec(A) = vec(A^T)
+						# where A is a m-by-n matrix.
+						# T_(m, n) is an orthogonal matrix. T_(m, n)=T(n, m)^T
+						# Magnus,  J. R. and H. Neudecker (1979). The commutation matrix: some properties and applica- tions,  The Annals of Statistics,  7(2),  381-394.
+						# a square mn-by-mn matrix partioned into mn submatrices of n-by-m such that the i, jth matrix has a 1 in its j, ith position,  others are zeros. 
+
+#						p <- m * n
+#						C <- matrix( 0, nrow=p, ncol=p )
+#						r <- 0
+#						for ( i in 1:m ) {
+#								c <- i # the ith row submatrix
+#								for ( j in 1:n ) { # the ith row,  jth column submatrix
+#										r <- r + 1 
+#										C[r,c] <- 1  # the (j, i) enttry
+#										c <- c + m # for the next submatrix
+#								}
+#						}
+#						return( C )
+#				}
+
+#				vec <- function( x )
+#				{
+            ## a matrix (m, n) to a vec matrix  (1*(m*n))
+#						return( t( t( as.vector( x ) ) ) )
+#				}
+
+				extendMatrix <- function(selA, sel)
+				{
+						nsel <- length(sel);
+						A <- matrix(data=0, nrow=nsel, ncol=nsel);
+						B <- matrix(data=0, nrow=nsel, ncol=ncol(selA));
+						iselA <- 1
+						#extend row
+						for(i in (1:nsel)) {
+								if(sel[i])
+								{
+										B[i, ] = selA[iselA, ];
+										iselA <- iselA + 1;
+								}
+						}
+						#extend column
+						iselA <- 1;
+						for(i in (1:nsel))
+						{
+								if(sel[i])
+								{
+										A[, i]=B[, iselA];
+										iselA <- iselA + 1;
+								}
+						}
+						A
+				}
+
+
+				result <- list(
+											 objective = function(par, model.description){
+													 with(model.description, {
+																A <- P <- matrix(0, m, m)
+													 val <- ifelse (fixed, ram[,5], par[sel.free])
+													 A[arrows.1] <- val[one.head]
+													 P[arrows.2t] <- P[arrows.2] <- val[!one.head]
+													 I.Ainv <- solve(diag(m) - A)
+													 C <- J %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J)
+													 f <- 0
+													 grad <- NULL
+
+
+													 dfdC <- matrix(data=0.0, nrow=nrow(C), ncol=ncol(C))
+
+													 log.2pi <- log(2*pi)
+													 n.pat <- nrow(valid.data.patterns)
+													 for (i in 1:n.pat){
+															 sel <- valid.data.patterns[i, ]
+															 X <- data[pattern.number == i, sel, drop=FALSE]
+															 Ci <- C[sel, sel]
+															 Cinv <- solve(Ci)
+															 # note: in the matrix product X %*% solve(C[sel, sel]) %*% t(X))
+															 #       only the trace is required and so it isn't necessary to form the whole product
+															 #	 f <- f + sum(diag(X %*% Cinv %*% t(X))) + nrow(X)*(log.2pi + log(det(Ci)))
+															 for (j in 1:nrow(X)){
+																	 f <- f + as.vector(X[j, ] %*% Cinv %*% X[j, ])
+															 }
+															 f <- f + nrow(X)*(log.2pi + log(det(Ci)))
+
+															 #gradient
+															 if(gradient)
+															 {
+																	 dfdCi <- nrow(X)*t(vec(t(Cinv))) - t(vec(t(X))) %*% (X %x% diag(nrow(Cinv))) %*% (t(Cinv) %x% Cinv)
+																	 dfdCiExtend <- extendMatrix(matrix(dfdCi, nrow(Cinv), ncol(Cinv)), sel);
+																	 dfdC <- dfdC + dfdCiExtend;
+															 }
+													 }
+													 f <- f/N
+													 if(gradient)
+													 {
+															 dfdC <- t(vec(dfdC/N))   #dfdC is a 1*(n^2) matrix.
+
+															 dCdP <- (J %*% I.Ainv) %x% (J %*% I.Ainv)
+
+															 B <- J %*% I.Ainv
+															 dBdA <- (diag(m) %x% J) %*% (t(I.Ainv) %x% I.Ainv)
+															 Tmn <- commutation.matrix(nrow(B),ncol(B))
+															 dCdA <- (((B %*% t(P)) %x% diag(nrow(B)) )+(diag(nrow(B)) %x% B) %*% Tmn %*% (P %x% diag(nrow(B)))) %*% dBdA
+															 dfdP <- t(vec(correct)) * (dfdC %*% dCdP)
+															 dfdA <- dfdC %*% dCdA
+
+															 grad <- rep(0,t)
+															 myarrows.1.free <- rep(0,nrow(arrows.1.free))
+															 myarrows.2.free <- rep(0,nrow(arrows.2.free))
+
+															 for(i in 1:nrow(arrows.1.free)) myarrows.1.free[i] <- (arrows.1.free[i,][2]-1)*m+arrows.1.free[i,][1]
+															 for(i in 1:nrow(arrows.2.free)) myarrows.2.free[i] <- (arrows.2.free[i,][2]-1)*m+arrows.2.free[i,][1]
+
+
+															 grad[sort(unique.free.1)] <- tapply(t(dfdA)[myarrows.1.free],ram[ram[,1]==1 & ram[,4]!=0, 4], sum)
+															 grad[sort(unique.free.2)] <- tapply(t(dfdP)[myarrows.2.free],ram[ram[,1]==2 & ram[,4]!=0, 4], sum)
+													 }
+
+													 attributes(f) <- list(C=C, A=A, P=P, gradient=grad)
+													 f
+})
+											 }
+				)
+				if (gradient)
+						result$gradient <- function(par, model.description){
+								with(model.description, {
+										 A <- P <- matrix(0, m, m)
+								val <- ifelse (fixed, ram[,5], par[sel.free])
+								A[arrows.1] <- val[one.head]
+								P[arrows.2t] <- P[arrows.2] <- val[!one.head]
+								I.Ainv <- solve(diag(m) - A)
+								C <- J %*% I.Ainv %*% P %*% t(I.Ainv) %*% t(J)
+
+								dfdC <- matrix(data=0.0, nrow=nrow(C), ncol=ncol(C))
+
+								n.pat <- nrow(valid.data.patterns)
+								for (i in 1:n.pat){
+										sel <- valid.data.patterns[i, ]
+										X <- data[pattern.number == i, sel, drop=FALSE]
+										Ci <- C[sel, sel]
+										Cinv <- solve(Ci)
+
+										dfdCi <- nrow(X)*t(vec(t(Cinv))) - t(vec(t(X))) %*% (X %x% diag(nrow(Cinv))) %*% (t(Cinv) %x% Cinv)
+										dfdCiExtend <- extendMatrix(matrix(dfdCi, nrow(Cinv), ncol(Cinv)), sel);
+										dfdC <- dfdC + dfdCiExtend;
+
+								}
+
+								dfdC <- t(vec(dfdC/N))   #dfdC is a 1*(n^2) matrix.
+
+								dCdP <- (J %*% I.Ainv) %x% (J %*% I.Ainv)
+
+								B <- J %*% I.Ainv
+								dBdA <- (diag(nrow(A)) %x% J) %*% (t(I.Ainv) %x% I.Ainv)
+								Tmn <- commutation.matrix(nrow(B),ncol(B))
+								dCdA <- (((B %*% t(P)) %x% diag(nrow(B)) )+(diag(nrow(B)) %x% B) %*% Tmn %*% (P %x% diag(nrow(B)))) %*% dBdA
+								dfdP <- dfdC %*% dCdP
+								dfdA <- dfdC %*% dCdA
+
+								grad <- rep(0,t)
+								myarrows.1.free <- rep(0,nrow(arrows.1.free))
+								myarrows.2.free <- rep(0,nrow(arrows.2.free))
+
+								for(i in 1:nrow(arrows.1.free)) myarrows.1.free[i] <- (arrows.1.free[i,][2]-1)*9+arrows.1.free[i,][1]
+								for(i in 1:nrow(arrows.2.free)) myarrows.2.free[i] <- (arrows.2.free[i,][2]-1)*9+arrows.2.free[i,][1]
+
+
+								grad[sort(unique.free.1)] <- tapply(t(dfdA)[myarrows.1.free],ram[ram[,1]==1 & ram[,4]!=0, 4], sum)
+								grad[sort(unique.free.2)] <- tapply(t(dfdP)[myarrows.2.free],ram[ram[,1]==2 & ram[,4]!=0, 4], sum)
+
+								attributes(grad) <- list(C=C, A=A, P=P, gradient=grad)
+								grad
+
+				}
+								)
+						}
+				class(result) <- "semObjective"
+				result
 }
 
 
@@ -182,45 +334,45 @@ logLik.objectiveFIML <- function(object, saturated=FALSE, intercept="Intercept",
 }
 
 residuals.objectiveFIML <- function(object, S, ...){
-  if (missing(S)) S <- attr(logLik(object, saturated=TRUE), "C")
-  S - object$C
+    if (missing(S)) S <- attr(logLik(object, saturated=TRUE), "C")
+    S - object$C
 }
 
 normalizedResiduals.objectiveFIML <- function(object, S, ...){
-  if (missing(S)) S <- attr(logLik(object, saturated=TRUE), "C")
-  res <- residuals(object, S=S)
-  N <- object$N - (!object$raw)
-  C <- object$C
-  c <- diag(C)
-  res/sqrt((outer(c, c) + C^2)/N)
+    if (missing(S)) S <- attr(logLik(object, saturated=TRUE), "C")
+    res <- residuals(object, S=S)
+    N <- object$N - (!object$raw)
+    C <- object$C
+    c <- diag(C)
+    res/sqrt((outer(c, c) + C^2)/N)
 }
 
 standardizedResiduals.objectiveFIML <- function(object, S, ...){
-  if (missing(S)) S <- attr(logLik(object, saturated=TRUE), "C")
-  res <- residuals(object, S=S)
-  s <- diag(S)
-  res/sqrt(outer(s, s))
+    if (missing(S)) S <- attr(logLik(object, saturated=TRUE), "C")
+    res <- residuals(object, S=S)
+    s <- diag(S)
+    res/sqrt(outer(s, s))
 }
 
 deviance.objectiveFIML <- function(object, saturated.logLik, ...){
-  if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
-  2*(as.vector(saturated.logLik) - logLik(object))
+    if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
+    2*(as.vector(saturated.logLik) - logLik(object))
 }
 
 AIC.objectiveFIML <- function(object, saturated.logLik, ..., k) {
-  if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
-  deviance(object, saturated.logLik) + 2*object$t
+    if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
+    deviance(object, saturated.logLik) + 2*object$t
 }
 
 AICc.objectiveFIML <- function(object, saturated.logLik, ...) {
-  if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
-  deviance(object, saturated.logLik) + 2*object$t*(object$t + 1)/(object$N - object$t - 1)
+    if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
+    deviance(object, saturated.logLik) + 2*object$t*(object$t + 1)/(object$N - object$t - 1)
 }
 
 CAIC.objectiveFIML <- function(object, saturated.logLik, ...) {
-  props <- semProps(object)
-  if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
-  deviance(object, saturated.logLik) - props$df*(1 + log(object$N))
+    props <- semProps(object)
+    if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
+    deviance(object, saturated.logLik) - props$df*(1 + log(object$N))
 }
 
 BIC.objectiveFIML <- function(object, saturated.logLik, ...) {
@@ -230,7 +382,7 @@ BIC.objectiveFIML <- function(object, saturated.logLik, ...) {
     t <- object$t
     df <- n*(n + 1)/2 - t - n.fix*(n.fix + 1)/2
     if (missing(saturated.logLik)) saturated.logLik <- logLik(object, saturated=TRUE)
-#    deviance(object, saturated.logLik) + object$t*log(object$N)
+    #    deviance(object, saturated.logLik) + object$t*log(object$N)
     deviance(object, saturated.logLik) - df*log(N)
 }
 
@@ -285,8 +437,8 @@ summary.objectiveFIML <- function(object, digits=getOption("digits"), conf.level
         AICc <- if ("AICc" %in% fit.indices) AICc(object, saturated.logLik=saturated.logLik) else NA
         BIC <- if ("BIC" %in% fit.indices) BIC(object, saturated.logLik=saturated.logLik) else NA
         CAIC <- if ("CAIC" %in% fit.indices)  CAIC(object, saturated.logLik=saturated.logLik) else NA
-    #         SRMR <- if ("SRMR" %in% fit.indices  && !object$raw) sqrt(sum(standardizedResiduals(object, S=S)^2 * 
-    #             upper.tri(diag(n), diag=TRUE))/(n*(n + 1)/2)) else NA
+        #         SRMR <- if ("SRMR" %in% fit.indices  && !object$raw) sqrt(sum(standardizedResiduals(object, S=S)^2 * 
+        #             upper.tri(diag(n), diag=TRUE))/(n*(n + 1)/2)) else NA
     }
     else AIC <- AICc <- BIC <- CAIC <- NA
     #   if (robust) { 
@@ -314,21 +466,21 @@ summary.objectiveFIML <- function(object, digits=getOption("digits"), conf.level
 }
 
 print.objectiveFIML <- function(x, saturated=FALSE, ...) {
-  n <- x$n
-  t <- x$t
-  n.fix <- x$n.fix
-  df <- n*(n + 1)/2 - t - n.fix*(n.fix + 1)/2
-  if (saturated){
-    cat("\n Model Chisquare = ", 2*(logLik(x, saturated=TRUE) - logLik(x)), 
-        "  Df = ", df, "\n\n")
-  }
-  else{
-    cat("\n Model log-likelihood = ", logLik(x), "  Df = ", df, "\n\n")
-  }
-  if (!is.null(x$coef)){
-    print(x$coeff)
-    if (!is.na(x$iterations)) cat("\n Iterations = ", x$iterations, "\n")
-    if (!is.null(x$aliased)) cat("\n Aliased parameters:", x$aliased, "\n")
-  }
-  invisible(x)
+    n <- x$n
+    t <- x$t
+    n.fix <- x$n.fix
+    df <- n*(n + 1)/2 - t - n.fix*(n.fix + 1)/2
+    if (saturated){
+        cat("\n Model Chisquare = ", 2*(logLik(x, saturated=TRUE) - logLik(x)), 
+            "  Df = ", df, "\n\n")
+    }
+    else{
+        cat("\n Model log-likelihood = ", logLik(x), "  Df = ", df, "\n\n")
+    }
+    if (!is.null(x$coef)){
+        print(x$coeff)
+        if (!is.na(x$iterations)) cat("\n Iterations = ", x$iterations, "\n")
+        if (!is.null(x$aliased)) cat("\n Aliased parameters:", x$aliased, "\n")
+    }
+    invisible(x)
 }

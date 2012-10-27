@@ -23,12 +23,12 @@
 # The following function is a wrapper to compute the objective function and its gradient.
 # If hessian=TRUE,  csem will return Hessian computed by the numerical method,  but
 # is flexible to return Hessian computed by the analytical solution.
-CompiledObjective <- function(par, model.description, hessian=FALSE, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"), ...)
+CompiledObjective <- function(par, model.description, gradient=TRUE, hessian=FALSE, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"), ...)
 {
 		if(missing(objective)) objective <- "objectiveML"
 		objective <- match.arg(objective)
 
-		res <- csem(model=model.description,  start=par, objective=objective,  opt.flag=0,   opts=list("hessian"=hessian, "check.analyticals"=FALSE), ...)
+		res <- csem(model=model.description,  start=par, objective=objective,  opt.flag=0,  gradient=gradient,  opts=list("hessian"=hessian, "check.analyticals"=FALSE), ...)
 		ret <- list();
 		ret$f <- res$minimum
 		ret$parameters <- res$estimate
@@ -41,12 +41,12 @@ CompiledObjective <- function(par, model.description, hessian=FALSE, objective=c
 		return(ret)
 }
 
-msemCompiledObjective <- function(par, model.description, hessian=FALSE, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"), ...)
+msemCompiledObjective <- function(par, model.description, gradient=TRUE, hessian=FALSE, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"), ...)
 {
 		if(missing(objective)) objective <- "objectiveML"
 		objective <- match.arg(objective)
 
-		res <- cmsem(model=model.description,  start=par, objective=objective,  opt.flag=0,   opts=list("hessian"=hessian, "check.analyticals"=FALSE), ...)
+		res <- cmsem(model=model.description,  start=par, objective=objective,  opt.flag=0, gradient=gradient,   opts=list("hessian"=hessian, "check.analyticals"=FALSE), ...)
 		AA <- PP <- CC <- vector(model.description$G,  mode="list")
 		indAP <- 1
 		indC <- 1
@@ -76,7 +76,7 @@ msemCompiledObjective <- function(par, model.description, hessian=FALSE, objecti
 }
 
 # The wrapper function for solving optimization problems. Please note that the objective function is written in C/C++,  we need to know the name.
-CompiledSolve <- function(model.description, start, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"),  typsize=rep(1.0, length(start)), debug=FALSE, maxiter=100,...)
+CompiledSolve <- function(model.description, start, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"),  gradient=TRUE, typsize=rep(1.0, length(start)), debug=FALSE, maxiter=100,...)
 {
 		if(missing(objective)) objective <- "objectiveML"
 		objective <- match.arg(objective)
@@ -84,6 +84,7 @@ CompiledSolve <- function(model.description, start, objective=c("objectiveML", "
 		stepmax=max(1000.0 * sqrt(sum((start/typsize)^2)),  1000.0)
 
 		res <- csem(model=model.description, start, opt.flag=1, typsize=typsize,objective=objective,  
+								gradient=gradient, 
 								opts=list("iterlim"=maxiter, "print.level"=if(debug) 2 else 0,
 													"hessian"=TRUE, "check.analyticals"=FALSE, "stepmax"=stepmax), ...)
 
@@ -92,6 +93,7 @@ CompiledSolve <- function(model.description, start, objective=c("objectiveML", "
 
 # The wrapper function for solving optimization problems. Please note that the objective function is written in C/C++,  we need to know the name.
 msemCompiledSolve <- function(model.description, start, objective=c("objectiveML", "objectiveGLS", "objectiveFIML"),  
+															gradient=TRUE, 
 															typsize=rep(1.0, length(start)), debug=FALSE, maxiter=100,gradtol=1e-6, ...)
 {
 		if(missing(objective)) objective <- "objectiveML"
@@ -100,6 +102,7 @@ msemCompiledSolve <- function(model.description, start, objective=c("objectiveML
 		stepmax=max(1000.0 * sqrt(sum((start/typsize)^2)),  1000.0)
 
 		res <- cmsem(model=model.description, start, opt.flag=1, typsize=typsize,objective=objective,  
+								 gradient=gradient, 
 								opts=list("iterlim"=maxiter, "print.level"=if(debug) 2 else 0,"gradtol"=gradtol, 
 													"hessian"=TRUE, "check.analyticals"=FALSE, "stepmax"=stepmax), ...)
 
@@ -139,6 +142,7 @@ msemCompiledSolve <- function(model.description, start, objective=c("objectiveML
 #optimze:0 we only compute the objective function,  gradients or hessian and return them.
 # 
 csem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), objective=c("objectiveML", "objectiveGLS", "objectiveFIML", "test_objective"),  
+								 gradient=TRUE, 
 								 opts=list("hessian"=1, "fscale"=1, "gradtol"=1e-6, "steptol"=1e-6, "stepmax"=max(1000 * sqrt(sum((start/typsize)^2)),  1000), "iterlim"=100, 
 													 "ndigit"=12,"print.level"=0, "check.analyticals"=1), 
 								 csem.environment = new.env(), ...){
@@ -217,6 +221,7 @@ csem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), ob
 
 		ret <- list( 
 		"objective" = objective, 
+		"gradient" = as.integer(gradient), 
 		"opt.flg" = as.integer(opt.flag), 
 		"start" = start, 
 		"options" = get.option.types(opts), 
@@ -270,6 +275,7 @@ csem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), ob
 }
 
 cmsem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), objective=c("objectiveML", "objectiveGLS", "objectiveFIML", "test_objective"),  
+									gradient=TRUE, 
 								 opts=list("hessian"=1, "fscale"=1, "gradtol"=1e-6, "steptol"=1e-6, "stepmax"=max(1000 * sqrt(sum((start/typsize)^2)),  1000), "iterlim"=100, 
 													 "ndigit"=12,"print.level"=0, "check.analyticals"=1), 
 								 csem.environment = new.env(), ...){
@@ -351,6 +357,7 @@ cmsem <- function(model=NULL, start=NULL,opt.flag=1,  typsize=rep(1, model$t), o
 
 		ret <- list( 
 								"objective" = objective, 
+								"gradient" = as.integer(gradient), 
 								"opt.flg" = as.integer(opt.flag), 
 								"start" = start, 
 								"options" = get.option.types(opts), 

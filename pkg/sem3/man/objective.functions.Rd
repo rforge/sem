@@ -39,8 +39,8 @@ objectiveML2(gradient=TRUE)
 objectiveGLS(gradient=FALSE)
 objectiveGLS2(gradient=FALSE)
 
-objectiveFIML(gradient=FALSE)
-objectiveFIML2(gradient=FALSE)
+objectiveFIML(gradient=TRUE, hessian=FALSE)
+objectiveFIML2(gradient=TRUE, hessian=FALSE)
 
 msemObjectiveML(gradient=TRUE)
 msemObjectiveML2(gradient=TRUE)

@@ -1,6 +1,6 @@
 Changes to Version 3.1-0
 
-    o Added FIML objective function for handling missing data. (Preliminary implementation for single-group models only, using compiled code but no analytic derivatives.)
+    o Added FIML objective function for handling missing data. (Preliminary implementation for single-group models only.)
 
     o Added miSem() for multiple imputation.
 

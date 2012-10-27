@@ -24,7 +24,7 @@ optimizerSem <- function(start, objective=objectiveML,
 			
 			if (!warn) save.warn <- options(warn=-1)
 
-			res <- CompiledSolve(model.description=model.description, start=start, objective=objectiveCompiled, typsize=typsize, debug=debug, maxiter=maxiter)
+			res <- CompiledSolve(model.description=model.description, start=start, objective=objectiveCompiled, gradient=gradient, typsize=typsize, debug=debug, maxiter=maxiter)
 
 			if (!warn) options(save.warn)
 			result <- list()

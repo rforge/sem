@@ -11,7 +11,6 @@
  *       Compiler:  gcc
  *
  *         Author:  Zhenghua Nie (ZHN), zhenghua.nie@gmail.com
- *         (in part adapting work by Saikat DebRoy,  R-core,  and Richard H. Jones.)
  *        Company:  McMaster University
  *
  *    Copyright (C) 2011 Zhenghua Nie. All Rights Reserved.
@@ -212,8 +211,9 @@ void setApplicationOptions(int &hessian, double &fscale, double &steptol, double
 		}
 
 		// loop over the string options and set them
-		//SEXP opts_string_names;
-		//opts_string_names = getAttrib(opts_string, R_NamesSymbol);
+		// Currently,  we don't have string options, so we commented the following two lines.
+		// SEXP opts_string_names;
+		// opts_string_names = getAttrib(opts_string, R_NamesSymbol);
 		for (int list_cnt=0;list_cnt<length( opts_string );list_cnt++) {
 
 				// opt_value will contain the first (should be the only one) element of the list
@@ -524,6 +524,69 @@ extern "C" {
 				for(int i=0; i < *n; ++i) *z++ = *x++ * *y++;
 				return;
 		}
+
+//column-wise
+		static double *Kronecker(const double *A,  const int &rowA,  const int &colA, const double *B,  const int &rowB, const int &colB)
+		{
+				double *C = new double[rowA*colA*rowB*colB];
+				double *CA = new double[rowA*colA*rowB*colB];
+				double *CB = new double[rowA*colA*rowB*colB];
+				double *tC = new double[rowA*colA*rowB*colB];
+				int rowC = rowA * rowB;
+				int colC = colA *colB;
+
+				for(int i = 0; i < colA; ++i)
+				{
+						for(int j = 0; j < colB; ++j)
+						{
+								Memcpy(&tC[i*rowA*colB+j*rowA], &A[i*rowA], rowA);
+						}
+				}
+				if(SEM_DEBUG)
+						printMatrix(tC, rowA, colA*colB, "CAHalf", 1);
+				MatrixTranspose(tC, colA*colB, rowA);
+				if(SEM_DEBUG)
+						printMatrix(tC, colC, rowA,  "CAHalfTans", 1);
+
+				for(int i = 0; i < rowB; ++i)
+				{
+						for(int j = 0; j < rowA; ++j)
+						{
+								Memcpy(&CA[j*colC*rowB+i*colC],&tC[j*colC] , colC);
+						}
+				}
+				if(SEM_DEBUG)
+						printMatrix(CA, colC, rowC, "CAT", 1);
+				MatrixTranspose(CA, rowC, colC);
+				if(SEM_DEBUG)
+						printMatrix(CA, rowC, colC, "CA", 1);
+
+				for(int i = 0; i < colB; ++i)
+				{
+						for(int j = 0; j < rowA; ++j)
+						{
+								Memcpy(&tC[i*rowC+j*rowB],&B[i*rowB], rowB);
+						}
+				}
+				if(SEM_DEBUG)
+						printMatrix(tC, rowC, colB, "CBHalf", 1);
+				for(int i = 0; i < colA; ++i)
+				{
+						Memcpy(&CB[i*colB*rowC], tC, colB*rowC);
+				}
+				if(SEM_DEBUG)
+						printMatrix(CB, rowC, colC, "CB", 1);
+
+				int n = rowC*colC;
+				int incx = 1;
+				sempdot(&n, CA, &incx, CB, &incx, C);
+
+
+				delete(CA);
+				delete(CB);
+				delete(tC);
+				return(C);
+		}
 		/* 
 #this function will transfer into C code for generating matrix A and P with new parameters.
 # the index of par should be the same as start,  so we set par's names as start's names.
@@ -625,16 +688,17 @@ static void generate_AP(int n,  const double x[], double *A, double *P,  double 
 // input: valid.data.pattern
 static int *SubMatrixRow(SEXP A,  const int &row, const int &col, const int &ithrow)
 {
-		int *rowA = new int[col];  // the ith row of the matrix A
 		int *transA=new int[row*col];  // for row-wise
+		int *rowA = new int[col];  // the ith row of the matrix A
 		Memcpy(transA, INTEGER(AS_INTEGER(A)), row*col);
 
-		MatrixTranspose(transA, col, row);
+		MatrixTranspose(transA, col, row);   //column-wise
 
 		Memcpy(rowA, &transA[ithrow*col], col);
 
-		delete transA;
-		return rowA;
+		delete(transA);
+
+		return(rowA);
 
 }
 // Please note that R uses the column-wise to store matrices.
@@ -677,11 +741,85 @@ static double *SubMatrix(const double *A, const int *rA,  const int *cA, const i
 				}
 		}
 		if(SEM_DEBUG)
-		printMatrix(subA, row_subA, col_subA, "select rows", 0 );
+				printMatrix(subA, row_subA, col_subA, "select rows", 0 );
 
 		MatrixTranspose(subA, row_subA, col_subA);
 
+		delete(tmpA);
+
 		return(subA);
+}
+
+// commutation matrix
+static double *CommutationMatrix(const int &m, const int &n)
+{
+		int p = m*n;
+		double *C = new double[p*p];
+		memset(C, 0, p*p*sizeof(double));  //zero matrix.
+
+		int r, c, i, j;
+		r = 0;
+		for (i=0; i < m; ++i)
+		{
+				c = i;
+				for (j = 0; j < n; ++j)
+				{
+						C[r*p+c] = 1.0;
+						++r;
+						c += m;
+				}
+		}
+
+		return(C);
+}
+
+// vec
+static double *vec(const double *A, const int &row, const int &col) 
+{// the matrix is in the C order,  if the matrix is in the Fortran/R order,  we don't need this.
+		double *vecA = new double[row*col];
+
+		Memcpy(vecA, A, row*col);
+
+		MatrixTranspose(vecA, row, col);
+
+		return(vecA);
+}
+
+// extend matrix
+static double *ExtendMatrix(const double *selA, const int &row, const int &col, const int *sel, const int &nsel)
+{// selA is in the Fortran/R order (the column wise), 
+		double *A = new double[nsel*nsel];
+		double *B = new double[row*nsel];
+
+		memset(A, 0, nsel*nsel*sizeof(double));
+		memset(B, 0, nsel*row*sizeof(double));
+
+		int iselA, i;
+		iselA = 0;
+
+		for(i = 0; i < nsel; ++i)
+		{
+				if(sel[i])
+				{
+						Memcpy(&B[i*row], &selA[iselA*row], row);
+						++ iselA;
+				}
+		} //nsel*row
+		MatrixTranspose(B, nsel, row);
+
+		iselA = 0; 
+		for(i = 0; i < nsel; ++i)
+		{
+				if(sel[i])
+				{
+						Memcpy(&A[i*nsel], &B[iselA*nsel], nsel);
+						++ iselA;
+				}
+		}
+
+		delete(B);
+
+		return(A);
 }
 
 // this function will compute the Maximum Likelihood and gradients.
@@ -753,107 +891,112 @@ void objectiveML(int n, const double x[], double *f, double *g, double *h,  doub
 
 		//now we start to calculate the gradient.
 
-		double *grad_P, *grad_A;
+		if(state->have_gradient)
+		{
+				double *grad_P, *grad_A;
 
-		grad_P = new double[maxmn*maxmn];  //After the compuation,  grad_P is m-by-m.
-		grad_A = new double[maxmn*maxmn];  //After the compuation,  grad_A is m-by-m.
-		memset(grad_P, 0, maxmn*maxmn*sizeof(double));
-		memset(grad_A, 0, maxmn*maxmn*sizeof(double));
+				grad_P = new double[maxmn*maxmn];  //After the compuation,  grad_P is m-by-m.
+				grad_A = new double[maxmn*maxmn];  //After the compuation,  grad_A is m-by-m.
+				memset(grad_P, 0, maxmn*maxmn*sizeof(double));
+				memset(grad_A, 0, maxmn*maxmn*sizeof(double));
 
-		MatrixMultiTransAB(invA, m, m, REAL(model->J), modeln, m, C0);
-		if(SEM_DEBUG) printMatrix(C0, m, modeln, "t(I.Ainv) %*% t(J)", 1);
+				MatrixMultiTransAB(invA, m, m, REAL(model->J), modeln, m, C0);
+				if(SEM_DEBUG) printMatrix(C0, m, modeln, "t(I.Ainv) %*% t(J)", 1);
 
-		MatrixMulti(C0, m, modeln, invC, modeln, modeln, grad_P);
-		if(SEM_DEBUG) printMatrix(grad_P, m, modeln, "t(I.Ainv) %*% t(J) %*% Cinv", 1);
+				MatrixMulti(C0, m, modeln, invC, modeln, modeln, grad_P);
+				if(SEM_DEBUG) printMatrix(grad_P, m, modeln, "t(I.Ainv) %*% t(J) %*% Cinv", 1);
 
-		Memcpy(grad_A, C, modeln*modeln); //y, we use daxpy,  y=ax+y
-		Memcpy(C0, REAL(model->S), modeln*modeln); //y, we use daxpy,  y=ax+y
-		//F77_NAME(daxpy)(const int *n,  const double *alpha, 
-		//								const double *dx,  const int *incx, 
-		//								double *dy,  const int *incy);
-		double alpha = -1.0;
-		int incx = 1;
-		int mm = modeln*modeln;
+				Memcpy(grad_A, C, modeln*modeln); //y, we use daxpy,  y=ax+y
+				Memcpy(C0, REAL(model->S), modeln*modeln); //y, we use daxpy,  y=ax+y
+				//F77_NAME(daxpy)(const int *n,  const double *alpha, 
+				//								const double *dx,  const int *incx, 
+				//								double *dy,  const int *incy);
+				double alpha = -1.0;
+				int incx = 1;
+				int mm = modeln*modeln;
 
-		F77_CALL(daxpy)(&mm,&alpha, C0,&incx, grad_A, &incx); //grad_A = -C0 + grad_A ==>  grad_A = -S + C
-		if(SEM_DEBUG) printMatrix(grad_A, modeln, modeln, "(C-S)", 1);
+				F77_CALL(daxpy)(&mm,&alpha, C0,&incx, grad_A, &incx); //grad_A = -C0 + grad_A ==>  grad_A = -S + C
+				if(SEM_DEBUG) printMatrix(grad_A, modeln, modeln, "(C-S)", 1);
 
-		MatrixMulti(grad_P, m, modeln, grad_A, modeln, modeln, C0);
-		if(SEM_DEBUG) printMatrix(C0, m, modeln, "t(I.Ainv) %*% t(J) %*% Cinv %*% (C-S)", 1);
+				MatrixMulti(grad_P, m, modeln, grad_A, modeln, modeln, C0);
+				if(SEM_DEBUG) printMatrix(C0, m, modeln, "t(I.Ainv) %*% t(J) %*% Cinv %*% (C-S)", 1);
 
-		MatrixMulti(C0, m, modeln, invC, modeln, modeln, grad_P);
-		if(SEM_DEBUG) printMatrix(grad_P, m, modeln, "t(I.Ainv) %*% t(J) %*% Cinv %*% (C-S) %*% Cinv", 1);
+				MatrixMulti(C0, m, modeln, invC, modeln, modeln, grad_P);
+				if(SEM_DEBUG) printMatrix(grad_P, m, modeln, "t(I.Ainv) %*% t(J) %*% Cinv %*% (C-S) %*% Cinv", 1);
 
-		MatrixMulti(grad_P, m, modeln, REAL(model->J), modeln, m, C0);
-		if(SEM_DEBUG) printMatrix(C0, m, m, "t(I.Ainv) %*% t(J) %*% Cinv %*% (C-S) %*% Cinv %*% J", 1);
+				MatrixMulti(grad_P, m, modeln, REAL(model->J), modeln, m, C0);
+				if(SEM_DEBUG) printMatrix(C0, m, m, "t(I.Ainv) %*% t(J) %*% Cinv %*% (C-S) %*% Cinv %*% J", 1);
 
-		MatrixMulti(C0, m, m, invA, m, m, grad_A);
-		if(SEM_DEBUG) printMatrix(grad_A, m, m, "t(I.Ainv) %*% t(J) %*% Cinv %*% (C-S) %*% Cinv %*% J %*% I.Ainv ", 1);
+				MatrixMulti(C0, m, m, invA, m, m, grad_A);
+				if(SEM_DEBUG) printMatrix(grad_A, m, m, "t(I.Ainv) %*% t(J) %*% Cinv %*% (C-S) %*% Cinv %*% J %*% I.Ainv ", 1);
 
-		mm = m*m;
-		sempdot(&mm, REAL(model->correct), &incx, grad_A, &incx, grad_P);
-		if(SEM_DEBUG) printMatrix(grad_P, m, m, "correct * t(I.Ainv) %*% t(J) %*% Cinv %*% (C-S) %*% Cinv %*% J %*% I.Ainv ", 1);
+				mm = m*m;
+				sempdot(&mm, REAL(model->correct), &incx, grad_A, &incx, grad_P);
+				if(SEM_DEBUG) printMatrix(grad_P, m, m, "correct * t(I.Ainv) %*% t(J) %*% Cinv %*% (C-S) %*% Cinv %*% J %*% I.Ainv ", 1);
 
 
-		MatrixMulti(grad_P, m, m, P, m, m, C0);
-		if(SEM_DEBUG) printMatrix(C0, m, m, "grad.P %*% P", 1);
+				MatrixMulti(grad_P, m, m, P, m, m, C0);
+				if(SEM_DEBUG) printMatrix(C0, m, m, "grad.P %*% P", 1);
 
-		MatrixMultiTransB(C0, m, m,invA, m, m, grad_A );
-		if(SEM_DEBUG) printMatrix(grad_A, m, m, "grad.A = grad.P %*% P %*% t(I.Ainv)", 1);
+				MatrixMultiTransB(C0, m, m,invA, m, m, grad_A );
+				if(SEM_DEBUG) printMatrix(grad_A, m, m, "grad.A = grad.P %*% P %*% t(I.Ainv)", 1);
 
-		//The following code will produce gradients based on grad_A and grad_P.
-		//This is the implentation of "tapply" in R.
-		double *A_grad, *P_grad;
-		int nA;
-		int nP;
-		A_grad = new double[n];
-		P_grad = new double[n];
-		memset(A_grad, 0, n*sizeof(double));
-		memset(P_grad, 0, n*sizeof(double));
+				//The following code will produce gradients based on grad_A and grad_P.
+				//This is the implentation of "tapply" in R.
+				double *A_grad, *P_grad;
+				int nA;
+				int nP;
+				A_grad = new double[n];
+				P_grad = new double[n];
+				memset(A_grad, 0, n*sizeof(double));
+				memset(P_grad, 0, n*sizeof(double));
 
-		double *grad_Au,  *grad_Pu;
-		nA = length(model->arrows_1_free)/2;
-		nP = length(model->arrows_2_free)/2;
-		grad_Au = new double[nA];
-		grad_Pu = new double[nP];
-		int *tA = new int[max(max(nA*2, nP*2), max(length(model->unique_free_1), length(model->unique_free_2)))];
+				double *grad_Au,  *grad_Pu;
+				nA = length(model->arrows_1_free)/2;
+				nP = length(model->arrows_2_free)/2;
+				grad_Au = new double[nA];
+				grad_Pu = new double[nP];
+				int *tA = new int[max(max(nA*2, nP*2), max(length(model->unique_free_1), length(model->unique_free_2)))];
 
-		Memcpy(tA, INTEGER(AS_INTEGER(model->arrows_1_free)), length(model->arrows_1_free));
-		for(int i=0;i<nA;++i){
-				int ir = tA[i]-1;  //fortran to C
-				int il = tA[nA+i]-1;
-				grad_Au[i] = grad_A[ir+il*m];  //column-wise.
+				Memcpy(tA, INTEGER(AS_INTEGER(model->arrows_1_free)), length(model->arrows_1_free));
+				for(int i=0;i<nA;++i){
+						int ir = tA[i]-1;  //fortran to C
+						int il = tA[nA+i]-1;
+						grad_Au[i] = grad_A[ir+il*m];  //column-wise.
+				}
+				for(int i=0;i<nA;i++) {
+						A_grad[model->arrows_1_seq[i]-1] += grad_Au[i];
+				}
+
+				Memcpy(tA, INTEGER(AS_INTEGER(model->arrows_2_free)), nP*2);
+				for(int i=0;i<nP;++i){
+						int ir = tA[i]-1;
+						int il = tA[nP+i]-1;
+						grad_Pu[i] = grad_P[ir+il*m];  //column-wise.
+				}
+				for(int i=0;i<nP;i++) {
+						P_grad[model->arrows_2_seq[i]-1] += grad_Pu[i];
+				}
+
+				nA=length(model->unique_free_1);
+				Memcpy(tA, INTEGER(AS_INTEGER(model->unique_free_1)), nA);
+
+				for(int i=0;i<nA;++i) g[tA[i]-1] = A_grad[tA[i]-1];
+
+				nP=length(model->unique_free_2);
+				Memcpy(tA, INTEGER(AS_INTEGER(model->unique_free_2)), nP);
+				for(int i=0;i<nP;++i) g[tA[i]-1] = P_grad[tA[i]-1];
+
+				delete(tA);
+				delete(grad_Pu);
+				delete(grad_Au);
+				delete(P_grad);
+				delete(A_grad);
+				delete(grad_A);
+				delete(grad_P);
 		}
-		for(int i=0;i<nA;i++) {
-				A_grad[model->arrows_1_seq[i]-1] += grad_Au[i];
-		}
 
-		Memcpy(tA, INTEGER(AS_INTEGER(model->arrows_2_free)), nP*2);
-		for(int i=0;i<nP;++i){
-				int ir = tA[i]-1;
-				int il = tA[nP+i]-1;
-				grad_Pu[i] = grad_P[ir+il*m];  //column-wise.
-		}
-		for(int i=0;i<nP;i++) {
-				P_grad[model->arrows_2_seq[i]-1] += grad_Pu[i];
-		}
 
-		nA=length(model->unique_free_1);
-		Memcpy(tA, INTEGER(AS_INTEGER(model->unique_free_1)), nA);
-
-		for(int i=0;i<nA;++i) g[tA[i]-1] = A_grad[tA[i]-1];
-
-		nP=length(model->unique_free_2);
-		Memcpy(tA, INTEGER(AS_INTEGER(model->unique_free_2)), nP);
-		for(int i=0;i<nP;++i) g[tA[i]-1] = P_grad[tA[i]-1];
-
-		delete(tA);
-		delete(grad_Pu);
-		delete(grad_Au);
-		delete(P_grad);
-		delete(A_grad);
-		delete(grad_A);
-		delete(grad_P);
 		delete(invA);
 		delete(C0);
 		delete(invC);
@@ -1093,7 +1236,6 @@ void objectiveFIML(int n, const double x[], double *f, double *g, double *h,  do
 		int modeln = model->n;
 		int maxmn = (m > modeln ? m : modeln);
 
-
 		double *ImA = new double[m*m];
 
 		generate_AP(n, x, A, P, ImA, model);
@@ -1106,9 +1248,11 @@ void objectiveFIML(int n, const double x[], double *f, double *g, double *h,  do
 
 		double *invA;
 		double *C0;  //for matrix multiplication.
+		double *JAinv;
 
 
 		C0 = new double[maxmn*maxmn];  //After the compuation,  C is n-by-n.
+		JAinv = new double[modeln*m];  //for gradient.n-by-m
 		memset(C, 0, maxmn*maxmn*sizeof(double));
 		memset(C0, 0, maxmn*maxmn*sizeof(double));
 
@@ -1126,6 +1270,7 @@ void objectiveFIML(int n, const double x[], double *f, double *g, double *h,  do
 		}
 
 		MatrixMulti(REAL(model->J), nrows(model->J), ncols(model->J), invA, m, m, C0);
+		Memcpy(JAinv, C0, modeln*m);  // for gradient
 		if(SEM_DEBUG) 
 				printMatrix(C0, modeln, m, "J %*% I.Ainv", 1);
 
@@ -1143,14 +1288,18 @@ void objectiveFIML(int n, const double x[], double *f, double *g, double *h,  do
 
 		*f = 0.0;
 		int Npatterns = nrows(model->valid_data_patterns);  // number of patterns,  each row represents one pattern of the missing data.
+
+		int Npattern_number = length(model->pattern_number);   // equal to nrows(model->data)
+		int *pattern_number = new int[Npattern_number];
+
+		double *dfdC = new double[modeln*modeln];  //for gradient df/dC
+		memset(dfdC, 0, modeln*modeln*sizeof(double));
+
 		for(int i = 0; i < Npatterns; ++i)
 		{
 				int *sel = SubMatrixRow(model->valid_data_patterns, Npatterns, ncols(model->valid_data_patterns), i);
 				if(SEM_DEBUG) 
 						printMatrix(sel, 1, ncols(model->valid_data_patterns), "sel", 0);
-
-				int Npattern_number = length(model->pattern_number);   // equal to nrows(model->data)
-				int *pattern_number = new int[Npattern_number];
 
 				Memcpy(pattern_number, INTEGER(AS_INTEGER(model->pattern_number)), Npattern_number);
 				if(SEM_DEBUG) 
@@ -1177,12 +1326,12 @@ void objectiveFIML(int n, const double x[], double *f, double *g, double *h,  do
 
 				*f += row_subX * (log2Pi + log(detC));
 
-				MatrixInverse(subC, row_subC);
+				MatrixInverse(subC, row_subC);   // now subC is the inverse of C[sel, sel]
 				if(SEM_DEBUG) 
 						printMatrix(subC, row_subC, col_subC, "Inverse(C[sel, sel])", 1);
 
 				double *CC = new double[row_subX*col_subC];
-				double *CCX = new double[row_subX*row_subX];
+				double *CCX = new double[max(row_subX*max(col_subX, row_subX), row_subC*max(row_subC, col_subC))];
 
 				MatrixMulti(X, row_subX, col_subX, subC, row_subC, col_subC, CC);
 				if(SEM_DEBUG) 
@@ -1194,19 +1343,266 @@ void objectiveFIML(int n, const double x[], double *f, double *g, double *h,  do
 
 				*f += MatrixTrace(CCX, row_subX, row_subX);
 
+				// gradient
+
+				if(state->have_gradient)
+				{
+						int ndfdCi = row_subC*col_subC;
+						double *dfdCi = new double[ndfdCi];
+						memset(dfdCi, 0, ndfdCi*sizeof(double));
+
+						double *subC_T = new double[ndfdCi];   //transpose (C[sel, sel])^(-T)
+						Memcpy(subC_T, subC, ndfdCi);
+						MatrixTranspose(subC_T, col_subC, row_subC); 
+						if(SEM_DEBUG) 
+								printMatrix(subC_T, col_subC, row_subC, "(inv(C[sel, sel]))^T", 1);
+
+						int incx = 1;
+						//F77_NAME(daxpy)(const int *n,  const double *alpha, 
+						//								const double *dx,  const int *incx, 
+						//								double *dy,  const int *incy); y = ax+y
+						double alpha = static_cast<double>(row_subX);
+						F77_CALL(daxpy)(&ndfdCi,&alpha, subC_T,&incx, dfdCi, &incx); 
+
+						if(SEM_DEBUG) 
+								printMatrix(dfdCi, 1, ndfdCi, "nrow(X)*t(vec(t(inv(C[sel, sel]))))", 1);
+
+						int nX = row_subX*col_subX;
+						double *X_T = new double[nX];
+						Memcpy(X_T, X, nX);
+						MatrixTranspose(X_T, col_subX, row_subX);   // X: the column-wise
+						if(SEM_DEBUG) 
+								printMatrix(X_T, col_subX, row_subX, "X^T", 1);
+
+						double *IsubC = new double[ndfdCi];  //identity matrix 
+						memset(IsubC, 0, ndfdCi*sizeof(double));
+						for(int j = 0; j < row_subC; ++j) 
+								IsubC[j*col_subC + j] = 1.0;  // in fact,  row_subC = col_subC.
+
+						double *XkronI = Kronecker(X, row_subX, col_subX, IsubC, row_subC, col_subC);
+						if(SEM_DEBUG) 
+								printMatrix(XkronI, row_subX*row_subC, col_subX*col_subC, "X %x% diag(nrow(Cinv))", 1);
+
+						MatrixMulti(X_T, 1, nX, XkronI, row_subX*row_subC, col_subX*col_subC, CCX);
+						if(SEM_DEBUG) 
+								printMatrix(CCX, 1, ndfdCi, "t(vec(t(X))) %*% (X %x% diag(nrow(Cinv)))", 1);
+
+						double *CKronC = Kronecker(subC_T, col_subC, row_subC, subC, row_subC, col_subC );
+						if(SEM_DEBUG) 
+								printMatrix(CKronC, col_subC*row_subC, row_subC*col_subC, "t(Cinv) %x% Cinv", 1);
+
+						MatrixMulti(CCX, 1, ndfdCi, CKronC, ndfdCi, ndfdCi, IsubC); 
+						if(SEM_DEBUG) 
+								printMatrix(IsubC, 1, ndfdCi, "t(vec(t(X))) %*% (X %x% diag(nrow(Cinv))) %*% t(Cinv) %x% Cinv", 1);
+
+						alpha = -1.0;
+
+						F77_CALL(daxpy)(&ndfdCi,&alpha, IsubC, &incx, dfdCi, &incx); //
+						if(SEM_DEBUG) 
+								printMatrix(dfdCi, 1, ndfdCi, "dfdCi", 1);
+
+						double *dfdCiExtend = ExtendMatrix(dfdCi, row_subC, col_subC, sel, ncols(model->valid_data_patterns));  //modeln
+						if(SEM_DEBUG) 
+								printMatrix(dfdCiExtend, modeln, modeln, "dfdCiExtend", 1);
+
+						alpha = 1.0/static_cast<double>(model->N);
+						int nn = modeln*modeln;
+						F77_CALL(daxpy)(&nn,&alpha, dfdCiExtend, &incx, dfdC, &incx); //
+						if(SEM_DEBUG) 
+								printMatrix(dfdC, 1, nn, "dfdC = dfdC + dfdCi", 1);
+
+						delete(dfdCi);
+						delete(subC_T);
+						delete(X_T);
+						delete(IsubC);
+						delete(XkronI);
+						delete(CKronC);
+						delete(dfdCiExtend);
+				}
+
+
 				delete(sel);
-				delete(pattern_number);
 				delete(X);
 				delete(subC);
 				delete(CC);
 				delete(CCX);
+
 		}
 
 		*f /= static_cast<double>(model->N);
 
-		delete(invA);
-		delete(C0);
+		if(state->have_gradient)
+		{
+				double *dCdP = Kronecker(JAinv, modeln, m, JAinv, modeln, m);
+				if(SEM_DEBUG) 
+						printMatrix(dCdP, modeln*modeln, m*m, "dCdP = (J %*% I.Ainv) %x% (J %*% I.Ainv)", 1);
+
+				memset(ImA, 0, m*m*sizeof(double));
+				for(int i=0; i < m; ++i) ImA[i*m+i] = 1.0;
+				double *B = Kronecker(ImA, m, m, REAL(model->J), modeln, m);
+				if(SEM_DEBUG) 
+						printMatrix(B, modeln*m, m*m, "(diag(nrow(A)) %x% J)", 1);
+
+				double *tinvA = new double[m*m];
+				Memcpy(tinvA, invA, m*m);
+				MatrixTranspose(tinvA, m, m);
+				double *kinvA = Kronecker(tinvA, m, m, invA, m, m);
+				if(SEM_DEBUG) 
+						printMatrix(kinvA, m*m, m*m, "(t(I.Ainv) %x% I.Ainv)", 1);
+
+				double *dBdA = new double[modeln*m*m*m]; 
+				MatrixMulti(B, m*modeln, m*m, kinvA, m*m, m*m, dBdA);
+				if(SEM_DEBUG) 
+						printMatrix(dBdA, m*modeln, m*m, "(diag(nrow(A)) %x% J) %*% (t(I.Ainv) %x% I.Ainv)", 1);
+
+				double *Tmn = CommutationMatrix(m, modeln);  //column-wise
+				if(SEM_DEBUG) 
+						printMatrix(Tmn, modeln*m, modeln*m, "Tmn", 1);   //zhenghua,  check
+
+				double *dCdA1 = new double[modeln*m];
+				MatrixMultiTransB(JAinv, modeln, m, P, m, m, dCdA1);
+				if(SEM_DEBUG) 
+						printMatrix(dCdA1, modeln, m, "(B %*% t(P))", 1);
+
+				double *ImB = new double[modeln*modeln];
+				memset(ImB, 0, modeln*modeln*sizeof(double));
+				for(int i=0; i<modeln; ++i)
+						ImB[i*modeln+i] = 1.0;
+				double *dCdA2 = Kronecker(dCdA1, modeln, m, ImB, modeln, modeln);
+				if(SEM_DEBUG) 
+						printMatrix(dCdA2, modeln*modeln, modeln*m, "(B %*% t(P)) %x% diag(nrow(B))", 1);
+
+				double *dCdA30 = Kronecker(ImB, modeln, modeln, JAinv, modeln, m);
+				if(SEM_DEBUG) 
+						printMatrix(dCdA30, modeln*modeln, modeln*m, "(diag(nrow(B)) %x% B)", 1);
+
+				double *dCdA31 = new double[modeln*modeln*modeln*m];
+				MatrixMulti(dCdA30, modeln*modeln, modeln*m, Tmn, modeln*m, modeln*m, dCdA31);
+				if(SEM_DEBUG) 
+						printMatrix(dCdA31, modeln*modeln, modeln*m, "(diag(nrow(B)) %x% B) %*% Tmn", 1);
+
+				double *dCdA32 = Kronecker(P, m, m, ImB, modeln, modeln);
+				if(SEM_DEBUG) 
+						printMatrix(dCdA32, modeln*m, modeln*m, "P %x% diag(nrow(B))", 1);
+
+				double *dCdA33 = new double[modeln*modeln*modeln*m];
+				MatrixMulti(dCdA31, modeln*modeln, modeln*m, dCdA32, modeln*m, modeln*m, dCdA33);
+				if(SEM_DEBUG) 
+						printMatrix(dCdA33, modeln*modeln, modeln*m, "(diag(nrow(B)) %x% B) %*% Tmn %*% (P %x% diag(nrow(B))) ", 1);
+
+				double alpha = 1.0;
+				int mn = modeln*modeln*modeln*m;
+				int incx = 1;
+				F77_CALL(daxpy)(&mn,&alpha,dCdA2 , &incx, dCdA33, &incx); //
+				if(SEM_DEBUG) 
+						printMatrix(dCdA33, modeln*modeln, modeln*m, "(B %*% t(P)) %x% diag(nrow(B)) + (diag(nrow(B)) %x% B) %*% Tmn %*% (P %x% diag(nrow(B))) ", 1);
+
+
+				double *dCdA = new double[modeln*modeln*m*m];
+				MatrixMulti(dCdA33, modeln*modeln, modeln*m, dBdA, m*modeln, m*m, dCdA);
+				if(SEM_DEBUG) 
+						printMatrix(dCdA, modeln*modeln, m*m, "dCdA", 1);
+
+				double *dfdP0 = new double[m*m];
+				MatrixMulti(dfdC, 1, modeln*modeln, dCdP, modeln*modeln, m*m, dfdP0);
+				if(SEM_DEBUG) 
+						printMatrix(dfdP0, 1, m*m, "dfdP0", 1);
+
+				double *vcorr = vec(REAL(model->correct), m, m);
+				if(SEM_DEBUG) 
+						printMatrix(vcorr, 1, m*m, "correct", 1);
+
+				double *dfdP = new double[m*m];
+				int mm = m*m;
+				incx = 1;
+				sempdot(&mm, vcorr, &incx, dfdP0, &incx, dfdP);
+				if(SEM_DEBUG) 
+						printMatrix(dfdP, 1, m*m, "dfdP", 1);
+
+				double *dfdA = new double[m*m];
+				MatrixMulti(dfdC, 1, modeln*modeln, dCdA, modeln*modeln, m*m, dfdA);
+				if(SEM_DEBUG) 
+						printMatrix(dfdA, 1, m*m, "dfdA", 1);
+
+				//The following code will produce gradients based on grad_A and grad_P.
+				//This is the implentation of "tapply" in R.
+				double *A_grad, *P_grad;
+				int nA;
+				int nP;
+				A_grad = new double[n];
+				P_grad = new double[n];
+				memset(A_grad, 0, n*sizeof(double));
+				memset(P_grad, 0, n*sizeof(double));
+
+				double *grad_Au,  *grad_Pu;
+				nA = length(model->arrows_1_free)/2;
+				nP = length(model->arrows_2_free)/2;
+				grad_Au = new double[nA];
+				grad_Pu = new double[nP];
+				int *tA = new int[max(max(nA*2, nP*2), max(length(model->unique_free_1), length(model->unique_free_2)))];
+
+				Memcpy(tA, INTEGER(AS_INTEGER(model->arrows_1_free)), length(model->arrows_1_free));
+				for(int i=0;i<nA;++i){
+						int ir = tA[i]-1;  //fortran to C
+						int il = tA[nA+i]-1;
+						grad_Au[i] = dfdA[ir+il*m];  //column-wise.
+				}
+				for(int i=0;i<nA;i++) {
+						A_grad[model->arrows_1_seq[i]-1] += grad_Au[i];
+				}
+
+				Memcpy(tA, INTEGER(AS_INTEGER(model->arrows_2_free)), nP*2);
+				for(int i=0;i<nP;++i){
+						int ir = tA[i]-1;
+						int il = tA[nP+i]-1;
+						grad_Pu[i] = dfdP[ir+il*m];  //column-wise.
+				}
+				for(int i=0;i<nP;i++) {
+						P_grad[model->arrows_2_seq[i]-1] += grad_Pu[i];
+				}
+
+				nA=length(model->unique_free_1);
+				Memcpy(tA, INTEGER(AS_INTEGER(model->unique_free_1)), nA);
+
+				for(int i=0;i<nA;++i) g[tA[i]-1] = A_grad[tA[i]-1];
+
+				nP=length(model->unique_free_2);
+				Memcpy(tA, INTEGER(AS_INTEGER(model->unique_free_2)), nP);
+				for(int i=0;i<nP;++i) g[tA[i]-1] = P_grad[tA[i]-1];
+
+				delete(dCdP);
+				delete(B);
+				delete(tinvA);
+				delete(kinvA);
+				delete(dBdA);
+				delete(dCdA1);
+				delete(ImB);
+				delete(dCdA2);
+				delete(dCdA30);
+				delete(dCdA31);
+				delete(dCdA32);
+				delete(dCdA33);
+				delete(dCdA);
+				delete(dfdP0);
+				delete(vcorr);
+				delete(dfdP);
+				delete(dfdA);
+
+				delete(A_grad);
+				delete(P_grad);
+				delete(grad_Au);
+				delete(grad_Pu);
+				delete(tA);
+		}
+
 		delete(ImA);
+		delete(C0);
+		delete(JAinv);
+		delete(invA);
+
+		delete(pattern_number);
+		delete(dfdC);
+
 
 		return;
 }
@@ -1272,7 +1668,6 @@ void msem_objectiveFIML(int n, const double x[], double *f, double *g, double *h
 		delete C0;
 		delete grad;
 		delete state;
-		return;
 
 		return;
 }
@@ -1338,11 +1733,12 @@ SEXP csemSolve( SEXP args )
 		{
 				(myfcn_p) objectiveML,   //objective, gradient (iagflg[0]=1),  no hessian (iahflg[0]=0)
 				(myfcn_p) objectiveGLS,  //objective, no gradient (iagflg[1]=0), no hessian (iahflg[1]=0) 
-				(myfcn_p) objectiveFIML,  //objective, no gradient (iagflg[1]=0), no hessian (iahflg[1]=0) 
+				(myfcn_p) objectiveFIML,  //objective, gradient (iagflg[2]=1), no hessian (iahflg[1]=0) 
 				(myfcn_p) test_objective  //objective, gradient, hessian
 		};
-		const int iagflg[num_objs]={1, 0, 0, 1};  //gradients
+		const int iagflg[num_objs]={1, 0, 1, 1};  //gradients
 		const int iahflg[num_objs]={0, 0, 0, 1};  //hessian
+		int gradient = 1;                 //0: we don't use gradient to optimize.
 
 		int obj_ind = 0;  //default objective function.
 
@@ -1355,6 +1751,9 @@ SEXP csemSolve( SEXP args )
 				}
 		}
 		if(SEM_DEBUG) printSEXP(st, "Objective Function");
+
+		st = getListElement(args, "gradient");
+		gradient = INTEGER(st)[0];
 
 		int optimize;   //0: only compute the objective function,  gradients and  Hessian if it is provided.
 		st = getListElement(args, "opt.flg");
@@ -1485,7 +1884,7 @@ SEXP csemSolve( SEXP args )
 		if (check_analyticals==0) msg += 2 + 4;
 
 
-		solution = csemnlm(x0, model->t, iagflg[obj_ind], iahflg[obj_ind], hessian, typsiz, fscale, msg, ndigit, gradtol, 
+		solution = csemnlm(x0, model->t, iagflg[obj_ind]&gradient, iahflg[obj_ind], hessian, typsiz, fscale, msg, ndigit, gradtol, 
 						stepmax, steptol,  iterlim, model, (myfcn_p) objectiveFun[obj_ind], optimize);
 
 		UNPROTECT(num_prot);
@@ -1530,6 +1929,7 @@ SEXP cmsemSolve( SEXP args )
 		};
 		const int iagflg[num_objs]={1, 0, 0, 1};  //gradients
 		const int iahflg[num_objs]={0, 0, 0, 1};  //hessian
+		int gradient=1;
 
 		int obj_ind = 0;  //default objective function.
 
@@ -1542,6 +1942,9 @@ SEXP cmsemSolve( SEXP args )
 				}
 		}
 		if(SEM_DEBUG) printSEXP(st, "Objective Function");
+
+		st = getListElement(args, "gradient");
+		gradient = INTEGER(st)[0];
 
 		int optimize;   //0: only compute the objective function,  gradients and  Hessian if it is provided.
 		st = getListElement(args, "opt.flg");
@@ -1722,7 +2125,7 @@ SEXP cmsemSolve( SEXP args )
 		msg = 1+msg_print[print_level];
 		if (check_analyticals==0) msg += 2 + 4;
 
-		solution = cmsemnlm(x0, model->t, iagflg[obj_ind], iahflg[obj_ind], hessian, typsiz, fscale, msg, ndigit, gradtol, 
+		solution = cmsemnlm(x0, model->t, iagflg[obj_ind]&gradient, iahflg[obj_ind], hessian, typsiz, fscale, msg, ndigit, gradtol, 
 						stepmax, steptol,  iterlim, model, (msem_fcn_p) objectiveFun[obj_ind], optimize);
 
 		UNPROTECT(num_prot);
