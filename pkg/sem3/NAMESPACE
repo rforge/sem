@@ -1,4 +1,4 @@
-# last modified 2012-10-02 by J. Fox
+# last modified 2012-11-01 by J. Fox
 
 useDynLib(sem)
 useDynLib(sem, csemSolve)
@@ -66,6 +66,7 @@ S3method(print, msemModIndices)
 S3method(modIndices, objectiveML)
 S3method(modIndices, msemObjectiveML)
 S3method(pathDiagram, sem)
+S3method(pathDiagram, semmod)
 S3method(print, semeffects)     
 S3method(print, semmod)
 S3method(print, bootsem)
