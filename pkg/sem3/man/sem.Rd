@@ -39,7 +39,8 @@
     pattern.number=NULL, valid.data.patterns=NULL,
     use.means=TRUE, param.names, 
   	var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
-		analytic.gradient=TRUE, warn=FALSE, maxiter=1000, par.size=c("ones", "startvalues"), 
+		analytic.gradient=!identical(objective, objectiveFIML), 
+        warn=FALSE, maxiter=1000, par.size=c("ones", "startvalues"), 
 		start.tol=1E-6, optimizer=optimizerSem, objective=objectiveML, cls, ...)
 		
 \method{sem}{semmodList}(model, S, N, data, raw=FALSE, fixed.x=NULL, 
@@ -140,7 +141,8 @@ startvalues2(S, ram, debug=FALSE, tol=1E-6)
     (typically the observed and latent variables --- see below), given in their
     numerical order; default names are \code{Var1}, \ldots, \code{Var}\emph{m}.
     Note: Should not be specified when the model is given in symbolic form.}
-  \item{analytic.gradient}{if \code{TRUE} (the default), then analytic first derivatives are
+  \item{analytic.gradient}{if \code{TRUE} (the default, except for the \code{objectiveFIML} objective function,
+    where, at present, an analytic gradient slows down the computation), then analytic first derivatives are
     used in the maximization of the likelihood if the optimzer employed will accept them; 
     otherwise numeric derivatives are used, again if the optimizer will compute them.}
   \item{warn}{if \code{TRUE}, warnings produced by the optimization function will be printed.

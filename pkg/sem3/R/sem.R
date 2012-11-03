@@ -1,4 +1,4 @@
-# last modified 2012-10-24 by J. Fox
+# last modified 2012-11-03 by J. Fox
 
 sem <- function(model, ...){
 	if (is.character(model)) class(model) <- "semmod"
@@ -135,7 +135,7 @@ sem.default <- function(model, S, N, raw=FALSE, data=NULL, start.fn=startvalues,
 		pattern.number=NULL, valid.data.patterns=NULL,
 		use.means=TRUE, param.names, 
 		var.names, fixed.x=NULL, robust=!is.null(data), semmod=NULL, debug=FALSE,
-		analytic.gradient=TRUE, warn=FALSE, maxiter=1000, par.size=c("ones", "startvalues"), 
+		analytic.gradient=!identical(objective, objectiveFIML), warn=FALSE, maxiter=1000, par.size=c("ones", "startvalues"), 
 		start.tol=1E-6, optimizer=optimizerSem, objective=objectiveML, cls, ...){
 	ord <- function(x) 1 + apply(outer(unique(x), x, "<"), 2, sum)
 	is.triangular <- function(X) {
