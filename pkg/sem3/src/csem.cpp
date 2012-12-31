@@ -525,68 +525,36 @@ extern "C" {
 				return;
 		}
 
-//column-wise
-		static double *Kronecker(const double *A,  const int &rowA,  const int &colA, const double *B,  const int &rowB, const int &colB)
+
+//column_wise
+static double *Kronecker(const double *A,  const int &rowA, const int &colA, const double *B, const int &rowB, const int &colB)
+{
+		double *kron = new double[rowA*colA*rowB*colB];
+		int iA, jA, iB, jB;
+		int rowC = rowA*rowB;
+		int colC = colA*colB;
+
+		for(iA = 0; iA < colA; ++iA)
 		{
-				double *C = new double[rowA*colA*rowB*colB];
-				double *CA = new double[rowA*colA*rowB*colB];
-				double *CB = new double[rowA*colA*rowB*colB];
-				double *tC = new double[rowA*colA*rowB*colB];
-				int rowC = rowA * rowB;
-				int colC = colA *colB;
-
-				for(int i = 0; i < colA; ++i)
+				for(jA = 0; jA < rowA; ++jA)
 				{
-						for(int j = 0; j < colB; ++j)
+						double a = *A++;   // the matrix is column-wise.
+						const double *b = &B[0];
+						int M = iA * colB;
+						int N = jA * rowB;
+						for(iB = 0; iB < colB; ++iB)
 						{
-								Memcpy(&tC[i*rowA*colB+j*rowA], &A[i*rowA], rowA);
+								for(jB = 0; jB < rowB; ++jB)
+								{
+										kron[(M+iB)*rowC+N+jB] = a * *b++;   // the matrix is column-wise
+								}
 						}
 				}
-				if(SEM_DEBUG)
-						printMatrix(tC, rowA, colA*colB, "CAHalf", 1);
-				MatrixTranspose(tC, colA*colB, rowA);
-				if(SEM_DEBUG)
-						printMatrix(tC, colC, rowA,  "CAHalfTans", 1);
-
-				for(int i = 0; i < rowB; ++i)
-				{
-						for(int j = 0; j < rowA; ++j)
-						{
-								Memcpy(&CA[j*colC*rowB+i*colC],&tC[j*colC] , colC);
-						}
-				}
-				if(SEM_DEBUG)
-						printMatrix(CA, colC, rowC, "CAT", 1);
-				MatrixTranspose(CA, rowC, colC);
-				if(SEM_DEBUG)
-						printMatrix(CA, rowC, colC, "CA", 1);
-
-				for(int i = 0; i < colB; ++i)
-				{
-						for(int j = 0; j < rowA; ++j)
-						{
-								Memcpy(&tC[i*rowC+j*rowB],&B[i*rowB], rowB);
-						}
-				}
-				if(SEM_DEBUG)
-						printMatrix(tC, rowC, colB, "CBHalf", 1);
-				for(int i = 0; i < colA; ++i)
-				{
-						Memcpy(&CB[i*colB*rowC], tC, colB*rowC);
-				}
-				if(SEM_DEBUG)
-						printMatrix(CB, rowC, colC, "CB", 1);
-
-				int n = rowC*colC;
-				int incx = 1;
-				sempdot(&n, CA, &incx, CB, &incx, C);
-
-
-				delete(CA);
-				delete(CB);
-				delete(tC);
-				return(C);
 		}
+
+		return kron;
+}
+
 		/* 
 #this function will transfer into C code for generating matrix A and P with new parameters.
 # the index of par should be the same as start,  so we set par's names as start's names.
@@ -1606,6 +1574,119 @@ void objectiveFIML(int n, const double x[], double *f, double *g, double *h,  do
 
 		return;
 }
+
+void objectivelogLik(int n, const double x[], double *f, double *g, double *h,  double *A,  double *P, double *C, function_info *state)
+{
+		R_CheckUserInterrupt();
+
+		*A = csem_NaN; 
+		*P = csem_NaN;
+		*C = csem_NaN;
+
+		sem_object *semObject = state->model->semObject;
+		int ncolData = ncols(semObject->data);
+
+		double *C0 = new double[ncolData*ncolData];
+
+		memset(C0, 0, ncolData*ncolData*sizeof(double));
+
+		int posn_intercept = semObject->posn_intercept - 1;  // fortran to C
+
+		C0[posn_intercept*n+posn_intercept] = 1.0;
+
+
+		int ncolTri = ncols(semObject->tri);
+		int nrowTri = nrows(semObject->tri);
+		int *tri = new int[length(semObject->tri)];
+		Memcpy(tri, INTEGER(AS_INTEGER(semObject->tri)), length(semObject->tri));
+
+		//printMatrix(tri, nrowTri, ncolTri, "tri", 1);
+
+		for(int i = 0; i < ncolTri; ++i)
+		{
+				for(int j = 0; j < nrowTri; ++j)
+						if(tri[i*nrowTri + j])
+								C0[i*nrowTri + j] = *x++;
+						else
+								C0[i*nrowTri + j] = C0[j*nrowTri + i];
+
+		}  // C <- C + t(C) - diag(diag(C))
+
+		//printMatrix(C0, ncolData, ncolData, "C", 1);
+
+
+		*f = 0.0;
+		int Npatterns = nrows(semObject->valid_data_patterns);  // number of patterns,  each row represents one pattern of the missing data.
+
+		int Npattern_number = length(semObject->pattern_number);   // equal to nrows(model->data)
+		int *pattern_number = new int[Npattern_number];
+
+		//	double *dfdC = new double[ncolTri*nrowTri];  //for gradient df/dC
+		//	memset(dfdC, 0, ncolTri*nrowTri*sizeof(double));
+
+		for(int i = 0; i < Npatterns; ++i)
+		{
+				int *sel = SubMatrixRow(semObject->valid_data_patterns, Npatterns, ncols(semObject->valid_data_patterns), i);
+				if(SEM_DEBUG) 
+						printMatrix(sel, 1, ncols(semObject->valid_data_patterns), "sel", 0);
+
+				Memcpy(pattern_number, INTEGER(AS_INTEGER(semObject->pattern_number)), Npattern_number);
+				if(SEM_DEBUG) 
+						printMatrix(pattern_number, 1, Npattern_number, "pattern.number", 0);
+
+				for(int j = 0; j < Npattern_number; ++j)
+				{
+						pattern_number[j] = (pattern_number[j]==(i+1) ? 1 : 0);
+				}
+				if(SEM_DEBUG) 
+						printMatrix(pattern_number, 1, Npattern_number, "pattern.number", 0);
+
+				int row_subX, col_subX;
+				double *X = SubMatrix(REAL(AS_NUMERIC(semObject->data)),  pattern_number,  sel, Npattern_number, ncols(semObject->data),  row_subX, col_subX);
+				if(SEM_DEBUG) 
+						printMatrix(X, row_subX, col_subX, "X", 1);
+
+				int row_subC, col_subC;
+				double *subC = SubMatrix(C0, sel, sel, nrowTri, nrowTri, row_subC, col_subC);  //row_subC should be equal to col_subC;
+				if(SEM_DEBUG) 
+						printMatrix(subC, row_subC, col_subC, "C[sel, sel]", 1);
+
+				double detC = MatrixDeterminant(subC, row_subC, col_subC);
+
+				*f += row_subX * (log2Pi + log(detC));
+
+				MatrixInverse(subC, row_subC);   // now subC is the inverse of C[sel, sel]
+				if(SEM_DEBUG) 
+						printMatrix(subC, row_subC, col_subC, "Inverse(C[sel, sel])", 1);
+
+				double *CC = new double[row_subX*col_subC];
+				double *CCX = new double[max(row_subX*max(col_subX, row_subX), row_subC*max(row_subC, col_subC))];
+
+				MatrixMulti(X, row_subX, col_subX, subC, row_subC, col_subC, CC);
+				if(SEM_DEBUG) 
+						printMatrix(CC, row_subX, col_subC, "X %*% inv(C[sel, sel])", 1);
+
+				MatrixMultiTransB(CC, row_subX, col_subC, X, row_subX, col_subX, CCX);
+				if(SEM_DEBUG) 
+						printMatrix(CCX, row_subX, row_subX, "X %*% inv(C[sel, sel]) %*% X^T", 1);
+
+				*f += MatrixTrace(CCX, row_subX, row_subX);
+
+
+				delete(sel);
+				delete(X);
+				delete(subC);
+				delete(CC);
+				delete(CCX);
+
+		}
+
+
+		delete pattern_number;
+		delete C0;
+		delete tri;
+		return;
+}
 //
 // this function will compute  GLS.
 void msem_objectiveFIML(int n, const double x[], double *f, double *g, double *h,  double *A,  double *P, double *C, double *ff, msem_function_info *m_state)
@@ -1719,14 +1800,15 @@ SEXP csemSolve( SEXP args )
 
 		PROTECT(solution=args);
 
-		//			showArgs1(args);
+		//showArgs1(args);
 		// Define objective functions and their properties.
-		const int num_objs = 4;
+		const int num_objs = 5;
 		const string name_objs[num_objs] =
 		{
 				"objectiveML", 
 				"objectiveGLS", 
 				"objectiveFIML", 
+				"objectivelogLik", 
 				"test_objective"
 		};
 		const myfcn_p objectiveFun[num_objs]=
@@ -1734,10 +1816,11 @@ SEXP csemSolve( SEXP args )
 				(myfcn_p) objectiveML,   //objective, gradient (iagflg[0]=1),  no hessian (iahflg[0]=0)
 				(myfcn_p) objectiveGLS,  //objective, no gradient (iagflg[1]=0), no hessian (iahflg[1]=0) 
 				(myfcn_p) objectiveFIML,  //objective, gradient (iagflg[2]=1), no hessian (iahflg[1]=0) 
+				(myfcn_p) objectivelogLik,  //objective,  no gradient (iaglfg[1]=0i), no hessian (iahflg[1]=0)
 				(myfcn_p) test_objective  //objective, gradient, hessian
 		};
-		const int iagflg[num_objs]={1, 0, 1, 1};  //gradients
-		const int iahflg[num_objs]={0, 0, 0, 1};  //hessian
+		const int iagflg[num_objs]={1, 0, 1, 0, 1};  //gradients
+		const int iahflg[num_objs]={0, 0, 0, 0, 1};  //hessian
 		int gradient = 1;                 //0: we don't use gradient to optimize.
 
 		int obj_ind = 0;  //default objective function.
@@ -1759,138 +1842,218 @@ SEXP csemSolve( SEXP args )
 		st = getListElement(args, "opt.flg");
 		optimize = INTEGER(st)[0];
 
-		// model 
-		model_info *model;
+		model_info *model = NULL;
 
 		model = new model_info;
 
-		//model = (model_info *)R_alloc(1, sizeof(model_info));
 
-		st = getListElement(args, "logdetS");
-		model->logdetS = REAL(st)[0];
-		st = getListElement(args, "N");
-		model->N = INTEGER(st)[0];
-		st = getListElement(args, "t");
-		model->t = INTEGER(st)[0];
-		st = getListElement(args, "n");
-		model->n = INTEGER(st)[0];
-		st = getListElement(args, "m");
-		model->m = INTEGER(st)[0];
-		PROTECT(model->ram = getListElement(args, "ram"));
-		PROTECT(model->sel_free = getListElement(args, "sel.free"));
-		PROTECT(model->arrows_1 = getListElement(args, "arrows.1"));
-		PROTECT(model->arrows_1_free = getListElement(args, "arrows.1.free"));
-		PROTECT(model->one_head = getListElement(args, "one.head"));
-		PROTECT(model->arrows_2t = getListElement(args, "arrows.2t"));
-		PROTECT(model->arrows_2 = getListElement(args, "arrows.2"));
-		PROTECT(model->arrows_2_free = getListElement(args, "arrows.2.free"));
-		PROTECT(model->unique_free_1 = getListElement(args, "unique.free.1"));
-		PROTECT(model->unique_free_2 = getListElement(args, "unique.free.2"));
-		PROTECT(model->param_names = getListElement(args, "param.names"));
-		PROTECT(model->var_names = getListElement(args, "var.names"));
-		PROTECT(model->one_free = getListElement(args, "one.free"));
-		PROTECT(model->two_free = getListElement(args, "two.free"));
+		if(obj_ind < 3 )
+		{
+				// model 
 
-		PROTECT(model->S = getListElement(args, "S"));
-		PROTECT(model->invS = getListElement(args, "invS"));
-		PROTECT(model->fixed = getListElement(args, "fixed"));
-		PROTECT(model->J = getListElement(args, "J"));
-		PROTECT(model->correct = getListElement(args, "correct"));
-		num_prot += 19;
+				st = getListElement(args, "logdetS");
+				model->logdetS = REAL(st)[0];
+				st = getListElement(args, "N");
+				model->N = INTEGER(st)[0];
+				st = getListElement(args, "t");
+				model->t = INTEGER(st)[0];
+				st = getListElement(args, "n");
+				model->n = INTEGER(st)[0];
+				st = getListElement(args, "m");
+				model->m = INTEGER(st)[0];
+				PROTECT(model->ram = getListElement(args, "ram"));
+				PROTECT(model->sel_free = getListElement(args, "sel.free"));
+				PROTECT(model->arrows_1 = getListElement(args, "arrows.1"));
+				PROTECT(model->arrows_1_free = getListElement(args, "arrows.1.free"));
+				PROTECT(model->one_head = getListElement(args, "one.head"));
+				PROTECT(model->arrows_2t = getListElement(args, "arrows.2t"));
+				PROTECT(model->arrows_2 = getListElement(args, "arrows.2"));
+				PROTECT(model->arrows_2_free = getListElement(args, "arrows.2.free"));
+				PROTECT(model->unique_free_1 = getListElement(args, "unique.free.1"));
+				PROTECT(model->unique_free_2 = getListElement(args, "unique.free.2"));
+				PROTECT(model->param_names = getListElement(args, "param.names"));
+				PROTECT(model->var_names = getListElement(args, "var.names"));
+				PROTECT(model->one_free = getListElement(args, "one.free"));
+				PROTECT(model->two_free = getListElement(args, "two.free"));
 
-		PROTECT(model->data = getListElement(args, "data"));
-		PROTECT(model->pattern_number = getListElement(args, "pattern.number"));
-		PROTECT(model->valid_data_patterns = getListElement(args, "valid.data.patterns"));
-		num_prot += 3;
+				PROTECT(model->S = getListElement(args, "S"));
+				PROTECT(model->invS = getListElement(args, "invS"));
+				PROTECT(model->fixed = getListElement(args, "fixed"));
+				PROTECT(model->J = getListElement(args, "J"));
+				PROTECT(model->correct = getListElement(args, "correct"));
+				num_prot += 19;
+
+				PROTECT(model->data = getListElement(args, "data"));
+				PROTECT(model->pattern_number = getListElement(args, "pattern.number"));
+				PROTECT(model->valid_data_patterns = getListElement(args, "valid.data.patterns"));
+				num_prot += 3;
 
 
 
-		st = getListElement(args, "raw");
-		model->raw = INTEGER(st)[0];
+				st = getListElement(args, "raw");
+				model->raw = INTEGER(st)[0];
 
-		st = getListElement(args, "arrows.1.seq");
-		model->arrows_1_seq = (int *)R_alloc(length(st), sizeof(int)); 
-		Memcpy(model->arrows_1_seq, INTEGER(AS_INTEGER(st)), length(st));
+				st = getListElement(args, "arrows.1.seq");
+				model->arrows_1_seq = (int *)R_alloc(length(st), sizeof(int)); 
+				Memcpy(model->arrows_1_seq, INTEGER(AS_INTEGER(st)), length(st));
 
-		st = getListElement(args, "arrows.2.seq");
-		model->arrows_2_seq = (int *)R_alloc(length(st), sizeof(int)); 
-		Memcpy(model->arrows_2_seq, INTEGER(AS_INTEGER(st)), length(st));
+				st = getListElement(args, "arrows.2.seq");
+				model->arrows_2_seq = (int *)R_alloc(length(st), sizeof(int)); 
+				Memcpy(model->arrows_2_seq, INTEGER(AS_INTEGER(st)), length(st));
 
-		//Print if debug
-		if(SEM_DEBUG){
-				printSEXP(model->S, "\nMatrix S");
-				printSEXP(model->invS, "\nMatrix invS");
-				printSEXP(model->J, "\nMatrix J");
-				printSEXP(model->fixed, "\nVector fixed");
-				printSEXP(model->correct, "\nMatrix correct");
+				//Print if debug
+				if(SEM_DEBUG){
+						printSEXP(model->S, "\nMatrix S");
+						printSEXP(model->invS, "\nMatrix invS");
+						printSEXP(model->J, "\nMatrix J");
+						printSEXP(model->fixed, "\nVector fixed");
+						printSEXP(model->correct, "\nMatrix correct");
+				}
+
+				//initial values x0 and typsize
+				double *x0 = new double[model->t];
+				double *typsiz = new double[model->t];
+				//typsiz = (double *)R_alloc(model->t, sizeof(double));
+				int ind;
+				double sum = 0.0;
+
+				SEXP sx0 = getListElement(args, "start");
+				if(LENGTH(sx0) != model->t) error(("The number of variables are not consistent!\n"));
+
+				SEXP stypsiz = getListElement(args, "typsize");
+				Memcpy(typsiz, REAL(AS_NUMERIC(stypsiz)), model->t);
+
+				//x0 = (double *)R_alloc(model->t, sizeof(double));
+
+				for(ind=0;ind <model->t;++ind){
+						R_CheckUserInterrupt();
+						x0[ind]=REAL(sx0)[ind];
+						sum += (x0[ind]/typsiz[ind])*(x0[ind]/typsiz[ind]);
+				}
+
+				//options for optimization
+
+				double stepmax=1000*sqrt(sum);
+				stepmax = stepmax > 1000.0? stepmax: 1000.0;
+				int hessian; 
+				double fscale;
+				double steptol;
+				double gradtol;
+				int iterlim;
+				int ndigit;
+				int print_level;
+				int check_analyticals;
+				int msg=0;
+				int msg_print[]={8, 0, 16};
+
+				SEXP opts;
+
+				PROTECT(opts = getListElement(args, "options"));
+				setApplicationOptions(hessian, fscale, steptol, stepmax, iterlim, ndigit, print_level, check_analyticals,gradtol, opts );
+				UNPROTECT(1);
+
+				if(SEM_DEBUG) {
+						Rprintf("hessian: [%d]\n", hessian);
+						Rprintf("iterlim: [%d]\n", iterlim);
+						Rprintf("ndigit: [%d]\n", ndigit);
+						Rprintf("print.level: [%d]\n", print_level);
+						Rprintf("check.analyticals: [%d]\n", check_analyticals);
+						Rprintf("fscale: [%f]\n", fscale);
+						Rprintf("steptol: [%f]\n", steptol);
+						Rprintf("stepmax: [%f]\n", stepmax);
+						Rprintf("gradtol: [%f]\n", gradtol);
+				}
+
+				msg = 1+msg_print[print_level];
+				if (check_analyticals==0) msg += 2 + 4;
+
+
+				solution = csemnlm(x0, model->t, iagflg[obj_ind]&gradient, iahflg[obj_ind], hessian, typsiz, fscale, msg, ndigit, gradtol, 
+								stepmax, steptol,  iterlim, model, (myfcn_p) objectiveFun[obj_ind], optimize);
+
+				delete x0;
+				delete typsiz;
 		}
+		else
+		{
+				//for matrix A,  P,  C
+				model->m = 1;
+				model->n = 1;
 
-		//initial values x0 and typsize
-		double *x0 = new double[model->t];
-		double *typsiz = new double[model->t];
-		//typsiz = (double *)R_alloc(model->t, sizeof(double));
-		int ind;
-		double sum = 0.0;
+				sem_object *semObject = new sem_object;
 
-		SEXP sx0 = getListElement(args, "start");
-		if(LENGTH(sx0) != model->t) error(("The number of variables are not consistent!\n"));
+				st = getListElement(args, "t");
+				semObject->t = INTEGER(st)[0];
 
-		SEXP stypsiz = getListElement(args, "typsize");
-		Memcpy(typsiz, REAL(AS_NUMERIC(stypsiz)), model->t);
+				st = getListElement(args, "posn.intercept");
+				semObject->posn_intercept = INTEGER(st)[0];
 
-		//x0 = (double *)R_alloc(model->t, sizeof(double));
+				PROTECT(semObject->data = getListElement(args, "data"));
+				PROTECT(semObject->pattern_number = getListElement(args, "pattern.number"));
+				PROTECT(semObject->valid_data_patterns = getListElement(args, "valid.data.patterns"));
+				PROTECT(semObject->tri = getListElement(args, "tri"));
+				num_prot += 4;
 
-		for(ind=0;ind <model->t;++ind){
-				R_CheckUserInterrupt();
-				x0[ind]=REAL(sx0)[ind];
-				sum += (x0[ind]/typsiz[ind])*(x0[ind]/typsiz[ind]);
+				model->semObject = semObject;
+
+				//printSEXP(semObject->valid_data_patterns, "valid.data.patterns");
+				//printSEXP(semObject->pattern_number, "pattern.number");
+
+				//initial values x0 and typsize
+				double *x0 = new double[semObject->t];
+				double *typsiz = new double[semObject->t];
+
+				int ind;
+				double sum = 0.0;
+
+				SEXP sx0 = getListElement(args, "start");
+				if(LENGTH(sx0) != semObject->t) error(("The number of variables are not consistent!\n"));
+
+				SEXP stypsiz = getListElement(args, "typsize");
+				Memcpy(typsiz, REAL(AS_NUMERIC(stypsiz)), semObject->t);
+
+
+				for(ind=0;ind <semObject->t;++ind){
+						R_CheckUserInterrupt();
+						x0[ind]=REAL(sx0)[ind];
+						sum += (x0[ind]/typsiz[ind])*(x0[ind]/typsiz[ind]);
+				}
+
+				//options for optimization
+
+				double stepmax=1000*sqrt(sum);
+				stepmax = stepmax > 1000.0? stepmax: 1000.0;
+				int hessian; 
+				double fscale;
+				double steptol;
+				double gradtol;
+				int iterlim;
+				int ndigit;
+				int print_level;
+				int check_analyticals;
+				int msg=0;
+				int msg_print[]={8, 0, 16};
+
+				SEXP opts;
+
+				PROTECT(opts = getListElement(args, "options"));
+				setApplicationOptions(hessian, fscale, steptol, stepmax, iterlim, ndigit, print_level, check_analyticals,gradtol, opts );
+				UNPROTECT(1);
+
+				msg = 1+msg_print[print_level];
+				if (check_analyticals==0) msg += 2 + 4;
+
+				solution = csemnlm(x0, semObject->t, iagflg[obj_ind]&gradient, iahflg[obj_ind], hessian, typsiz, fscale, msg, ndigit, gradtol, 
+								stepmax, steptol,  iterlim, model, (myfcn_p) objectiveFun[obj_ind], optimize);
+
+				delete semObject;
+				delete x0;
+				delete typsiz;
 		}
-
-
-		//options for optimization
-
-		double stepmax=1000*sqrt(sum);
-		stepmax = stepmax > 1000.0? stepmax: 1000.0;
-		int hessian; 
-		double fscale;
-		double steptol;
-		double gradtol;
-		int iterlim;
-		int ndigit;
-		int print_level;
-		int check_analyticals;
-		int msg=0;
-		int msg_print[]={8, 0, 16};
-
-		SEXP opts;
-
-		PROTECT(opts = getListElement(args, "options"));
-		setApplicationOptions(hessian, fscale, steptol, stepmax, iterlim, ndigit, print_level, check_analyticals,gradtol, opts );
-		UNPROTECT(1);
-
-		if(SEM_DEBUG) {
-				Rprintf("hessian: [%d]\n", hessian);
-				Rprintf("iterlim: [%d]\n", iterlim);
-				Rprintf("ndigit: [%d]\n", ndigit);
-				Rprintf("print.level: [%d]\n", print_level);
-				Rprintf("check.analyticals: [%d]\n", check_analyticals);
-				Rprintf("fscale: [%f]\n", fscale);
-				Rprintf("steptol: [%f]\n", steptol);
-				Rprintf("stepmax: [%f]\n", stepmax);
-				Rprintf("gradtol: [%f]\n", gradtol);
-		}
-
-		msg = 1+msg_print[print_level];
-		if (check_analyticals==0) msg += 2 + 4;
-
-
-		solution = csemnlm(x0, model->t, iagflg[obj_ind]&gradient, iahflg[obj_ind], hessian, typsiz, fscale, msg, ndigit, gradtol, 
-						stepmax, steptol,  iterlim, model, (myfcn_p) objectiveFun[obj_ind], optimize);
 
 		UNPROTECT(num_prot);
+
 		delete model;
-		delete x0;
-		delete typsiz;
 
 		return(solution);
 
@@ -2137,4 +2300,5 @@ SEXP cmsemSolve( SEXP args )
 		return(solution);
 
 }
-}
+
+}  /* extern "C"  */

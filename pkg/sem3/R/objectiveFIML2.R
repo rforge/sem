@@ -283,55 +283,55 @@ objectiveFIML2 <- function(gradient=TRUE, hessian=FALSE){
 }
 
 
-logLik.objectiveFIML <- function(object, saturated=FALSE, intercept="Intercept", iterlim=1000, ...){
-    logLikSaturated <- function(object, iterlim, ...){
-        objective <- function(par){
-            C <- matrix(0, n, n)
-            C[posn.intercept, posn.intercept] <- 1
-            C[tri] <- par
-            C <- C + t(C) - diag(diag(C))
-            f <- 0
-            for (i in 1:n.pat){
-                sel <- valid.data.patterns[i, ]
-                X <- data[pattern.number == i, sel, drop=FALSE]
-                f <- f + sum(diag(X %*% solve(C[sel, sel]) %*% t(X))) + nrow(X)*(log.2pi + log(det(C[sel, sel])))
-            }
-            f
-        }
-        data <- object$data
-        valid <- !is.na(data)
-        valid.pattern <- apply(valid, 1, function(row) paste(row, collapse="."))
-        unique.patterns <- unique(valid.pattern)
-        pattern.number <- apply(outer(valid.pattern, unique.patterns, `==`), 1, which)
-        valid.data.patterns <- t(sapply(strsplit(unique.patterns, "\\."), as.logical))
-        n.pat <- nrow(valid.data.patterns) 
-        log.2pi <- log(2*pi)
-        n <- ncol(data)
-        N <- nrow(data)
-        C <- object$C
-        tri <- lower.tri(C, diag=TRUE)
-        posn.intercept <- which(rownames(C) == intercept)
-        tri[posn.intercept, posn.intercept] <- FALSE
-        start <- C[tri]
-        opt <- options(warn=-1)
-        on.exit(options(opt))
-        res <- nlm(objective, start, iterlim=iterlim)
-        logL <- - res$minimum/2
-        C <- matrix(0, n, n)
-        C[tri] <- res$estimate
-        C <- C + t(C) - diag(diag(C))
-        C[posn.intercept, posn.intercept] <- 1
-        list(logL=logL, C=C, code=res$code)
-    }
-    if (saturated) {
-        res <- logLikSaturated(object, iterlim=iterlim)
-        if (res$code > 3) warning("nlm return code = ", res$code)
-        logL <- res$logL
-        attr(logL, "C") <- res$C
-        return(logL)
-    }
-    else return(- object$criterion*object$N/2)
-}
+#logLik2.objectiveFIML <- function(object, saturated=FALSE, intercept="Intercept", iterlim=1000, ...){
+#    logLikSaturated <- function(object, iterlim, ...){
+#        objective <- function(par){
+#            C <- matrix(0, n, n)
+#            C[posn.intercept, posn.intercept] <- 1
+#            C[tri] <- par
+#            C <- C + t(C) - diag(diag(C))
+#            f <- 0
+#            for (i in 1:n.pat){
+#                sel <- valid.data.patterns[i, ]
+#                X <- data[pattern.number == i, sel, drop=FALSE]
+#                f <- f + sum(diag(X %*% solve(C[sel, sel]) %*% t(X))) + nrow(X)*(log.2pi + log(det(C[sel, sel])))
+#            }
+#            f
+#        }
+#        data <- object$data
+#        valid <- !is.na(data)
+#        valid.pattern <- apply(valid, 1, function(row) paste(row, collapse="."))
+#        unique.patterns <- unique(valid.pattern)
+#        pattern.number <- apply(outer(valid.pattern, unique.patterns, `==`), 1, which)
+#        valid.data.patterns <- t(sapply(strsplit(unique.patterns, "\\."), as.logical))
+#        n.pat <- nrow(valid.data.patterns) 
+#        log.2pi <- log(2*pi)
+#        n <- ncol(data)
+#        N <- nrow(data)
+#        C <- object$C
+#        tri <- lower.tri(C, diag=TRUE)
+#        posn.intercept <- which(rownames(C) == intercept)
+#        tri[posn.intercept, posn.intercept] <- FALSE
+#        start <- C[tri]
+#        opt <- options(warn=-1)
+#        on.exit(options(opt))
+#        res <- nlm(objective, start, iterlim=iterlim)
+#        logL <- - res$minimum/2
+#        C <- matrix(0, n, n)
+#        C[tri] <- res$estimate
+#        C <- C + t(C) - diag(diag(C))
+#        C[posn.intercept, posn.intercept] <- 1
+#        list(logL=logL, C=C, code=res$code)
+#    }
+#    if (saturated) {
+#        res <- logLikSaturated(object, iterlim=iterlim)
+#        if (res$code > 3) warning("nlm return code = ", res$code)
+#        logL <- res$logL
+#        attr(logL, "C") <- res$C
+#        return(logL)
+#    }
+#    else return(- object$criterion*object$N/2)
+#}
 
 residuals.objectiveFIML <- function(object, S, ...){
     if (missing(S)) S <- attr(logLik(object, saturated=TRUE), "C")

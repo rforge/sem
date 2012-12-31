@@ -514,10 +514,12 @@ from above in some direction,\n"\
     //typsiz = fixparam(typsize, &n);
 SEXP csemnlm(double *x0, int n, int iagflg,  int iahflg, int want_hessian, 
 				double *typsiz, double fscale, int msg, int ndigit, double gradtl, 
-				double stepmx, double steptol, int itnlim, model_info *model, myfcn_p myobjfun, 
+				double stepmx, double steptol, int itnlim, void *model_input, myfcn_p myobjfun, 
 				int optimize)
 {
     SEXP value, names;
+
+		model_info *model = (model_info *)model_input;
 
 		if(SEM_DEBUG) Rprintf("Optimize: [%d]\n", optimize);
 
