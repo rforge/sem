@@ -532,7 +532,7 @@ static double *Kronecker(const double *A,  const int &rowA, const int &colA, con
 		double *kron = new double[rowA*colA*rowB*colB];
 		int iA, jA, iB, jB;
 		int rowC = rowA*rowB;
-		int colC = colA*colB;
+//  int colC = colA*colB;   /* we don't need it when dealing with a column-wise matrix. */
 
 		for(iA = 0; iA < colA; ++iA)
 		{
