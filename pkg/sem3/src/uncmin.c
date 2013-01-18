@@ -28,10 +28,10 @@
 /*--- The Dennis + Schnabel Minimizer -- used by R's  nlm() ---*/
 
 #include <math.h>
+#include <R.h>
 #include <float.h> /* DBL_MAX */
 #include <R_ext/Applic.h>
 #include <R_ext/Boolean.h>
-#include <R_ext/PrtUtil.h> /* printRealVector */
 #include <R_ext/Linpack.h> /* ddot, dnrm2, dtrsl, dscal */
 #include <Rmath.h>
 
@@ -2057,6 +2057,16 @@ optchk(int n, double *x, double *typsiz, double *sx, double *fscale,
     return;
 } /* optchk */
 
+static void semprintRealVector(const double *p, const int num,  const int index )
+{
+		int i;
+		for( i = 0 ; i < num; ++i)
+		{
+				Rprintf("%f \n", p[i]);
+		}
+		Rprintf("\n");
+}
+
 static void
 prt_result(int nr, int n, const double x[], double f, const double g[],
        const double *a, const double p[], int itncnt, int iflg)
@@ -2087,23 +2097,23 @@ prt_result(int nr, int n, const double x[], double f, const double g[],
 
     if (iflg != 0) {
 	Rprintf("Step:\n");
-	printRealVector((double *)p, n, 1);
+	semprintRealVector((double *)p, n, 1);
     }
 
     /* Print current iterate */
 
     Rprintf("Parameter:\n");
-    printRealVector((double *)x, n, 1);
+    semprintRealVector((double *)x, n, 1);
 
     /* Print function value */
 
     Rprintf("Function Value\n");
-    printRealVector((double *)&f, 1, 1);
+    semprintRealVector((double *)&f, 1, 1);
 
     /* Print gradient */
 
     Rprintf("Gradient:\n");
-    printRealVector((double *)g, n, 1);
+    semprintRealVector((double *)g, n, 1);
 
 #ifdef NEVER
     /*	Print Hessian */
