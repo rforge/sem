@@ -34,6 +34,8 @@
 #include <R_ext/Boolean.h>
 #include <R_ext/Linpack.h> /* ddot, dnrm2, dtrsl, dscal */
 #include <Rmath.h>
+#include "csemnlm.h"
+#include "utils.h"
 
 /* CC	 subroutines  mvmlt[lsu] should be REPLACED by BLAS ones!
  * CC
@@ -2057,15 +2059,6 @@ optchk(int n, double *x, double *typsiz, double *sx, double *fscale,
     return;
 } /* optchk */
 
-static void semprintRealVector(const double *p, const int num,  const int index )
-{
-		int i;
-		for( i = 0 ; i < num; ++i)
-		{
-				Rprintf("%f \n", p[i]);
-		}
-		Rprintf("\n");
-}
 
 static void
 prt_result(int nr, int n, const double x[], double f, const double g[],
