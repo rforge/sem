@@ -1,6 +1,6 @@
 Package: sem
-Version: 3.1-1
-Date: 2013/01/27
+Version: 3.1-2
+Date: 2013/01/30
 Title: Structural Equation Models
 Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
 	person("Zhenghua", "Nie", role = "aut", email="niez@mcmaster.ca"),
