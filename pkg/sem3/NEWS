@@ -1,6 +1,6 @@
 Changes to Version 3.1-2
 
-    o Nothing yet.
+    o specifyModel() now allows tabs in path specifications.
 
 Changes to Version 3.1-1
 
