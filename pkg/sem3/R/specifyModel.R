@@ -1,4 +1,4 @@
-# last modified 2013-03-28 by J. Fox
+# last modified 2013-06-14 by J. Fox
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
@@ -114,27 +114,27 @@ classifyVariables <- function(model) {
 strip.white <- function(x) gsub(' ', '', x)
 
 removeRedundantPaths <- function(model, warn=TRUE){
-	paths <- model[, 1]
-	paths <- strip.white(paths)
-	paths <- sub("-*>", "->", sub("<-*", "<-", paths))
-	start <- regexpr("<->|<-|->", paths)
-	end <- start + attr(start, "match.length") - 1
-	arrows <- substr(paths, start, end)
-	vars <- matrix(unlist(strsplit(paths, "<->|<-|->")), ncol=2, byrow=TRUE)
-	for (i in 1:length(arrows)){
-		if (arrows[i] == "<-"){
-			arrows[i] <- "->"
-			vars[i, ] <- vars[i, 2:1]
-		}
-	}
-	vars <- cbind(vars, arrows)
-	dupl.paths <- duplicated(vars)
-	if (warn && any(dupl.paths)){
-		warning("the following duplicated paths were removed: ", paste(model[dupl.paths, 1], collapse=", "))
-	}
-	model <- model[!dupl.paths, ]
-	class(model) <- "semmod"
-	model
+    paths <- model[, 1]
+    paths <- strip.white(paths)
+    paths <- sub("-*>", "->", sub("<-*", "<-", paths))
+    start <- regexpr("<->|<-|->", paths)
+    end <- start + attr(start, "match.length") - 1
+    arrows <- substr(paths, start, end)
+    vars <- matrix(unlist(strsplit(paths, "<->|<-|->")), ncol=2, byrow=TRUE)
+    for (i in 1:length(arrows)){
+        if (arrows[i] == "<-"){
+            arrows[i] <- "->"
+            vars[i, ] <- vars[i, 2:1]
+        }
+    }
+    vars <- cbind(vars, arrows)
+    dupl.paths <- duplicated(vars)
+    if (warn && any(dupl.paths)){
+        warning("the following duplicated paths were removed: ", paste(model[dupl.paths, 1], collapse=", "))
+    }
+    model <- model[!dupl.paths, , drop=FALSE]
+    class(model) <- "semmod"
+    model
 }
 
 specifyEquations <- function(file="", ...){

@@ -1,6 +1,12 @@
+Changes to Version 3.1-4
+
+    o Fixed multigroup start values (which failed under some circumstances, reported by Timo von Oertzen).
+
+    o specifyModel() no longer fails when the model has just one input line.
+
 Changes to Version 3.1-3
 
-    o Nothing yet!
+    o No substantive changes.
 
 Changes to Version 3.1-2
 
