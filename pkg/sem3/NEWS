@@ -4,6 +4,8 @@ Changes to Version 3.1-4
 
     o specifyModel() no longer fails when the model has just one input line.
 
+    o Fixed bug in computing robust statistics in multigroup models when not all variables in the input data set are in the model (reported by Thomas Niemand).
+
 Changes to Version 3.1-3
 
     o No substantive changes.
