@@ -4,7 +4,11 @@ Changes to Version 3.1-4
 
     o specifyModel() no longer fails when the model has just one input line.
 
+    o specifyEquations() allows structural equations to be split over more than one line.
+
     o Fixed bug in computing robust statistics in multigroup models when not all variables in the input data set are in the model (reported by Thomas Niemand).
+
+    o summary.tsls() now returns an object, printed by print.summary.tsls() (after question by Steve Koch).
 
 Changes to Version 3.1-3
 

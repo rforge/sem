@@ -138,90 +138,108 @@ removeRedundantPaths <- function(model, warn=TRUE){
 }
 
 specifyEquations <- function(file="", ...){
-	par.start <- function(coef, eq){
-		if (length(grep("\\(", coef)) == 0){
-			return(c(coef, "NA"))
-		}
-		par.start <- strsplit(coef, "\\(")[[1]]
-		if (length(par.start) != 2) stop("Parse error in equation: ", eq,
-					'\n  Start values must be given in the form "parameter(value)".')
-		par <- par.start[[1]]
-		start <- par.start[[2]]
-		if (length(grep("\\)$", start)) == 0) stop("Parse error in equation: ", eq,
-					"\n  Unbalanced parentheses.")
-		start <- sub("\\)", "", start)
-		return(c(par, start))  
-	}
-	parseEquation <- function(eqn){
-		eq <- eqn
-		eqn <- gsub("\\s*", "", eqn)
-		eqn <- strsplit(eqn, "=")[[1]]
-		if (length(eqn) != 2) stop("Parse error in equation: ", eq,
-					"\n  An equation must have a left- and right-hand side separated by =.")
-		lhs <- eqn[1]
-		rhs <- eqn[2]
-		if (length(grep("^[cC]\\(", lhs)) > 0){
-			if (length(grep("\\)$", lhs)) == 0) stop("Parse error in equation: ", eq,
-						"\n  Unbalanced parentheses.")
-			lhs <- sub("[cC]\\(", "", lhs)
-			lhs <- sub("\\)", "", lhs)
-			variables <- strsplit(lhs, ",")[[1]]
-			if (length(variables) != 2) stop("Parse error in equation: ", eq,
-						"\n  A covariance must be in the form C(var1, var2) = cov12")
-			if (not.number(rhs)){
-				par.start <- par.start(rhs, eq)
-				if (not.number(par.start[2]) && (par.start[2] != "NA")) 
-					stop("Parse error in equation: ", eq,
-							"\n  Start values must be numeric constants.")
-				ram <- paste(variables[1], " <-> ", variables[2], ", ", par.start[1], ", ", par.start[2], sep="")
-			}
-			else{
-				ram <- paste(variables[1], " <-> ", variables[2], ", NA, ", rhs, sep="")
-			}
-		}
-		else if (length(grep("^[vV]\\(", lhs)) > 0){
-			lhs <- sub("[vV]\\(", "", lhs)
-			if (length(grep("\\)$", lhs)) == 0) stop("Parse error in equation: ", eq,
-						"\n  Unbalanced parentheses.")
-			lhs <- sub("\\)", "", lhs)
-			if (not.number(rhs)){
-				par.start <- par.start(rhs, eq)
-				if (not.number(par.start[2]) && (par.start[2] != "NA")) 
-					stop("Parse error in equation: ", eq,
-							"\n  Start values must be numeric constants.")
-				ram <- paste(lhs, " <-> ", lhs, ", ", par.start[1], ", ", par.start[2], sep="")
-			}
-			else{
-				ram <- paste(lhs, " <-> ", lhs, ", NA, ", rhs, sep="")
-			}
-		}
-		else{
-			terms <- strsplit(rhs, "\\+")[[1]]
-			terms <- strsplit(terms, "\\*")
-			ram <- character(length(terms))
-			for (term in 1:length(terms)){
-				trm <- terms[[term]]
-				if (length(trm) != 2) stop("Parse error in equation: ", eq,
-							'\n  The term  "', trm, '" is malformed.',
-							'\n  Each term on the right-hand side of a structural equation must be of the form "parameter*variable".')
-				coef <-  trm[1]
-				if (not.number(coef)){
-					par.start <- par.start(coef, eq)
-					if (not.number(par.start[2]) && (par.start[2] != "NA")) 
-						stop("Parse error in equation: ", eq,
-								"\n  Start values must be numeric constants.")
-					ram[term] <- paste(trm[2], " -> ", lhs, ", ", par.start[1], ", ", par.start[2], sep="")
-				}
-				else{
-					ram[term] <- paste(trm[2], " -> ", lhs, ", NA, ", coef, sep="")
-				}
-			}
-		}
-		ram
-	}
-	equations <- scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
-	ram <- unlist(lapply(equations, parseEquation))
-	specifyModel(file=textConnection(ram), ..., quiet=TRUE)
+    par.start <- function(coef, eq){
+        if (length(grep("\\(", coef)) == 0){
+            return(c(coef, "NA"))
+        }
+        par.start <- strsplit(coef, "\\(")[[1]]
+        if (length(par.start) != 2) stop("Parse error in equation: ", eq,
+            '\n  Start values must be given in the form "parameter(value)".')
+        par <- par.start[[1]]
+        start <- par.start[[2]]
+        if (length(grep("\\)$", start)) == 0) stop("Parse error in equation: ", eq,
+            "\n  Unbalanced parentheses.")
+        start <- sub("\\)", "", start)
+        return(c(par, start))  
+    }
+    parseEquation <- function(eqn){
+        eq <- eqn
+        eqn <- gsub("\\s*", "", eqn)
+        eqn <- strsplit(eqn, "=")[[1]]
+        if (length(eqn) != 2) stop("Parse error in equation: ", eq,
+            "\n  An equation must have a left- and right-hand side separated by =.")
+        lhs <- eqn[1]
+        rhs <- eqn[2]
+        if (length(grep("^[cC]\\(", lhs)) > 0){
+            if (length(grep("\\)$", lhs)) == 0) stop("Parse error in equation: ", eq,
+                "\n  Unbalanced parentheses.")
+            lhs <- sub("[cC]\\(", "", lhs)
+            lhs <- sub("\\)", "", lhs)
+            variables <- strsplit(lhs, ",")[[1]]
+            if (length(variables) != 2) stop("Parse error in equation: ", eq,
+                "\n  A covariance must be in the form C(var1, var2) = cov12")
+            if (not.number(rhs)){
+                par.start <- par.start(rhs, eq)
+                if (not.number(par.start[2]) && (par.start[2] != "NA")) 
+                    stop("Parse error in equation: ", eq,
+                        "\n  Start values must be numeric constants.")
+                ram <- paste(variables[1], " <-> ", variables[2], ", ", par.start[1], ", ", par.start[2], sep="")
+            }
+            else{
+                ram <- paste(variables[1], " <-> ", variables[2], ", NA, ", rhs, sep="")
+            }
+        }
+        else if (length(grep("^[vV]\\(", lhs)) > 0){
+            lhs <- sub("[vV]\\(", "", lhs)
+            if (length(grep("\\)$", lhs)) == 0) stop("Parse error in equation: ", eq,
+                "\n  Unbalanced parentheses.")
+            lhs <- sub("\\)", "", lhs)
+            if (not.number(rhs)){
+                par.start <- par.start(rhs, eq)
+                if (not.number(par.start[2]) && (par.start[2] != "NA")) 
+                    stop("Parse error in equation: ", eq,
+                        "\n  Start values must be numeric constants.")
+                ram <- paste(lhs, " <-> ", lhs, ", ", par.start[1], ", ", par.start[2], sep="")
+            }
+            else{
+                ram <- paste(lhs, " <-> ", lhs, ", NA, ", rhs, sep="")
+            }
+        }
+        else{
+            terms <- strsplit(rhs, "\\+")[[1]]
+            terms <- strsplit(terms, "\\*")
+            ram <- character(length(terms))
+            for (term in 1:length(terms)){
+                trm <- terms[[term]]
+                if (length(trm) != 2) stop("Parse error in equation: ", eq,
+                    '\n  The term  "', trm, '" is malformed.',
+                    '\n  Each term on the right-hand side of a structural equation must be of the form "parameter*variable".')
+                coef <-  trm[1]
+                if (not.number(coef)){
+                    par.start <- par.start(coef, eq)
+                    if (not.number(par.start[2]) && (par.start[2] != "NA")) 
+                        stop("Parse error in equation: ", eq,
+                            "\n  Start values must be numeric constants.")
+                    ram[term] <- paste(trm[2], " -> ", lhs, ", ", par.start[1], ", ", par.start[2], sep="")
+                }
+                else{
+                    ram[term] <- paste(trm[2], " -> ", lhs, ", NA, ", coef, sep="")
+                }
+            }
+        }
+        ram
+    }
+    equations <- scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
+    equations2 <- character(0)
+    eqn <- 0
+    skip <- FALSE
+    for(equation in equations){
+        eqn <- eqn + 1
+        if (skip){
+            skip <- FALSE
+            next
+        }
+        if (substring(equation, 1, 1) == "+"){
+            equations2[length(equations2)] <- paste(equations2[length(equations2)], equation)
+        }
+        else if (substring(equation, nchar(equation)) == "+"){
+            equations2 <- c(equations2, paste(equation, equations[eqn + 1]))
+            skip <- TRUE
+        }
+        else equations2 <- c(equations2, equation)
+    }
+    ram <- unlist(lapply(equations2, parseEquation))
+    specifyModel(file=textConnection(ram), ..., quiet=TRUE)
 }
 
 cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators=TRUE, raw=FALSE, ...){
