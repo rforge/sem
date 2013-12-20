@@ -1,4 +1,4 @@
-# last modified 2013-06-14 by J. Fox
+# last modified 2013-12-20 by J. Fox
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
@@ -7,6 +7,8 @@ specify.model <- function(...){
 
 specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE, covs, suffix="", quiet=FALSE){
     add.variances <- function () {
+        if (!quiet) message("NOTE: it is generally simpler to use specifyEquations() or cfa()\n",
+                "      see ?specifyEquations")
         variables <- need.variance()
         nvars <- length(variables)
         if (nvars == 0) return(model)
