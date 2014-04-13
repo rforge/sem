@@ -171,7 +171,7 @@ startvalues2(S, ram, debug=FALSE, tol=1E-6)
   	in the SEM literature. The default for single-group models is \code{\link{objectiveML}},
   	which produces maximum-likelihood estimates assuming multinormality. An alternative is 
   	\code{\link{objectiveGLS}}, which produced generalized least squares estimates --- or the user
-  	can supply an objective function to be minimzed. For multigroup models, the default is
+  	can supply an objective function to be minimized. For multigroup models, the default is
   	available is \code{\link{msemObjectiveML}} for ML estimates and an alternative is \code{\link{msemObjectiveGLS}}
   	for GLS estiamtes.}
   \item{cls}{primary class to be assigned to the result; normally this is not specified directly, but
