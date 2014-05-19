@@ -1,6 +1,6 @@
 Changes to Version 3.1-5
 
-    o Nothing yet!
+    o Small corrections to C++ code by Zhenghua Nie to prevent warnings from valgrind.
 
 Changes to Version 3.1-4
 
