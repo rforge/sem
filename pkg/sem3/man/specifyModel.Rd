@@ -17,12 +17,12 @@
   Create the RAM specification of a structural equation model.
 }
 \usage{
-specifyModel(file="", exog.variances=FALSE, endog.variances=TRUE, covs, 
+specifyModel(file="", text, exog.variances=FALSE, endog.variances=TRUE, covs, 
 	suffix="", quiet=FALSE)
 
-specifyEquations(file="", ...)
+specifyEquations(file="", text, ...)
 
-cfa(file="", covs=paste(factors, collapse=","), reference.indicators=TRUE, 
+cfa(file="", text, covs=paste(factors, collapse=","), reference.indicators=TRUE, 
      raw=FALSE, ...)
 
 multigroupModel(..., groups=names(models), allEqual=FALSE)
@@ -31,7 +31,7 @@ classifyVariables(model)
 
 removeRedundantPaths(model, warn=TRUE)
 \method{combineModels}{semmod}(..., warn=TRUE)
-\method{update}{semmod}(object, file = "", ...)
+\method{update}{semmod}(object, file = "", text, ...)
 \method{edit}{semmod}(name, ...)
 
 \method{print}{semmod}(x, ...)
@@ -41,8 +41,13 @@ removeRedundantPaths(model, warn=TRUE)
 \arguments{
   \item{file}{The (quoted) file from which to read the model specification,
     including the path to the file if it is not in the current directory. If
-    \code{""} (the default), then the specification is read from the standard
+    \code{""} (the default) and the \code{text} argument is not supplied,
+    then the specification is read from the standard
     input stream, and is terminated by a blank line.}
+  \item{text}{The model specification given as a character string, as an alternative
+    to specifying the ]code{file} argument or reading the model specification from
+    the input stream --- e.g., when the session is not interactive and there is no
+    standard input.}
   \item{exog.variances}{If \code{TRUE} (the default is \code{FALSE}), free variance
   	parameters are added for the exogenous variables that lack them.}
   \item{endog.variances}{If \code{TRUE} (the default), free error-variance parameters
@@ -208,10 +213,48 @@ removeRedundantPaths(model, warn=TRUE)
 
 \examples{
 
-# Note: These examples can't be run via example() because the default file
-#  argument of specifyModel() requires that the model specification be entered
-#  at the command prompt. The examples can be copied and run in the R console,
-#  however.
+# example using the text argument:
+
+model.dhp <- specifyModel(text="
+    RParAsp  -> RGenAsp, gam11,  NA
+    RIQ      -> RGenAsp, gam12,  NA
+    RSES     -> RGenAsp, gam13,  NA
+    FSES     -> RGenAsp, gam14,  NA
+    RSES     -> FGenAsp, gam23,  NA
+    FSES     -> FGenAsp, gam24,  NA
+    FIQ      -> FGenAsp, gam25,  NA
+    FParAsp  -> FGenAsp, gam26,  NA
+    FGenAsp  -> RGenAsp, beta12, NA
+    RGenAsp  -> FGenAsp, beta21, NA
+    RGenAsp  -> ROccAsp,  NA,     1
+    RGenAsp  -> REdAsp,  lam21,  NA
+    FGenAsp  -> FOccAsp,  NA,     1
+    FGenAsp  -> FEdAsp,  lam42,  NA
+    RGenAsp <-> RGenAsp, ps11,   NA
+    FGenAsp <-> FGenAsp, ps22,   NA
+    RGenAsp <-> FGenAsp, ps12,   NA
+    ROccAsp <-> ROccAsp, theta1, NA
+    REdAsp  <-> REdAsp,  theta2, NA
+    FOccAsp <-> FOccAsp, theta3, NA
+    FEdAsp  <-> FEdAsp,  theta4, NA
+")    
+model.dhp
+
+   # same model in equation form:
+model.dhp.1 <- specifyEquations(covs="RGenAsp, FGenAsp", text="
+RGenAsp = gam11*RParAsp + gam12*RIQ + gam13*RSES + gam14*FSES + beta12*FGenAsp
+FGenAsp = gam23*RSES + gam24*FSES + gam25*FIQ + gam26*FParAsp + beta21*RGenAsp
+ROccAsp = 1*RGenAsp
+REdAsp = lam21(1)*RGenAsp  # to illustrate setting start values
+FOccAsp = 1*FGenAsp
+FEdAsp = lam42(1)*FGenAsp
+")
+model.dhp
+
+# Note: The following examples can't be run via example() because the 
+#  default file argument requires that the model specification be entered
+#  at the command prompt. The examples can be copied and run in an interactive 
+#  session in the R console, however.
 
     \dontrun{
 model.dhp <- specifyModel()

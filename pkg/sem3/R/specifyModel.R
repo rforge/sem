@@ -1,11 +1,11 @@
-# last modified 2013-12-20 by J. Fox
+# last modified 2014-10-27 by J. Fox
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
 	specifyModel(...)
 }
 
-specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE, covs, suffix="", quiet=FALSE){
+specifyModel <- function(file="", text, exog.variances=FALSE, endog.variances=TRUE, covs, suffix="", quiet=FALSE){
     add.variances <- function () {
         if (!quiet) message("NOTE: it is generally simpler to use specifyEquations() or cfa()\n",
                 "      see ?specifyEquations")
@@ -47,7 +47,9 @@ specifyModel <- function(file="", exog.variances=FALSE, endog.variances=TRUE, co
         if (!endog.variances && length(end.vars) > 0) variables[end.vars] <- FALSE
         names(variables)[variables]
     }
-    model <- scan(file=file, what=list(path="", par="", start=1, dump=""), sep=",", 
+    model <- if (!missing(text)) scan(text=text, what=list(path="", par="", start=1, dump=""), sep=",", 
+                                      strip.white=TRUE, comment.char="#", fill=TRUE, quiet=quiet) 
+      else scan(file=file, what=list(path="", par="", start=1, dump=""), sep=",", 
         strip.white=TRUE, comment.char="#", fill=TRUE, quiet=quiet) 
     # dump permits comma at line end
     model$path <- gsub("\\t", " ", model$path)
@@ -139,7 +141,7 @@ removeRedundantPaths <- function(model, warn=TRUE){
     model
 }
 
-specifyEquations <- function(file="", ...){
+specifyEquations <- function(file="", text, ...){
     par.start <- function(coef, eq){
         if (length(grep("\\(", coef)) == 0){
             return(c(coef, "NA"))
@@ -221,7 +223,8 @@ specifyEquations <- function(file="", ...){
         }
         ram
     }
-    equations <- scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
+    equations <- if (!missing(text)) scan(text=text, what="", sep=";", strip.white=TRUE, comment.char="#")
+      else scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
     equations2 <- character(0)
     eqn <- 0
     skip <- FALSE
@@ -241,11 +244,12 @@ specifyEquations <- function(file="", ...){
         else equations2 <- c(equations2, equation)
     }
     ram <- unlist(lapply(equations2, parseEquation))
-    specifyModel(file=textConnection(ram), ..., quiet=TRUE)
+    specifyModel(text=ram, ..., quiet=TRUE)
 }
 
-cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators=TRUE, raw=FALSE, ...){
-	Lines <- scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
+cfa <- function(file="", text, covs=paste(factors, collapse=","), reference.indicators=TRUE, raw=FALSE, ...){
+	Lines <- if (!missing(text)) scan(text=text, what="", sep=";", strip.white=TRUE, comment.char="#")
+    else scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
 	lines <- character(0)
 	current.line <- ""
 	for (line in Lines){
@@ -305,7 +309,7 @@ cfa <- function(file="", covs=paste(factors, collapse=","), reference.indicators
 #		ram <- c(ram, "(Intercept) <-> (Intercept), NA, 1")
 		message('NOTE: specify fixed.x="Intercept" in call to sem')
 	}
-	specifyModel(file=textConnection(ram), covs=covs, ..., quiet=TRUE)
+	specifyModel(text=ram, covs=covs, ..., quiet=TRUE)
 }
 
 # the following function (not exported) checks whether a text string can be converted into a number
