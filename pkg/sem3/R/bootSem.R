@@ -1,6 +1,6 @@
 # bootstrapped standard errors and confidence intervals for sem
 
-# last modified 2012-10-03 by J. Fox
+# last modified 2015-01-20 by J. Fox
 
 boot.sem <- function(...) {
 	.Deprecated("bootSem", package="sem")
@@ -21,7 +21,7 @@ bootSem.sem <- function(model, R=100, Cov=cov, data=model$data,  max.failures=10
         }
     if (!require("boot")) stop("package boot not available")
 	has.tcltk <- require("tcltk")
-	if (has.tcltk) pb <- tkProgressBar("Bootstrap Sampling", "Bootstrap sample: ", 0, R)
+	if (has.tcltk) pb <- tcltk::tkProgressBar("Bootstrap Sampling", "Bootstrap sample: ", 0, R)
     # the following 2 lines borrowed from boot in package boot
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) runif(1)
     seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -38,7 +38,7 @@ bootSem.sem <- function(model, R=100, Cov=cov, data=model$data,  max.failures=10
     coefs <- matrix(numeric(0), R, length(coefficients))
     colnames(coefs) <- coef.names
     for (b in 1:R){
-		if (has.tcltk) setTkProgressBar(pb, b, label=sprintf("Bootstrap sample: %d", b))
+		if (has.tcltk) tcltk::setTkProgressBar(pb, b, label=sprintf("Bootstrap sample: %d", b))
         for (try in 1:(max.failures + 1)){
             if (try >  max.failures) stop("more than ",  max.failures, " consecutive convergence failures")
             res <- try(refit(), silent=TRUE)
@@ -74,7 +74,7 @@ bootSem.msem <- function(model, R=100, Cov=cov, data=model$data,  max.failures=1
         }
     if (!require("boot")) stop("package boot not available")
 	has.tcltk <- require("tcltk")
-	if (has.tcltk) pb <- tkProgressBar("Bootstrap Sampling", "Bootstrap sample: ", 0, R)
+	if (has.tcltk) pb <- tcltk::tkProgressBar("Bootstrap Sampling", "Bootstrap sample: ", 0, R)
     # the following 2 lines borrowed from boot in package boot
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) runif(1)
     seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -99,7 +99,7 @@ bootSem.msem <- function(model, R=100, Cov=cov, data=model$data,  max.failures=1
     coefs <- matrix(numeric(0), R, length(coefficients))
     colnames(coefs) <- coef.names
     for (b in 1:R){
-		if (has.tcltk) setTkProgressBar(pb, b, label=sprintf("Bootstrap sample: %d", b))
+		if (has.tcltk) tcltk::setTkProgressBar(pb, b, label=sprintf("Bootstrap sample: %d", b))
         for (try in 1:(max.failures + 1)){
             if (try >  max.failures) stop("more than ",  max.failures, " consecutive convergence failures")
             res <- try(refit(), silent=TRUE)
@@ -151,7 +151,7 @@ summary.bootsem <- function(object,
         low <- if (type == "norm") 2 else 4
         up  <- if (type == "norm") 3 else 5 
         for (i in 1:p){
-            ci <- as.vector(boot.ci(object, type=type, index=i, 
+            ci <- as.vector(boot::boot.ci(object, type=type, index=i, 
                 conf=level)[[type, exact=FALSE]])
             lower[i] <- ci[low]
             upper[i] <- ci[up]

@@ -18,12 +18,12 @@ data, fitting the specified model to each completed data set.
 miSem(model, ...)
 
 \method{miSem}{semmod}(model, ..., data, formula = ~., raw = FALSE, 
-    fixed.x=NULL, objective=objectiveML, n.imp=5, n.iter=30, 
+    fixed.x=NULL, objective=objectiveML, n.imp=5, n.chains=n.imp, n.iter=30, 
     seed=sample(1e+06, 1), mi.args=list())
     
 \method{miSem}{semmodList}(model, ..., data, formula = ~., group, raw=FALSE, 
         fixed.x=NULL, objective=msemObjectiveML,
-        n.imp=5, n.iter=30, seed=sample(1e6, 1), mi.args=list())
+        n.imp=5, n.chains=n.imp, n.iter=30, seed=sample(1e6, 1), mi.args=list())
 
 \method{print}{miSem}(x, ...)
 
@@ -48,6 +48,10 @@ miSem(model, ...)
   \item{n.imp}{
     number of imputations (default \code{5}).
     }
+    
+  \item{n.chains}{
+    number of Markov chains (default is the number of imputations).
+  }
 
   \item{n.iter}{
     number of iterations for the multiple-imputation process (default \code{30}).
@@ -95,8 +99,8 @@ mod.cfa.tests <- cfa(raw=TRUE)
 verbal: x1, x2, x3
 math: y1, y2, y3
 
-imps <- miSem(mod.cfa.tests, data=Tests, fixed.x="Intercept", raw=TRUE, seed=12345,
-              mi.args=list(add.noise=noise.control(post.run.iter=30)))
+imps <- miSem(mod.cfa.tests, data=Tests, fixed.x="Intercept", 
+              raw=TRUE, seed=12345)
 summary(imps, digits=3) 
 
 library(MBESS) # for data
@@ -116,9 +120,9 @@ memory: wordr, numberr, figurer, object, numberf, figurew
 math: deduct, numeric, problemr, series, arithmet
 
 mod.mg <- multigroupModel(mod.hs, groups=c("Female", "Male")) 
-imps.mg <- miSem(mod.mg, data=HS, group="Gender",
-             seed=12345, n.iter=50, 
-             mi.args=list(add.noise=noise.control(post.run.iter=30)))
+system.time( # relatively time-consuming!
+  imps.mg <- miSem(mod.mg, data=HS, group="Gender", seed=12345)
+)
 summary(imps.mg, digits=3)
     }
 }
