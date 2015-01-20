@@ -1,4 +1,4 @@
-# last modified 2012-10-02 by J. Fox
+# last modified 2012-10-02 by Benjamin K Goodrich
 
 miSem <- function(model, ...){
     if (!require(mi)) stop("mi package missing")
@@ -28,23 +28,22 @@ miSem.semmod <- function(model, ..., data, formula = ~., raw=FALSE, fixed.x=NULL
     mi.args$seed <- seed
     mi.args$object <- data
     mi.data <- do.call("mi", mi.args)
-    fits <- vector(n.imp, mode="list")
     has.tcltk <- require("tcltk")
-	if (has.tcltk) pb <- tkProgressBar("Fitting", "Imputation no.: ", 0, n.imp)
-    for (i in 1:n.imp){
+	  if (has.tcltk) pb <- tkProgressBar("Fitting", "Imputation no.: ", 0, n.imp)
+    fits <- mi::complete(mi.data, m = n.imp, include_missing = FALSE)
+    for (i in seq_along(fits)) {
         if (has.tcltk) setTkProgressBar(pb, i, label=sprintf("Imputation no.: %d", i))
-        data.i <- mi.data.frame(mi.data, m=i)
-        data.i <- model.frame(formula, data=data.i)
-        data.i <- model.matrix(formula, data=data.i)
+        data.i <- model.frame(formula, data=fits[[i]])
+        data.i <- model.matrix(formula, data=fits[[i]])
         colnames(data.i)[colnames(data.i) == "(Intercept)"] <- "Intercept"
-    	S <- if (raw) rawMoments(data.i) else {
-			data.i <-  data.i[, colnames(data.i) != "Intercept"]
-			cov(data.i)
-		}
+    	  S <- if (raw) rawMoments(data.i) else {
+			    data.i <-  data.i[, colnames(data.i) != "Intercept"]
+			    cov(data.i)
+		    }
         fit <- sem(ram, S=S, N=N, data=data.i, raw=raw, param.names=coef.names, var.names=var.names, fixed.x=fixed.x,
                               optimizer=initial.fit$optimizer, objective=objective, ...)
         class(fit) <- cls   
-	    fits[[i]] <- fit
+	      fits[[i]] <- fit
     }
     if (has.tcltk) close(pb)
     result <- list(initial.fit=initial.fit, mi.fits=fits, imputations=mi.data, seed=seed)
@@ -78,12 +77,12 @@ miSem.semmodList <- function(model, ..., data, formula = ~., group, raw=FALSE,
     mi.args$seed <- seed
     mi.args$object <- data
     mi.data <- do.call("mi", mi.args)
-    fits <- vector(n.imp, mode="list")
+    fits <- mi::complete(mi.data, m = n.imp, include_missing = FALSE)
     has.tcltk <- require("tcltk")
     if (has.tcltk) pb <- tkProgressBar("Fitting", "Imputation no.: ", 0, n.imp)
     for (i in 1:n.imp){
         if (has.tcltk) setTkProgressBar(pb, i, label=sprintf("Imputation no.: %d", i))
-        data.i <- mi.data.frame(mi.data, m=i)
+        data.i <- fits[[i]]
         group.i <- data.i[, group]
         data.i <- model.frame(formula, data=data.i)
         data.i <- model.matrix(formula, data=data.i)
@@ -95,8 +94,8 @@ miSem.semmodList <- function(model, ..., data, formula = ~., group, raw=FALSE,
             data.out[[g]] <- data.g
             N[g] <- nrow(data.g)
             S[[g]] <- if (raw) rawMoments(data.g) else {
-    			data.g <-  data.g[, colnames(data.g) != "Intercept"]
-    			cov(data.g)
+    			  data.g <-  data.g[, colnames(data.g) != "Intercept"]
+    			  cov(data.g)
     		}
         }
         fit <- sem(ram, S=S, N=N, group=group, groups=groups, raw=raw, data=data.out, 
@@ -111,11 +110,11 @@ miSem.semmodList <- function(model, ..., data, formula = ~., group, raw=FALSE,
 }
 
 print.miSem <- function(x, ...){
-    coefs <- lapply(x$mi.fits, coef)
-    ses <- lapply(x$mi.fits, function(x) sqrt(diag(vcov(x))))
-    pooled <- mi.pooled(coefs, ses)
-    table <- matrix(0, length(pooled$coefficients), 4)
-    table[, 1] <- pooled$coefficients
+    coefs <- sapply(x$mi.fits, coef)
+    vars <- sapply(x$mi.fits, function(x) diag(vcov(x)))
+    table <- matrix(0, NROW(coefs), 4)
+    table[, 1] <- rowMeans(coefs)
+    ses <- sqrt(rowMeans(vars) + apply(coefs, 1, var) * (1 + 1/NCOL(coefs)))
     table[, 2] <- pooled$se
     table[, 3] <- table[, 1]/table[, 2]
     table[, 4] <- 2*pnorm(abs(table[, 3]), lower.tail=FALSE)
