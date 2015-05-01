@@ -1,6 +1,6 @@
 # these functions originally by Jarrett Byrnes
 
-# last modified 2015-01-20 by J. Fox
+# last modified 2015-04-30 by J. Fox
 
 robustVcov <- function(sem.obj, adj.obj, data.obj, use.fit=FALSE, use.ginv=FALSE){
 	if (missing(adj.obj) && missing(data.obj)) 
@@ -12,8 +12,7 @@ robustVcov <- function(sem.obj, adj.obj, data.obj, use.fit=FALSE, use.ginv=FALSE
 	hes <- semHessian(adj.obj$w_mat, adj.obj$p_deriv_mat)
 	info_m <- try(solve(hes), silent = TRUE)
 	if (class(info_m) == "try-error" && use.ginv == TRUE) {
-        if (!require(MASS)) stop("MASS package needed for ginv")
-		info_m <- MASS::ginv(hes)
+		info_m <- ginv(hes)
 		ginvFlag <- TRUE
 	}
 	acov <- info_m %*% (t(adj.obj$p_deriv_mat) %*% adj.obj$w_mat %*% 
@@ -35,8 +34,7 @@ sbchisq <- function(sem.obj, sem.data, adj=1e-04, use.fit=FALSE, use.ginv=FALSE)
 	invMat <- try(solve(t(p_deriv_mat) %*% w_mat %*% p_deriv_mat), 
 		silent = TRUE)
 	if (class(invMat) == "try-error" && use.ginv == TRUE) {
-	    if (!require(MASS)) stop("MASS package needed for ginv")
-		invMat <- MASS::ginv(t(p_deriv_mat) %*% w_mat %*% p_deriv_mat)
+		invMat <- ginv(t(p_deriv_mat) %*% w_mat %*% p_deriv_mat)
 		ginvFlag <- TRUE
 	}
 	res_u <- w_mat - (w_mat %*% p_deriv_mat %*% invMat %*% t(p_deriv_mat) %*% 

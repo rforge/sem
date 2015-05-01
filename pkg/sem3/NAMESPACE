@@ -1,4 +1,4 @@
-# last modified 2013-09-10 by J. Fox
+# last modified 2015-04-30 by J. Fox
 
 useDynLib(sem)
 useDynLib(sem, csemSolve)
@@ -6,6 +6,10 @@ useDynLib(sem, csemSolve)
 import(stats)
 
 importFrom(matrixcalc, duplication.matrix, vech)
+importFrom(MASS, ginv)
+importFrom(boot, boot.ci)
+importFrom(mi, mi, complete)
+importFrom(tcltk, tkProgressBar, setTkProgressBar)
 
 export(ram, standardizedResiduals, normalizedResiduals, readMoments, 
     startvalues, startvalues2,

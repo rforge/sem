@@ -1,8 +1,7 @@
-# last modified 2015-01-20 by J. Fox
+# last modified 2015-04-30 by J. Fox
 # some changes by Benjamin K Goodrich 2015-01-20
 
 miSem <- function(model, ...){
-    if (!require(mi)) stop("mi package missing")
     UseMethod("miSem")
 }
 
@@ -31,7 +30,7 @@ miSem.semmod <- function(model, ..., data, formula = ~., raw=FALSE, fixed.x=NULL
     mi.data <- do.call("mi", mi.args)
 #     has.tcltk <- require("tcltk")
 # 	  if (has.tcltk) pb <- tkProgressBar("Fitting", "Imputation no.: ", 0, n.imp)
-    fits <- mi::complete(mi.data, m = n.imp, include_missing = FALSE)
+    fits <- complete(mi.data, m = n.imp, include_missing = FALSE)
     for (i in seq_along(fits)) {
 #        if (has.tcltk) setTkProgressBar(pb, i, label=sprintf("Imputation no.: %d", i))
         data.i <- model.frame(formula, data=fits[[i]])
@@ -78,7 +77,7 @@ miSem.semmodList <- function(model, ..., data, formula = ~., group, raw=FALSE,
     mi.args$seed <- seed
     mi.args$y <- data
     mi.data <- do.call("mi", mi.args)
-    fits <- mi::complete(mi.data, m = n.imp, include_missing = FALSE)
+    fits <- complete(mi.data, m = n.imp, include_missing = FALSE)
 #     has.tcltk <- require("tcltk")
 #     if (has.tcltk) pb <- tkProgressBar("Fitting", "Imputation no.: ", 0, n.imp)
     for (i in 1:n.imp){
