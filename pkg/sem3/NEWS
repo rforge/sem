@@ -4,6 +4,8 @@ Changes to Version 3.1-6
 
     o Modifications to miSem() etc. to work with version 0.9-99 of the mi package (contributed by Benjamin K Goodrich).
     
+    o New argument edge.colors to pathDiagram() (suggestion of Michael Friendly).
+    
     o Get rid of calls to require().
 
 Changes to Version 3.1-5

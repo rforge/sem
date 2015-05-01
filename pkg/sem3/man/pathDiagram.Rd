@@ -19,6 +19,7 @@
 \method{pathDiagram}{sem}(model, file, min.rank=NULL, max.rank=NULL,
 	same.rank=NULL, variables=model$var.names, parameters,
 	ignore.double=TRUE, edge.labels=c("names", "values", "both"), 
+	edge.colors = c("black", "black"),
 	size=c(8, 8), node.font=c("Helvetica", 14),
 	edge.font=c("Helvetica", 10), rank.direction=c("LR", "TB"), 
 	digits=2, standardize=FALSE, output.type=c("graphics", "dot"),
@@ -53,6 +54,8 @@
     variances and covariances, are not graphed.}
   \item{edge.labels}{\code{"names"} to label arrows with parameter names; 
     \code{"values"} to label arrows with parameter estimates, or \code{"both"}.}
+  \item{edge.colors}{two-element character vector giving colors of positive
+    and negative arrows respectively; the default is \code{c("black", "black")}.}
   \item{size}{the size of the graph, in inches.}
   \item{node.font}{font name and point-size for printing variable names.}
   \item{edge.font}{font name and point-size for printing arrow names or values.}

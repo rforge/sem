@@ -56,7 +56,11 @@ removeRedundantPaths(model, warn=TRUE)
   	giving a string of variable names, separated by commas. Variances and covariances
   	among all variables in each such string are added to the model. For confirmatory
   	factor analysis models specified via \code{cfa}, \code{covs} defaults to all of
-  	the factors in the model, thus specifying all covariances among these factors.}
+  	the factors in the model, thus specifying all variances and covariances among these factors.
+  	\emph{Warning}: \code{covs="x1, x2"} and \code{covs=c("x1", "x2")} are \emph{not}
+  	equivalent: \code{covs="x1, x2"} specifies the variance of \code{x1}, the variance
+  	of \code{x2}, \emph{and} their covariance, while \code{covs=c("x1", "x2")} specifies
+  	the variance of \code{x1} and the variance of \code{x2} \emph{but not} their covariance.}
   \item{suffix}{a character string (defaulting to an empty string) to be 
     appended to each parameter name; this can be convenient for specifying multiple-group models.}
   \item{reference.indicators}{if \code{FALSE}, the default, variances of factors are
@@ -145,6 +149,13 @@ removeRedundantPaths(model, warn=TRUE)
   is a numeric value (e.g., \code{1}) then it is treated as fixed. In conformity with the RAM model,
   a variance or covariance for an endogenous variable in the model is an \dQuote{error} variance or
   covariance.
+  
+  \emph{Warning}: If the \code{covs} argument to \code{specifyEquations} is used to specify
+  variances and covariances, please be aware that
+  \code{covs="x1, x2"} and \code{covs=c("x1", "x2")} are \emph{not}
+  equivalent: \code{covs="x1, x2"} specifies the variance of \code{x1}, the variance
+  of \code{x2}, \emph{and} their covariance, while \code{covs=c("x1", "x2")} specifies
+  the variance of \code{x1} and the variance of \code{x2} \emph{but not} their covariance.
   
   To set a start value for a free parameter, enclose the numeric start value in parentheses after the
   parameter name, as \code{parameter(value)}.
