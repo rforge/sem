@@ -1,4 +1,4 @@
-# last modified 2014-10-27 by J. Fox
+# last modified 2015-05-14 by J. Fox
 
 specify.model <- function(...){
 	.Deprecated("specifyModel", package="sem")
@@ -245,71 +245,6 @@ specifyEquations <- function(file="", text, ...){
     }
     ram <- unlist(lapply(equations2, parseEquation))
     specifyModel(text=ram, ..., quiet=TRUE)
-}
-
-cfa <- function(file="", text, covs=paste(factors, collapse=","), reference.indicators=TRUE, raw=FALSE, ...){
-	Lines <- if (!missing(text)) scan(text=text, what="", sep=";", strip.white=TRUE, comment.char="#")
-    else scan(file=file, what="", sep=";", strip.white=TRUE, comment.char="#")
-	lines <- character(0)
-	current.line <- ""
-	for (line in Lines){
-		if (current.line != "") line <- paste(current.line, line)
-		if (length(grep(",$", line)) > 0){
-			current.line <- line
-			next
-		}
-		current.line <- ""
-		lines <- c(lines, line)
-	}
-	nfactor <- length(lines)
-	factors <- rep("", nfactor)
-	all.obs.vars <- ram <- character(0)
-	for (i in 1:nfactor){
-		Line <- line <- lines[[i]]
-		line <- gsub(" ", "", line)
-		line <- strsplit(line, ":")[[1]]
-		if (length(line) == 1){
-			factors[i] <- paste("Factor.", i, sep="")
-			variables <- strsplit(line, ",")[[1]]
-			all.obs.vars <- c(all.obs.vars, variables)
-		}
-		else if (length(line) == 2){
-			factors[i] <- line[1]
-			variables <- strsplit(line[2], ",")[[1]]
-			all.obs.vars <- c(all.obs.vars, variables)
-		}
-		else stop("Parse error in ", Line)
-		if (reference.indicators){
-			ram <- c(ram, paste(factors[i], " -> ", variables[1], ", NA, 1", sep=""))
-			variables <- variables[-1]
-		}
-		for (variable in variables){
-			if (length(grep("\\(", variable)) > 0){
-				if (length(grep("\\)", variable)) == 0) stop ("Parse error in ", Line)
-				variable <- sub("\\)", "", variable)   
-				var.start <- strsplit(variable, "\\(")[[1]]
-				if (length(var.start) != 2) stop("Parse error in ", Line)
-				variable <- var.start[1]
-				start <- var.start[2]
-				if (not.number(start)) stop ("Bad start value ", start, " in ", Line)
-			}
-			else start <- "NA"
-			ram <- c(ram, paste(factors[i], " -> ", variable, ", lam[", variable, ":", factors[i], "], ", start, sep=""))
-		}
-	}
-	ram <- if (reference.indicators) {
-				c(ram, sapply(factors, function(factor) paste(factor, " <-> ", factor, ", ", paste("V[", factor, "]", sep="") , ", NA", sep="")))
-			}
-			else{
-				c(ram, sapply(factors, function(factor) paste(factor, " <-> ", factor, ", NA, 1", sep="")))
-			}
-	if (raw){
-		all.obs.vars <- unique(all.obs.vars)
-		ram <- c(ram, sapply(all.obs.vars, function(var) paste("Intercept -> ", var, ", intercept(", var, "), NA", sep="")))
-#		ram <- c(ram, "(Intercept) <-> (Intercept), NA, 1")
-		message('NOTE: specify fixed.x="Intercept" in call to sem')
-	}
-	specifyModel(text=ram, covs=covs, ..., quiet=TRUE)
 }
 
 # the following function (not exported) checks whether a text string can be converted into a number
