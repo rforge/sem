@@ -1,4 +1,4 @@
-# last modified 2015-05-15 by J. Fox
+# last modified 2015-06-09 by J. Fox
 
 useDynLib(sem)
 useDynLib(sem, csemSolve)
@@ -15,7 +15,7 @@ importFrom(DiagrammeR, DiagrammeR)
 export(ram, standardizedResiduals, normalizedResiduals, readMoments, 
     startvalues, startvalues2,
     standardizedCoefficients, stdCoef, tsls, sem, modIndices, pathDiagram,
-    specifyModel, specifyEquations, cfa, annotate, bootSem, rawMoments, cov2raw, fscores,
+    specifyModel, specifyEquations, cfa, math, bootSem, rawMoments, cov2raw, fscores,
     AICc, CAIC,
     classifyVariables, combineModels, removeRedundantPaths,
     optimizerNlm, optimizerOptim, optimizerNlminb,

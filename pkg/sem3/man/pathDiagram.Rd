@@ -3,7 +3,7 @@
 \alias{pathDiagram}
 \alias{pathDiagram.sem}
 \alias{pathDiagram.semmod}
-\alias{annotate}
+\alias{math}
 
 \title{Draw Path Diagram}
 \description{
@@ -33,7 +33,7 @@ pathDiagram(model, ...)
 
 \method{pathDiagram}{semmod}(model, obs.variables, ...)
 
-annotate(text, html.only=FALSE, hat=FALSE)
+math(text, html.only=FALSE, hat=FALSE)
 }
 
 \arguments{
@@ -73,14 +73,14 @@ annotate(text, html.only=FALSE, hat=FALSE)
     If specified, the variable names should be in the same order as in \code{model}.}
   \item{var.labels}{a character vector with labels to be used 
     in lieu of (some of) the variables names, for greater flexibility
-    in labelling nodes in the graph --- e.g., the labels can be created with the \code{annotate}
+    in labelling nodes in the graph --- e.g., the labels can be created with the \code{math}
     function. The elements of the vector must have names corresponding to variables in the model.}
   \item{parameters}{parameter names; defaults to the parameter names in 
     \code{model}. If specified, the parameter names should be in the same order 
     as in \code{model}.}
   \item{par.labels}{a character vector with labels to be used 
     in lieu of (some of) the parameter names, for greater flexibility
-    in labelling edges in the graph --- e.g., the labels can be created with the \code{annotate}
+    in labelling edges in the graph --- e.g., the labels can be created with the \code{math}
     function. The elements of the vector must have names corresponding to parameters in the model.}
   \item{ignore.double}{if \code{TRUE}, the default, double-headed arrows, representing
     variances and covariances, are not graphed.}
@@ -114,10 +114,10 @@ annotate(text, html.only=FALSE, hat=FALSE)
     only contain the names of lowercase or uppercase Greek letters, such as \code{"alpha"} or \code{"Alpha"}.
     The full set of Greek letters recognized is given in the file \code{Greek.txt} in the package's
     \code{etc} subdirectory -- or type \code{sem:::Greek} at the R command prompt.
-    In either case, the symbols may be followed by numeric subscripts consisting of numerals 
+    In either case, the symbols may be followed by numeric subscripts in curly braces consisting of numerals 
     (e.g., \code{"beta_{12}"}),
     and/or numeric superscripts (e.g., \code{"sigma^{2}"},
-    \code{"sigma_{1}^{2}"}). Subscripts and superscripts only work properly with HTML output
+    \code{"sigma_{1}^{2}"}). Depending upon your OS, subscripts and superscripts may only work properly with HTML output
     from \code{pathDiagram}, not with graphics output produced by \emph{dot}.}
   \item{hat}{If \code{TRUE} (the default is \code{FALSE}), a hat (circumflex) is placed over the
     symbols in \code{text}; this feature doesn't produce a visually appealing result.}
@@ -134,8 +134,8 @@ annotate(text, html.only=FALSE, hat=FALSE)
   Alternatively, \emph{HTML} output can be created in a web browser without an independent installation
   of \code{dot} using facilities in the \pkg{DiagrammeR} package.
   
-  The \code{annotate} function can be used to create node (variable) and edge (arrow) labels with
-  symbols such as Greek letters.
+  The \code{math} function can be used to create node (variable) and edge (arrow) labels with
+  symbols such as Greek letters, subscripts, and superscripts.
   
   The \code{semmod} method of \code{pathDiagram} sets up a call to the \code{sem} method. 
   
@@ -151,7 +151,7 @@ annotate(text, html.only=FALSE, hat=FALSE)
 
 \value{
   \code{pathDiagram} invisibly returns a character vector containing \emph{dot} commands.
-  \code{annotate} returns a character vector containing suitable \code{HTML} markup.
+  \code{math} returns a character vector containing suitable \code{HTML} markup.
 }
 
 \references{
@@ -234,13 +234,13 @@ pathDiagram(model.dhp,
         FOccAsp="Friend Occupational Aspiration",
         FEdAsp="Friend Educational Aspiration",
         FGenAsp="Friend General Aspiration",
-        annotate(c(RGenAsp.error="xi_{1}",
+        math(c(RGenAsp.error="xi_{1}",
         FGenAsp.error="xi_{2}",
         ROccAsp.error="epsilon_{1}",
         REdAsp.error="epsilon_{2}",
         FOccAsp.error="epsilon_{3}",
         FEdAsp.error="epsilon_{4}"))),
-    par.labels=annotate(c(gam11="gamma_{11}",
+    par.labels=math(c(gam11="gamma_{11}",
         gam12="gamma_{12}",
         gam13="gamma_{13}",
         gam14="gamma_{14}",

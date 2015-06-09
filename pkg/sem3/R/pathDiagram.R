@@ -1,13 +1,13 @@
 # with contributions by Adam Kramer and Michael Friendly (originally by J. Fox)
-# last modified 2015-05-14 by J. Fox
+# last modified 2015-06-09 by J. Fox
 
 globalVariables("dot")
 
 Greek <- read.table(system.file("etc/GreekLetters.txt", package="sem"), as.is=TRUE)
 
-annotate <- function(text, html.only=FALSE, hat=FALSE){
+math <- function(text, html.only=FALSE, hat=FALSE){
     if (length(text) > 1) {
-        result <- sapply(text, annotate, html=html.only, hat=hat)
+        result <- sapply(text, math, html=html.only, hat=hat)
         names(result) <- names(text)
         return(result)
     }

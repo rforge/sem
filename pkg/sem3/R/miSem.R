@@ -1,4 +1,4 @@
-# last modified 2015-04-30 by J. Fox
+# last modified 2015-06-09 by J. Fox
 # some changes by Benjamin K Goodrich 2015-01-20
 
 miSem <- function(model, ...){
@@ -6,7 +6,7 @@ miSem <- function(model, ...){
 }
 
 miSem.semmod <- function(model, ..., data, formula = ~., raw=FALSE, fixed.x=NULL, objective=objectiveML,
-                  n.imp=5, n.chains=n.imp, n.iter=30, seed=sample(1e6, 1), mi.args=list()){
+                  n.imp=5, n.chains=n.imp, n.iter=30, seed=sample(1e6, 1), mi.args=list(), show.progress=TRUE){
     cls <- gsub("\\.", "", deparse(substitute(objective)))
     cls <- gsub("2", "", cls)
     cls <- c(cls, "sem")
@@ -27,12 +27,19 @@ miSem.semmod <- function(model, ..., data, formula = ~., raw=FALSE, fixed.x=NULL
     mi.args$n.iter <- n.iter
     mi.args$seed <- seed
     mi.args$y <- data
+    if (show.progress) cat("\n Beginning", n.imp, "imputations\n")
     mi.data <- do.call("mi", mi.args)
+    if (show.progress) cat("\n Imputations complete\n")
 #     has.tcltk <- require("tcltk")
 # 	  if (has.tcltk) pb <- tkProgressBar("Fitting", "Imputation no.: ", 0, n.imp)
+    if (show.progress) {
+        cat("\n Fitting model to imputations:\n")
+        pb <- txtProgressBar(min=0, max=n.imp, style=3)
+    }
     fits <- complete(mi.data, m = n.imp, include_missing = FALSE)
     for (i in seq_along(fits)) {
 #        if (has.tcltk) setTkProgressBar(pb, i, label=sprintf("Imputation no.: %d", i))
+        if (show.progress) setTxtProgressBar(pb, i)
         data.i <- model.frame(formula, data=fits[[i]])
         data.i <- model.matrix(formula, data=fits[[i]])
         colnames(data.i)[colnames(data.i) == "(Intercept)"] <- "Intercept"
@@ -46,14 +53,16 @@ miSem.semmod <- function(model, ..., data, formula = ~., raw=FALSE, fixed.x=NULL
 	      fits[[i]] <- fit
     }
 #    if (has.tcltk) close(pb)
-    result <- list(initial.fit=initial.fit, mi.fits=fits, imputations=mi.data, seed=seed)
+    if (show.progress) close(pb)
+    result <- list(initial.fit=initial.fit, mi.fits=fits, imputations=mi.data, seed=seed, mi.data=mi.data)
     class(result) <- "miSem"
     result
 }
 
 miSem.semmodList <- function(model, ..., data, formula = ~., group, raw=FALSE, 
         fixed.x=NULL, objective=msemObjectiveML,
-        n.imp=5, n.chains=n.imp, n.iter=30, seed=sample(1e6, 1), mi.args=list()){
+        n.imp=5, n.chains=n.imp, n.iter=30, seed=sample(1e6, 1), mi.args=list(),
+        show.progress=TRUE){
     if (missing(formula)) formula <- as.formula(paste("~ . -", group))
     warn <- options(warn=-1)
     on.exit(options(warn))
@@ -76,12 +85,19 @@ miSem.semmodList <- function(model, ..., data, formula = ~., group, raw=FALSE,
     mi.args$n.iter <- n.iter
     mi.args$seed <- seed
     mi.args$y <- data
+    if (show.progress) cat("\n Beginning", n.imp, "imputations\n")
     mi.data <- do.call("mi", mi.args)
+    if (show.progress) cat("\n Imputations complete\n")
     fits <- complete(mi.data, m = n.imp, include_missing = FALSE)
 #     has.tcltk <- require("tcltk")
 #     if (has.tcltk) pb <- tkProgressBar("Fitting", "Imputation no.: ", 0, n.imp)
+    if (show.progress) {
+        cat("\n Fitting model to imputations:\n")
+        pb <- txtProgressBar(min=0, max=n.imp, style=3)
+    }
     for (i in 1:n.imp){
 #        if (has.tcltk) setTkProgressBar(pb, i, label=sprintf("Imputation no.: %d", i))
+        if (show.progress) setTxtProgressBar(pb, i)
         data.i <- fits[[i]]
         group.i <- data.i[, group]
         data.i <- model.frame(formula, data=data.i)
@@ -104,7 +120,8 @@ miSem.semmodList <- function(model, ..., data, formula = ~., group, raw=FALSE,
 	    fits[[i]] <- fit
     }
 #    if (has.tcltk) close(pb)
-    result <- list(initial.fit=initial.fit, mi.fits=fits, imputations=mi.data, seed=seed)
+    if (show.progress) close(pb)
+    result <- list(initial.fit=initial.fit, mi.fits=fits, imputations=mi.data, seed=seed, mi.data=mi.data)
     class(result) <- "miSem"
     result
 }
