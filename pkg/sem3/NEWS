@@ -1,3 +1,7 @@
+Changes to Version 3.1-7
+
+    o Nothing yet!
+
 Changes to Version 3.1-6
 
     o Added text argument to specifyModel(), specifyEquations(), cfa(), readMoments(), and update.semmod().
