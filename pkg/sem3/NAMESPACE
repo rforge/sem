@@ -1,4 +1,4 @@
-# last modified 2015-06-10 by J. Fox
+# last modified 2015-07-14 by J. Fox
 
 useDynLib(sem)
 useDynLib(sem, csemSolve)
@@ -10,6 +10,7 @@ importFrom(MASS, ginv)
 importFrom(boot, boot.ci)
 importFrom(mi, mi, complete)
 importFrom(DiagrammeR, DiagrammeR)
+importFrom(utils, combn, edit, setTxtProgressBar, txtProgressBar)
 
 export(ram, standardizedResiduals, normalizedResiduals, readMoments, 
     startvalues, startvalues2,
