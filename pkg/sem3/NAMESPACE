@@ -9,7 +9,7 @@ importFrom(matrixcalc, duplication.matrix, vech)
 importFrom(MASS, ginv)
 importFrom(boot, boot.ci)
 importFrom(mi, mi, complete)
-importFrom(DiagrammeR, DiagrammeR)
+#importFrom(DiagrammeR, DiagrammeR)
 importFrom(utils, combn, edit, setTxtProgressBar, txtProgressBar)
 
 export(ram, standardizedResiduals, normalizedResiduals, readMoments, 
