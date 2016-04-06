@@ -1,6 +1,8 @@
 Changes to Version 3.1-7
 
     o Imports from standard packages to conform to new CRAN policy.
+    
+    o Moved DiagrammeR to Suggests: .
 
 Changes to Version 3.1-6
 
