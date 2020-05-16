@@ -1,6 +1,6 @@
 Package: sem
-Version: 3.1-10
-Date: 2019-11-15
+Version: 3.1-11
+Date: 2020-05-16
 Title: Structural Equation Models
 Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaster.ca"),
 	person("Zhenghua", "Nie", role = "aut", email="zhenghua.nie@gmail.com"),
@@ -14,9 +14,9 @@ Authors@R: c(person("John", "Fox", role = c("aut", "cre"), email = "jfox@mcmaste
     person("Georges", "Monette", role = "ctb"),
     person("R-Core", role = "ctb")
 	)
-Depends: R (>= 2.14.0), stats
+Depends: R (>= 3.5.0), stats
 Imports: matrixcalc, MASS, boot, mi (>= 0.9-99), utils
-Suggests: polycor, MBESS, DiagrammeR
+Suggests: polycor, DiagrammeR
 LazyLoad: yes
 LazyData: yes
 ByteCompile: yes
