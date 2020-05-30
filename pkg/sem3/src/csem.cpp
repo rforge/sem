@@ -299,7 +299,7 @@ void printMatrix(const double *x, int row, int col, const string msg, int column
 		}
 }
 //
-//print a mtrix (double)
+//print a mtrix (integer)
 void printMatrix(const int *x, int row, int col, const string msg, int column_wise) 
 {
 		Rprintf("Matrix: %s [%d*%d]\t", msg.c_str(), row, col);
@@ -1827,7 +1827,7 @@ SEXP csemSolve( SEXP args )
 		csem_NaN = std::numeric_limits<double>::quiet_NaN();
 
 		SEXP solution;
-		int num_prot = 0;
+		int num_prot = 1;
 
 		PROTECT(solution=args);
 
@@ -2100,7 +2100,7 @@ SEXP cmsemSolve( SEXP args )
 		csem_NaN = std::numeric_limits<double>::quiet_NaN();
 
 		SEXP solution;
-		int num_prot = 0;
+		int num_prot = 1;
 
 		PROTECT(solution=args);
 
